@@ -1,0 +1,45 @@
+import json
+import random
+
+with open("tile_config.json", "r") as f:
+	tile_config_dict = json.load(f)
+	suit_order = tile_config_dict["suit_order"]
+	tile_symbols = tile_config_dict["symbols"]
+
+class Tile:
+	def __init__(self, suit, value, symbol):
+		self.__suit = suit
+		self.__suit_id = suit_order.index(suit)
+		try:
+			self.__value = int(value)
+		except ValueError:
+			self.__value = value
+		self.__symbol = symbol
+
+	def __str__(self):
+		return "%s-%s"%(self.__suit, self.__value)
+
+	def __eq__(self, other):
+		return (self.__suit == other.__suit) and (self.__value == other.__value)
+
+	def __lt__(self, other):
+		if self.__suit_id < other.__suit_id:
+			return True
+
+		elif self.__suit == other.__suit:
+			return self.__value < other.__value
+
+		return False
+
+	def get_symbol(self):
+		return self.__symbol
+
+def get_tiles(shuffle = True):
+	result_tiles = []
+	for suit, collection in tile_symbols.items():
+		for value, symbol in collection.items():
+			for i in range(4):
+				result_tiles.append(Tile(suit = suit, value = value, symbol = symbol))
+	if shuffle:
+		random.shuffle(result_tiles)
+	return result_tiles
