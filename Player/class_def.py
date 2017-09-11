@@ -1,7 +1,7 @@
 class Player:
-	def __init__(self, move_generator):
+	def __init__(self, move_generator_class, player_name, **kwargs):
 		self.__cumulate_score = 0
-		self.__move_generator = move_generator
+		self.__move_generator = move_generator_class(player_name = player_name, **kwargs)
 		self.reset_hand()
 
 	def new_turn(self, new_tile):
@@ -39,7 +39,7 @@ class Player:
 				location = "hand"
 
 		if is_able:
-			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile)
+			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, location)
 		
 		return is_able, is_wants_to, location	
 
