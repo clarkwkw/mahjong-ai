@@ -31,6 +31,12 @@ class Tile:
 
 		return False
 
+	def generate_neighbor_tile(self, offset):
+		if type(self.__value) is int and self.__value + offset >= 1 and self.__value + offset <= 9:
+			tile = Tile(self.__suit, self.__value + offset, tile_symbols[self.__suit][self.__value + offset])
+			return tile
+		return None
+
 	def get_symbol(self):
 		return self.__symbol
 
