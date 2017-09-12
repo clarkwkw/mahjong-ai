@@ -34,7 +34,7 @@ class Player:
 		dispose_tile = self.__move_generator.decide_drop_tile(self.__fixed_hand, self.__hand, new_tile, neighbors)
 		score = self.check_hand_score()
 
-		if dispose_tile != new_tile:
+		if new_tile is not None and dispose_tile != new_tile:
 			index = self.__hand.index(dispose_tile)
 			self.__hand[index] = new_tile
 
@@ -66,7 +66,7 @@ class Player:
 		return is_able, is_wants_to, location	
 
 	def check_pong(self, new_tile, neighbors):
-		if self.get_hand_count(new_tile) != 2:
+		if self.get_hand_count(new_tile) < 2:
 			return False, False
 		else:
 			is_wants_to = self.__move_generator.decide_pong(self.__fixed_hand, self.__hand, new_tile, neighbors)
@@ -134,7 +134,7 @@ class Player:
 			if meld is None:
 				raise Exception("Existing Pong meld cannot be found")
 
-			new_meld = ("kong", False, meld[2] + (new_tile))
+			new_meld = ("kong", False, meld[2] + (new_tile, ))
 			self.__fixed_hand[i] = new_meld
 				
 		elif location == "hand":
@@ -163,7 +163,7 @@ class Player:
 	def chow(self, new_tile, which):
 		tiles = []
 
-		for offset in range(which - 1, which + 1):
+		for offset in range(which - 1, which + 2):
 			if offset == 0:
 				tiles.append(new_tile)
 				continue
@@ -173,8 +173,8 @@ class Player:
 			tiles.append(self.__hand.pop(index))
 			self.__hand_count_map[str(neighbor_tile)] -= 1
 
-		new_meld = ("chow", False, tiles)
-		self.fixed_hand.append(new_meld)
+		new_meld = ("chow", False, tuple(tiles))
+		self.__fixed_hand.append(new_meld)
 
 		self.__hand = sorted(self.__hand)
 		

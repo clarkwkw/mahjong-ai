@@ -21,6 +21,8 @@ class Tile:
 		return "%s-%s"%(self.__suit, self.__value)
 
 	def __eq__(self, other):
+		if other is None:
+			return False
 		return (self.__suit == other.__suit) and (self.__value == other.__value)
 
 	def __lt__(self, other):
