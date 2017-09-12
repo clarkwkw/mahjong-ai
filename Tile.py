@@ -33,7 +33,7 @@ class Tile:
 
 	def generate_neighbor_tile(self, offset):
 		if type(self.__value) is int and self.__value + offset >= 1 and self.__value + offset <= 9:
-			tile = Tile(self.__suit, self.__value + offset, tile_symbols[self.__suit][self.__value + offset])
+			tile = Tile(self.__suit, self.__value + offset, tile_symbols[self.__suit][str(self.__value + offset)])
 			return tile
 		return None
 
