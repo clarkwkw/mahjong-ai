@@ -1,34 +1,50 @@
-from . import utils
 import Tile
+
+
+class Degenerated_player:
+	def __init__(self, player, mask_secret_meld):
+		self.__player = player
+		self.__mask_secret_meld = mask_secret_meld
+	def get_fixed_hand(self, **kwargs):
+		return self.__player.get_fixed_hand(self.__mask_secret_meld, **kwargs)
+	def get_discarded_tiles(self, *args, **kwargs):
+		return self.__player.get_discarded_tiles(*args, **kwargs)
+
+	def get_hand_size(self):
+		return self.__player.get_hand_size()
+
+	def get_name(self):
+		return self.__player.get_name()
 
 class Player:
 	def __init__(self, move_generator_class, player_name, **kwargs):
 		self.__cumulate_score = 0
 		self.__move_generator = move_generator_class(player_name = player_name, **kwargs)
 		self.__name = player_name
-		self.reset_hand()
 
 	def new_turn(self, new_tile, neighbors):
 		dispose_tile, score = None, None
-		get_neighbor_fixed_hand_funcs = utils.get_neighbor_fixed_hand_funcs(neighbors, mask_secret_meld = True)
-		get_neighbor_discarded_tiles_funcs = utils.get_neighbor_discarded_tiles_funcs(neighbors)	
 		if new_tile is not None:
-			is_able, is_wants_to, location = self.check_kong(new_tile, include_non_fix_hand = True, get_neighbor_fixed_hand_funcs = get_neighbor_fixed_hand_funcs, get_neighbor_discarded_tiles_funcs = get_neighbor_discarded_tiles_funcs)
+			is_able, is_wants_to, location = self.check_kong(new_tile, include_non_fix_hand = True, neighbors = neighbors)
 			if is_able and is_wants_to:
 				self.kong(new_tile, location = location, source = "draw")
 				dispose_tile, score = None, None
 				return dispose_tile, score
 
-		dispose_tile = self.__move_generator.decide_drop_tile(self.__fixed_hand, self.__fixed_hand_size, self.__hand, new_tile, get_neighbor_fixed_hand_funcs = get_neighbor_fixed_hand_funcs, get_neighbor_discarded_tiles_funcs = get_neighbor_discarded_tiles_funcs)
+		dispose_tile = self.__move_generator.decide_drop_tile(self.__fixed_hand, self.__hand, new_tile, neighbors)
 		score = self.check_hand_score()
 
 		if dispose_tile != new_tile:
 			index = self.__hand.index(dispose_tile)
 			self.__hand[index] = new_tile
 
-		return dispose_tile
+		self.__discarded_tiles.append( (dispose_tile, True) )
 
-	def check_kong(self, new_tile, include_non_fix_hand = False, neighbors):
+		self.__hand = sorted(self.__hand)
+
+		return dispose_tile, score
+
+	def check_kong(self, new_tile, include_non_fix_hand = False, neighbors = None):
 		is_able, is_wants_to, location = False, False, None
 
 		# Search for potential Kong meld in fixed hand
@@ -40,25 +56,20 @@ class Player:
 		
 		# Search in non-fixed hand
 		if not is_able and include_non_fix_hand:
-			if self.__hand_count_map[str(tile)] == 3:
+			if self.get_hand_count(new_tile) == 3:
 				is_able = True
 				location = "hand"
 
 		if is_able:
-			get_neighbor_fixed_hand_funcs = utils.get_neighbor_fixed_hand_funcs(neighbors, mask_secret_meld = True)
-			get_neighbor_discarded_tiles_funcs = utils.get_neighbor_discarded_tiles_funcs(neighbors)
-			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, location, get_neighbor_fixed_hand_funcsm get_neighbor_discarded_tiles_funcs)
+			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, location, neighbors)
 		
 		return is_able, is_wants_to, location	
 
 	def check_pong(self, new_tile, neighbors):
-		name = str(new_tile)
-		if name not in self.__hand_count_map or self.__hand_count_map[name] != 2:
+		if self.get_hand_count(new_tile) != 2:
 			return False, False
 		else:
-			get_neighbor_fixed_hand_funcs = utils.get_neighbor_fixed_hand_funcs(neighbors, mask_secret_meld = True)
-			get_neighbor_discarded_tiles_funcs = utils.get_neighbor_discarded_tiles_funcs(neighbors)
-			is_wants_to = self.__move_generator.decide_pong(self.__fixed_hand, self.__hand, new_tile, get_neighbor_fixed_hand_funcs, get_neighbor_discarded_tiles_funcs)
+			is_wants_to = self.__move_generator.decide_pong(self.__fixed_hand, self.__hand, new_tile, neighbors)
 			return True, is_wants_to
 
 	def check_chow(self, new_tile, neighbors):
@@ -72,6 +83,7 @@ class Player:
 		succeeding_2_count = self.get_hand_count(str(new_tile.generate_neighbor_tile(offset = 2)))
 
 		choices = []
+		criteria = False
 
 		# So, there would be max. 3 choices to make a Chow meld 
 		if preceding_2_count > 0 and preceding_1_count > 0:
@@ -88,11 +100,9 @@ class Player:
 		
 		if criteria:
 			is_able = True
-			get_neighbor_fixed_hand_funcs = utils.get_neighbor_fixed_hand_funcs(neighbors, mask_secret_meld = True)
-			get_neighbor_discarded_tiles_funcs = utils.get_neighbor_discarded_tiles_funcs(neighbors)
-			is_wants, which = self.__move_generator.decide_chow(self.__fixed_hand, self.__hand, new_tile, choices, get_neighbor_fixed_hand_funcs, get_neighbor_discarded_tiles_funcs)
+			is_wants_to, which = self.__move_generator.decide_chow(self.__fixed_hand, self.__hand, new_tile, choices, neighbors)
 
-		return is_able, is_wants, which
+		return is_able, is_wants_to, which
 
 	def pong(self, new_tile):
 		tiles = []
@@ -106,6 +116,8 @@ class Player:
 			tiles.append(self.__hand[index])
 			self.__hand.pop(index)
 		self.__fixed_hand.append( ("pong", False, tuple(tiles)) )
+
+		self.__hand = sorted(self.__hand)
 
 	def kong(self, new_tile, location, source):
 		if location == "fixed_hand":
@@ -132,7 +144,8 @@ class Player:
 				if tile_name not in self.__hand_count_map or self.__hand_count_map[tile_name] <= 0:
 					raise Exception("Not enough tile in hand for Kong")
 
-				tiles.append(self.__hand.pop(new_tile))
+				index = self.__hand.index(new_tile)
+				tiles.append(self.__hand.pop(index))
 				self.__hand_count_map[tile_name] -= 1
 
 			if source == "draw":
@@ -145,6 +158,8 @@ class Player:
 		else:
 			raise Exception("Unexpected location '%s'"%location)
 
+		self.__hand = sorted(self.__hand)
+
 	def chow(self, new_tile, which):
 		tiles = []
 
@@ -154,11 +169,14 @@ class Player:
 				continue
 
 			neighbor_tile = new_tile.generate_neighbor_tile(offset = offset)
-			tiles.append(self.__hand.pop(neighbor_tile))
+			index = self.__hand.index(neighbor_tile)
+			tiles.append(self.__hand.pop(index))
 			self.__hand_count_map[str(neighbor_tile)] -= 1
 
 		new_meld = ("chow", False, tiles)
 		self.fixed_hand.append(new_meld)
+
+		self.__hand = sorted(self.__hand)
 		
 
 	def get_hand_count(self, tile):
@@ -214,53 +232,6 @@ class Player:
 	def get_name(self):
 		return self.__name
 
-	def print_game_board(self, neighbors, print_stolen_tiles = False):
-		line_format_left = "|{next:<20s}|{opposite:<20s}|{prev:<20s}|"
-		line_format_right = "|{next:>20s}|{opposite:>20s}|{prev:>20s}|"
-		horizontal_line = line_format_left.format(next = '-'*20, opposite = '-'*20, prev = '-'*20)
-
-		print(horizontal_line)
-		print(line_format_left.format(next = "Next Player", opposite = "Opposite Player", prev = "Previous Player"))
-		print(line_format_left.format(next = "(%s)"%neighbors[0].get_name(), opposite = "(%s)"%neighbors[1].get_name(), prev = "(%s)"%neighbors[2].get_name()))
-		print(horizontal_line)
-
-		fixed_hands = []
-		hand_sizes = []
-		disposed_tiles_symbols = []
-		filter_state = None if print_stolen_tiles else "unstolen"
-
-		for neighbor in neighbors:
-			fixed_hand = ""
-			for meld_type, is_secret, tiles in neighbor.get_fixed_hand():
-				if tiles is None:
-					if meld_type == "kong":
-						fixed_hand += Tile.tile_back_symbol*4
-					else:
-						fixed_hand += Tile.tile_back_symbol*3
-				else:
-					fixed_hand += "".join([tile.get_symbol() for tile in tiles])
-			fixed_hands.append(fixed_hand)
-			hand_sizes.append(neighbor.get_hand_size)
-
-			disposed_tiles = neighbor.get_discarded_tiles(filter_state)
-			disposed_tiles_symbols.append(''.join([tile.get_symbol() for tile in dispose_tiles]))
-
-		print(line_format_left.format(next = fixed_hands[0], opposite = fixed_hands[1], prev = fixed_hands[2]))
-		print(line_format_right.format(next = Tile.tile_back_symbol*hand_sizes[0], opposite = Tile.tile_back_symbol*hand_sizes[1], prev = Tile.tile_back_symbol*hand_sizes[2]))
-
-		is_continue_print = True
-
-		while is_continue_print:
-			print(line_format_left.format(next = disposed_tiles_symbols[0][0:20], opposite = disposed_tiles_symbols[1][0:20], prev = disposed_tiles_symbols[2][0:20]))
-			is_continue_print = False
-			for i in range(3):
-				disposed_tiles_symbols[i] = disposed_tiles_symbols[i][20:]
-				if len(disposed_tiles_symbols[i]) > 0:
-					is_continue_print = True
-
-		print(horizontal_line)
-
-
 	def reset_hand(self, hand):
 		self.__fixed_hand = []
 
@@ -274,3 +245,8 @@ class Player:
 				self.__hand_count_map[name] = 1
 			else:
 				self.__hand_count_map[name] += 1
+
+		self.__hand = sorted(self.__hand)
+
+	def degenerate(self, mask_secret_meld):
+		return Degenerated_player(self, mask_secret_meld = mask_secret_meld)

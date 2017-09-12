@@ -30,7 +30,7 @@ def get_input_range(title, lower_bound, upper_bound, lb_inclusive = True, ub_inc
 	range_str = "%s%d,%d%s"%(lb_sign, lower_bound, upper_bound, ub_sign)
 
 	while True:
-		result = input("%s %s: "%title, range_str)
+		result = input("%s %s: "%(title, range_str))
 		try:
 			result = int(result)
 			if result < lower_bound or result > upper_bound:
@@ -39,5 +39,6 @@ def get_input_range(title, lower_bound, upper_bound, lb_inclusive = True, ub_inc
 				raise ValueError
 			if not ub_inclusive and result == upper_bound:
 				raise ValueError
+			return result
 		except ValueError:
 			print("Input must be an integer within the range, try again")

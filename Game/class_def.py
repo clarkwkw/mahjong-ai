@@ -7,7 +7,7 @@ class Game:
 		self.__deck = Tile.get_tiles(shuffle = True)
 		for player in players:
 			hand = self.__deck[0:13]
-			self.__deck = self.__deck[13:len(self._deck)]
+			self.__deck = self.__deck[13:len(self.__deck)]
 			player.reset_hand(hand)
 
 	def start_game(self):
@@ -24,6 +24,7 @@ class Game:
 			# If the player formed Kong, let him/her draw again
 			while True:
 				neighbors = self.__get_neighbor_players(cur_player_id)
+				
 				dispose_tile,score = cur_player.new_turn(new_tile, neighbors)
 				if score is not None:
 					return cur_player, score
@@ -40,12 +41,14 @@ class Game:
 				check_player = self.__players[check_player_id]
 
 				neighbors = self.__get_neighbor_players(check_player_id)
-				is_able_kong, is_wants_kong, location = check_player.check_kong(dispose_tile, include_non_fix_hand = True, neighbors)
+				is_able_kong, is_wants_kong, location = check_player.check_kong(dispose_tile, include_non_fix_hand = True, neighbors = neighbors)
 				if is_able_kong and is_wants_kong:
+
 					check_player.kong(dispose_tile, location = location, source = "steal")
 					tile_used = True
 					cur_player_id = check_player_id
 				else:
+
 					is_able_pong, is_wants_pong = check_player.check_pong(dispose_tile, neighbors)
 					if is_able_pong and is_wants_pong:
 						check_player.pong(dispose_tile)
@@ -76,19 +79,22 @@ class Game:
 				is_ponged, is_chowed = False, False
 				cur_player.mark_last_discard_unstolen()
 
-			cur_player_id = next_player
+			cur_player_id = (cur_player_id+1)%4
 
 		return None, None
 
-	def __get_neighbor_players(self, player_id):
+	def __get_neighbor_players(self, player_id, degenerated = True):
 		tmp_player_id = (player_id + 1)%4
 		neighbors = []
 
 		while tmp_player_id != player_id:
-			neighbors.append(self.__players[tmp_player_id])
+			player = self.__players[tmp_player_id]
+			if degenerated:
+				player = player.degenerate(mask_secret_meld = True)
+			neighbors.append(player)
 			tmp_player_id = (tmp_player_id + 1)%4
 
-		return Tuple(neighbors)
+		return tuple(neighbors)
 
 	def display_board(self):
 		pass
