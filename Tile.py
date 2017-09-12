@@ -5,6 +5,7 @@ with open("tile_config.json", "r") as f:
 	tile_config_dict = json.load(f)
 	suit_order = tile_config_dict["suit_order"]
 	tile_symbols = tile_config_dict["symbols"]
+	tile_back_symbol = tile_config_dict["tile_back"]
 
 class Tile:
 	def __init__(self, suit, value, symbol):

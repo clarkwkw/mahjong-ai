@@ -3,7 +3,7 @@ from . import utils
 
 class Human(Move_generator):
 
-	def decide_pong(self, fixed_hand, hand, dispose_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funs):
+	def decide_pong(self, fixed_hand, hand, dispose_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funcs):
 		title = "Do you want to make a Pong of %s %s %s ?"%(dispose_tile.get_symbol(), dispose_tile.get_symbol(), dispose_tile.get_symbol())
 		str_choices = ["Yes", "No"]
 		result = utils.get_input_list(title, str_choices)
@@ -12,7 +12,7 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_kong(self, fixed_hand, hand, dispose_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funs):
+	def decide_kong(self, fixed_hand, hand, dispose_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funcs):
 		title = "Do you want to make a Kong of %s %s %s %s ?"%(dispose_tile.get_symbol(), dispose_tile.get_symbol(), dispose_tile.get_symbol(), dispose_tile.get_symbol())
 		str_choices = ["Yes", "No"]
 		result = utils.get_input_list(title, str_choices)
@@ -21,7 +21,7 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funs):
+	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funcs):
 		title = "Do you want to make a Chow of the following?"
 		str_choices = []
 		for choice in choices:
@@ -38,7 +38,7 @@ class Human(Move_generator):
 		else:
 			return True, choices[result]
 
-	def decide_drop_tile(self, fixed_hand, hand, new_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funs):
+	def decide_drop_tile(self, fixed_hand, hand, new_tile, get_neighbor_public_hand_funcs, get_neighbor_discarded_tiles_funcs):
 		title = "Which tile to drop?"
 		result = utils.get_input_range(title, 0, len(hand))
 		if result == len(hand):
