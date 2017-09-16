@@ -2,13 +2,36 @@ import Game
 import Player
 import Move_generator
 import Tile
+import Scoring_rules
+import argparse
+import traceback
+import importlib
+import debug
+from timeit import default_timer as timer
 
-player_names = ["Amy", "Billy", "Clark", "Doe"]
+_test_cases_dir = "test_cases"
 
-players = []
-game = None
-for player_name in player_names:
-	players.append(Player.Player(Move_generator.Human, player_name))
+def arg_parse():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("testcase", help = "testcase to call under ./%s"%_test_cases_dir)
+	args = parser.parse_args()
+	return args
 
-game = Game.Game(players)
-game.start_game()
+if __name__ == "__main__":
+	args = arg_parse()
+	try:
+		m = importlib.import_module("%s.%s"%(_test_cases_dir, args.testcase))
+	except ImportError:
+		print(">> Testcase '%s' not found, abort."%args.testcase)
+		exit(-1)
+
+	print(">> Testcase: %s"%args.testcase)
+	start = timer()
+	try:
+		debug.__debug_mode = True
+		m.test()
+	except:
+		traceback.print_exc()
+	end = timer()
+	total_runtime = end - start
+	print(">> Execution time: {:02.0f}:{:02.0f}:{:05.2f}".format(total_runtime//3600, (total_runtime%3600)//60, total_runtime%60))

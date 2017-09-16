@@ -1,5 +1,6 @@
 import random
 import Tile
+import Scoring_rules
 
 class Game:
 	def __init__(self, players):
@@ -31,6 +32,15 @@ class Game:
 
 				if dispose_tile is not None:
 					break
+
+			# Check whether any of the other players can win
+			check_player_id = (cur_player_id + 1)%4
+			while check_player_id != cur_player_id:
+				check_player = self.__players[check_player_id]
+				score = Scoring_rules.HK_rules.calculate_total_score(check_player.get_fixed_hand(False), check_player.get_hand(), dispose_tile, "steal", self)
+				if score is not None:
+					pass
+				check_player_id = (check_player_id + 1)%4
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
 			check_player_id = (cur_player_id + 1)%4

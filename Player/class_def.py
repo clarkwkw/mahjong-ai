@@ -248,5 +248,8 @@ class Player:
 
 		self.__hand = sorted(self.__hand)
 
+	def get_hand(self):
+		return list(self.__hand)
+
 	def degenerate(self, mask_secret_meld):
 		return Degenerated_player(self, mask_secret_meld = mask_secret_meld)
