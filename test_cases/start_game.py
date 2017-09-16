@@ -12,4 +12,11 @@ def test():
 		players.append(Player.Player(Move_generator.Human, player_name))
 
 	game = Game.Game(players)
-	game.start_game()
+	winner, losers, penalty = game.start_game()
+
+	if winner is None:
+		print("No one wins.")
+	else:
+		print("Winner: %s"%winner.get_name())
+		print("Loser(s): %s"%(', '.join([player.get_name() for player in losers])))
+		print("Penalty: %d"%penalty)

@@ -13,7 +13,7 @@ class Move_generator(metaclass = abc.ABCMeta):
 		pass
 
 	@abc.abstractmethod
-	def decide_kong(self, fixed_hand, hand, dispose_tile, location, neighbors):
+	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors):
 		pass
 
 	@abc.abstractmethod
@@ -22,4 +22,8 @@ class Move_generator(metaclass = abc.ABCMeta):
 
 	@abc.abstractmethod
 	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors):
+		pass
+
+	@abc.abstractmethod
+	def decide_win(self, fixed_hand, grouped_hand, score, neighbors):
 		pass

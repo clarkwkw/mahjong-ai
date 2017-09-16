@@ -1,6 +1,5 @@
 import random
 import Tile
-import Scoring_rules
 
 class Game:
 	def __init__(self, players):
@@ -17,29 +16,33 @@ class Game:
 		is_ponged, is_chowed, is_vict = False, False, False
 		while len(self.__deck) > 0:
 			cur_player = self.__players[cur_player_id]
-			if not is_ponged and not is_chowed:
-				new_tile = self.__deck.pop(0)
-			else:
-				new_tile = None
+			neighbors = self.__get_neighbor_players(cur_player_id)
 
 			# If the player formed Kong, let him/her draw again
 			while True:
-				neighbors = self.__get_neighbor_players(cur_player_id)
+				if not is_ponged and not is_chowed:
+					new_tile = self.__deck.pop(0)
+				else:
+					new_tile = None
 				
-				dispose_tile,score = cur_player.new_turn(new_tile, neighbors)
+				dispose_tile, score = cur_player.new_turn(new_tile, neighbors)
+				
 				if score is not None:
-					return cur_player, score
+					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
 
 				if dispose_tile is not None:
 					break
 
-			# Check whether any of the other players can win
+			# Check whether any of the other players can win by stealing
 			check_player_id = (cur_player_id + 1)%4
 			while check_player_id != cur_player_id:
 				check_player = self.__players[check_player_id]
-				score = Scoring_rules.HK_rules.calculate_total_score(check_player.get_fixed_hand(False), check_player.get_hand(), dispose_tile, "steal", self)
-				if score is not None:
-					pass
+				neighbors = self.__get_neighbor_players(check_player_id)
+				is_able, is_wants_to, score = check_player.check_win(dispose_tile, "steal", neighbors)
+				
+				if is_wants_to is not None and is_wants_to:
+					return check_player, [cur_player], score
+					
 				check_player_id = (check_player_id + 1)%4
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
@@ -91,7 +94,7 @@ class Game:
 
 			cur_player_id = (cur_player_id+1)%4
 
-		return None, None
+		return None
 
 	def __get_neighbor_players(self, player_id, degenerated = True):
 		tmp_player_id = (player_id + 1)%4

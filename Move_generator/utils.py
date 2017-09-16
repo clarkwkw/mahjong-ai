@@ -1,3 +1,5 @@
+import Tile
+
 def get_input_list(title, options):
 	i = 0
 	options_str = ""
@@ -9,7 +11,7 @@ def get_input_list(title, options):
 		result = input("Enter your choice [%d - %d]: "%(0, len(options) - 1))
 		try:
 			result = int(result)
-			if result < 0 or result >= len(options_str):
+			if result < 0 or result >= len(options):
 				raise ValueError
 			return result
 		except ValueError:
@@ -42,3 +44,21 @@ def get_input_range(title, lower_bound, upper_bound, lb_inclusive = True, ub_inc
 			return result
 		except ValueError:
 			print("Input must be an integer within the range, try again")
+
+def print_hand(hand, end = "\n"):
+	meld_type, is_secret, tiles = None, None, None
+	for meld in hand:
+		if type(meld) == Tile.Tile:
+			print(meld.symbol, end = "")
+		else:
+			if len(meld) == 3:
+				meld_type, is_secret, tiles = meld
+			elif len(meld) == 2:
+				meld_type, tiles = meld
+				is_secret = False
+			else:
+				raise Exception("unexpected structure of hand")
+			for tile in tiles:
+				print(tile.symbol, end = "")
+			print(" ", end = "")
+	print("", end = end)

@@ -3,12 +3,15 @@ import debug
 
 def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src, game):
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
-	if grouped_hands is not None:
-		print("Found %d possible winning hand(s):"%len(grouped_hands))
-		for grouped_hand in grouped_hands:
-			debug.print_hand(grouped_hand)
-
-	return None
+	print("additional_tile: %s"%additional_tile.symbol)
+	if grouped_hands is None:
+		print("Found no winning hand")
+		return None, None
+	print("Found %d winning hands"%len(grouped_hands))
+	for hand in grouped_hands:
+		debug.print_hand(hand)
+	# Temporary approach: select the first conf. and set the score to 1
+	return (grouped_hands[0], 1)
 
 def validate_hand(fixed_hand, hand, additional_tile):
 	new_hand = list(hand)
@@ -33,8 +36,6 @@ def validate_hand(fixed_hand, hand, additional_tile):
 	if pair_suit is None:
 		return None
 
-	print(">> Pair suit: %s"%pair_suit)
-
 	# Start searching with the pair
 	grouped_hands = []
 
@@ -42,7 +43,6 @@ def validate_hand(fixed_hand, hand, additional_tile):
 		if count >= 2:
 			suit_map[pair_suit] -= 2
 			tile_map[pair_suit][tile_val] -= 2
-			print("Checking pairs %s-%s: %d"%(pair_suit, tile_val, count))
 			result = __validate_helper(tile_map, suit_map, len(new_hand) - 2, [("pair", (Tile.Tile(pair_suit, tile_val), Tile.Tile(pair_suit, tile_val)))])
 			if len(result) > 0:
 				grouped_hands.extend(result)
@@ -56,8 +56,6 @@ def validate_hand(fixed_hand, hand, additional_tile):
 
 def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 	result = []
-	print("checking: [%d] "%tile_count, end = "")
-	debug.print_hand(grouped_hand)
 
 	if tile_count == 0:
 		return [list(grouped_hand)]

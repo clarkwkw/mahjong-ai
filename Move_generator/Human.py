@@ -15,9 +15,13 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_kong(self, fixed_hand, hand, dispose_tile, location, neighbors):
+	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors):
 		self.print_game_board(fixed_hand, hand, neighbors, None)
-		print("Someone just discarded a %s."%dispose_tile.symbol)
+		if src == "steal":
+			print("Someone just discarded a %s."%dispose_tile.symbol)
+		elif src == "draw":
+			print("You just drew a %s"%dispose_tile.symbol)
+
 		if location == "fixed_hand":
 			location = "fixed hand"
 		else:
@@ -61,6 +65,19 @@ class Human(Move_generator):
 			return new_tile
 		else:
 			return hand[result]
+
+	def decide_win(self, fixed_hand, hand, grouped_hand, score, neighbors):
+		self.print_game_board(fixed_hand, hand, neighbors)
+		print("You can form a victory hand of: ")
+		utils.print_hand(fixed_hand, end = " ")
+		utils.print_hand(grouped_hand, end = " ")
+		print("[%d]"%score)
+
+		title = "Do you want to end the game now?"
+		str_choices = ["Yes", "No"]
+		result = utils.get_input_list(title, str_choices)
+
+		return result == 0
 
 	def print_game_board(self, fixed_hand, hand, neighbors, new_tile = None, print_stolen_tiles = False):
 		line_format_left = "|{next:<20s}|{opposite:<20s}|{prev:<20s}|"

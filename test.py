@@ -26,12 +26,12 @@ if __name__ == "__main__":
 		exit(-1)
 
 	print(">> Testcase: %s"%args.testcase)
-	start = timer()
+	#start = timer()
 	try:
-		debug.__debug_mode = True
+		#debug.__debug_mode = True
 		m.test()
 	except:
 		traceback.print_exc()
-	end = timer()
-	total_runtime = end - start
-	print(">> Execution time: {:02.0f}:{:02.0f}:{:05.2f}".format(total_runtime//3600, (total_runtime%3600)//60, total_runtime%60))
+	#end = timer()
+	#total_runtime = end - start
+	#print(">> Execution time: {:02.0f}:{:02.0f}:{:05.2f}".format(total_runtime//3600, (total_runtime%3600)//60, total_runtime%60))

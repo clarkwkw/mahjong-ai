@@ -1,4 +1,5 @@
 import Tile
+import Scoring_rules
 
 
 class Degenerated_player:
@@ -23,28 +24,40 @@ class Player:
 		self.__name = player_name
 
 	def new_turn(self, new_tile, neighbors):
-		dispose_tile, score = None, None
+		dispose_tile = None
+
 		if new_tile is not None:
-			is_able, is_wants_to, location = self.check_kong(new_tile, include_non_fix_hand = True, neighbors = neighbors)
+
+			is_able, is_wants_to, score = self.check_win(new_tile, "draw", neighbors)
+			if is_able and is_wants_to:
+				return None, score
+
+			is_able, is_wants_to, location = self.check_kong(new_tile, include_non_fix_hand = True, src = "draw", neighbors = neighbors)
 			if is_able and is_wants_to:
 				self.kong(new_tile, location = location, source = "draw")
-				dispose_tile, score = None, None
-				return dispose_tile, score
+				return None, None
 
 		dispose_tile = self.__move_generator.decide_drop_tile(self.__fixed_hand, self.__hand, new_tile, neighbors)
-		score = self.check_hand_score()
 
-		if new_tile is not None and dispose_tile != new_tile:
-			index = self.__hand.index(dispose_tile)
-			self.__hand[index] = new_tile
+		
+		if dispose_tile != new_tile:
+			
+			dispose_tile_index = self.__hand.index(dispose_tile)
+			if new_tile is not None:
+				self.__hand[dispose_tile_index] = new_tile
+				self.update_hand_count_map(new_tile, 1)
+			else:
+				self.__hand.pop(dispose_tile_index)
+
+			self.update_hand_count_map(dispose_tile, -1)		
 
 		self.__discarded_tiles.append( (dispose_tile, True) )
 
 		self.__hand = sorted(self.__hand)
 
-		return dispose_tile, score
+		return dispose_tile, None
 
-	def check_kong(self, new_tile, include_non_fix_hand = False, neighbors = None):
+	def check_kong(self, new_tile, include_non_fix_hand = False, src = "", neighbors = None):
 		is_able, is_wants_to, location = False, False, None
 
 		# Search for potential Kong meld in fixed hand
@@ -55,13 +68,13 @@ class Player:
 				break
 		
 		# Search in non-fixed hand
-		if not is_able and include_non_fix_hand:
+		if (not is_able) and include_non_fix_hand:
 			if self.get_hand_count(new_tile) == 3:
 				is_able = True
 				location = "hand"
 
 		if is_able:
-			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, location, neighbors)
+			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, location, src, neighbors)
 		
 		return is_able, is_wants_to, location	
 
@@ -104,17 +117,26 @@ class Player:
 
 		return is_able, is_wants_to, which
 
+	def check_win(self, new_tile, tile_src, neighbors):
+		grouped_hand, score = Scoring_rules.HK_rules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, self)
+		if grouped_hand is not None:
+			is_wants_to = self.__move_generator.decide_win(self.__fixed_hand, self.__hand, grouped_hand, score, neighbors)
+			return True, is_wants_to, score
+		else:
+			return False, False, None
+
 	def pong(self, new_tile):
 		tiles = []
 		tiles.append(new_tile)
 
 		tile_name = str(new_tile)
-		self.__hand_count_map[tile_name] -= 2
+		self.update_hand_count_map(new_tile, -2)
 
 		for i in range(2):
 			index = self.__hand.index(new_tile)
 			tiles.append(self.__hand[index])
 			self.__hand.pop(index)
+
 		self.__fixed_hand.append( ("pong", False, tuple(tiles)) )
 
 		self.__hand = sorted(self.__hand)
@@ -146,7 +168,8 @@ class Player:
 
 				index = self.__hand.index(new_tile)
 				tiles.append(self.__hand.pop(index))
-				self.__hand_count_map[tile_name] -= 1
+
+			self.update_hand_count_map(new_tile, -3)
 
 			if source == "draw":
 				self.__fixed_hand.append( ("kong", True, tuple(tiles)) )
@@ -171,7 +194,7 @@ class Player:
 			neighbor_tile = new_tile.generate_neighbor_tile(offset = offset)
 			index = self.__hand.index(neighbor_tile)
 			tiles.append(self.__hand.pop(index))
-			self.__hand_count_map[str(neighbor_tile)] -= 1
+			self.update_hand_count_map(neighbor_tile, -1)
 
 		new_meld = ("chow", False, tuple(tiles))
 		self.__fixed_hand.append(new_meld)
@@ -194,9 +217,6 @@ class Player:
 			raise Exception("No tile was discarded")
 
 		self.__discarded_tiles[last_index] = (self.__discarded_tiles[last_index][0], False)
-
-	def check_hand_score(self):
-		pass
 
 	def add_cumulate_score(self, score):
 		self.__cumulate_score += score
@@ -232,6 +252,14 @@ class Player:
 	def get_name(self):
 		return self.__name
 
+	def update_hand_count_map(self, tile, adjustment):
+		if self.get_hand_count(tile) + adjustment < 0:
+			raise Exception("Invalid adjustment")
+		if str(tile) in self.__hand_count_map:
+			self.__hand_count_map[str(tile)] += adjustment
+		else:
+			self.__hand_count_map[str(tile)] = adjustment
+
 	def reset_hand(self, hand):
 		self.__fixed_hand = []
 
@@ -247,9 +275,6 @@ class Player:
 				self.__hand_count_map[name] += 1
 
 		self.__hand = sorted(self.__hand)
-
-	def get_hand(self):
-		return list(self.__hand)
 
 	def degenerate(self, mask_secret_meld):
 		return Degenerated_player(self, mask_secret_meld = mask_secret_meld)
