@@ -4,16 +4,24 @@ import Tile
 
 class Human(Move_generator):
 
-	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors):
+	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors):
 		self.print_game_board(fixed_hand, hand, neighbors, None)
 		print("Someone just discarded a %s."%dispose_tile.symbol)
-		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol)
-		str_choices = ["Yes", "No"]
+		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
+		str_choices = []
+		for choice in choices:
+			tiles = []
+			for i in range(choice - 1, choice + 2):
+				tile = dispose_tile.generate_neighbor_tile(offset = i)
+				tiles.append(tile.symbol)
+			str_choices.append(" ".join(tiles))
+
+		str_choices.append("None of the above")
 		result = utils.get_input_list(title, str_choices)
-		if result == 0:
-			return True
+		if result == len(choices):
+			return False, None
 		else:
-			return False
+			return True, choices[result]
 
 	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors):
 		self.print_game_board(fixed_hand, hand, neighbors, None)
@@ -34,24 +42,16 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors):
+	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors):
 		self.print_game_board(fixed_hand, hand, neighbors, None)
 		print("Someone just discarded a %s."%dispose_tile.symbol)
-		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
-		str_choices = []
-		for choice in choices:
-			tiles = []
-			for i in range(choice - 1, choice + 2):
-				tile = dispose_tile.generate_neighbor_tile(offset = i)
-				tiles.append(tile.symbol)
-			str_choices.append(" ".join(tiles))
-
-		str_choices.append("None of the above")
+		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol)
+		str_choices = ["Yes", "No"]
 		result = utils.get_input_list(title, str_choices)
-		if result == len(choices):
-			return False, None
+		if result == 0:
+			return True
 		else:
-			return True, choices[result]
+			return False
 
 	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors):
 		self.print_game_board(fixed_hand, hand, neighbors, new_tile)
@@ -91,7 +91,7 @@ class Human(Move_generator):
 
 		print(horizontal_line)
 		print(line_format_left.format(next = "Next Player", opposite = "Opposite Player", prev = "Previous Player"))
-		print(line_format_left.format(next = "(%s)"%neighbors[0].get_name(), opposite = "(%s)"%neighbors[1].get_name(), prev = "(%s)"%neighbors[2].get_name()))
+		print(line_format_left.format(next = "(%s)"%neighbors[0].name, opposite = "(%s)"%neighbors[1].name, prev = "(%s)"%neighbors[2].name))
 		print(horizontal_line)
 
 		fixed_hands_strs = []
@@ -110,7 +110,7 @@ class Human(Move_generator):
 				else:
 					fixed_hand_str += "".join([tile.symbol for tile in tiles])
 			fixed_hands_strs.append(fixed_hand_str)
-			hand_sizes.append(neighbor.get_hand_size())
+			hand_sizes.append(neighbor.hand_size)
 
 			disposed_tiles = neighbor.get_discarded_tiles(filter_state)
 			disposed_tiles_symbols.append(''.join([tile.symbol for tile in disposed_tiles]))

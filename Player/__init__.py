@@ -1,1 +1,1 @@
-from .class_def import Player
+from .Player import Player

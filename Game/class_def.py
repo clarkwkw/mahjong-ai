@@ -33,6 +33,8 @@ class Game:
 				if dispose_tile is not None:
 					break
 
+			is_ponged, is_chowed = False, False
+
 			# Check whether any of the other players can win by stealing
 			check_player_id = (cur_player_id + 1)%4
 			while check_player_id != cur_player_id:
@@ -89,12 +91,11 @@ class Game:
 
 			# No one wants to Pong/Kong/Chow, mark the tile as unstolen
 			if not tile_used:
-				is_ponged, is_chowed = False, False
 				cur_player.mark_last_discard_unstolen()
 
 			cur_player_id = (cur_player_id+1)%4
 
-		return None
+		return None, None, None
 
 	def __get_neighbor_players(self, player_id, degenerated = True):
 		tmp_player_id = (player_id + 1)%4
@@ -108,6 +109,3 @@ class Game:
 			tmp_player_id = (tmp_player_id + 1)%4
 
 		return tuple(neighbors)
-
-	def display_board(self):
-		pass
