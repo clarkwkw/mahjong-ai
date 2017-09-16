@@ -3,13 +3,9 @@ import debug
 
 def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src, game):
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
-	print("additional_tile: %s"%additional_tile.symbol)
 	if grouped_hands is None:
-		print("Found no winning hand")
 		return None, None
-	print("Found %d winning hands"%len(grouped_hands))
-	for hand in grouped_hands:
-		debug.print_hand(hand)
+		
 	# Temporary approach: select the first conf. and set the score to 1
 	return (grouped_hands[0], 1)
 

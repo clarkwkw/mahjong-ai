@@ -17,6 +17,6 @@ def test():
 	if winner is None:
 		print("No one wins.")
 	else:
-		print("Winner: %s"%winner.get_name())
-		print("Loser(s): %s"%(', '.join([player.get_name() for player in losers])))
+		print("Winner: %s"%winner.name)
+		print("Loser(s): %s"%(', '.join([player.name for player in losers])))
 		print("Penalty: %d"%penalty)

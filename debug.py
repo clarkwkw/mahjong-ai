@@ -1,4 +1,4 @@
-__debug_mode = True
+__debug_mode = False
 
 def print_hand(hand, mask_secret_tile = False):
 	if not __debug_mode:
