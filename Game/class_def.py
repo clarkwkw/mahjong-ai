@@ -9,7 +9,10 @@ class Game:
 			hand = self.__deck[0:13]
 			self.__deck = self.__deck[13:len(self.__deck)]
 			player.reset_hand(hand)
-
+	@property
+	def deck_size(self):
+		return len(self.__deck)
+		
 	def start_game(self):
 		cur_player_id = 0
 		new_tile = None

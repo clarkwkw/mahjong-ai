@@ -1,12 +1,6 @@
 import json
 import random
 
-with open("tile_config.json", "r") as f:
-	tile_config_dict = json.load(f)
-	suit_order = tile_config_dict["suit_order"]
-	tile_symbols = tile_config_dict["symbols"]
-	tile_back_symbol = tile_config_dict["tile_back"]
-
 class Tile:
 	def __init__(self, suit, value):
 		self.__suit = suit
@@ -75,3 +69,14 @@ def get_suit_classification_map(default_val = None):
 	for suit in tile_symbols:
 		result[suit] = default_val
 	return result
+
+with open("tile_config.json", "r") as f:
+	tile_config_dict = json.load(f)
+	suit_order = tile_config_dict["suit_order"]
+	tile_symbols = tile_config_dict["symbols"]
+	tile_back_symbol = tile_config_dict["tile_back"]
+	tile_map = {}
+	for suit in tile_symbols:
+		tile_map[suit] = {}
+		for value in tile_symbols[suit]:
+			tile_map[suit][value] = Tile(suit, value)

@@ -5,9 +5,34 @@ def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
 	if grouped_hands is None:
 		return None, None
-		
-	# Temporary approach: select the first conf. and set the score to 1
-	return (grouped_hands[0], 1)
+	
+	parameters = {
+		"fixed_hand": fixed_hand,
+		"hand": hand,
+		"additional_tile": additional_tile,
+		"additional_tile_src": additional_tile_src,
+		"game": game
+	}
+
+	max_hand, max_score = None, float("-inf")
+	for grouped_hand in grouped_hands:
+		parameters["grouped_hand"] = grouped_hand
+		score = 0
+		for score_func in __score_funcs:
+			score += score_func(**parameters)
+			if score >= __score_upper_limit:
+				break
+
+		if score > max_score:
+			max_score = score
+			max_hand = hand
+
+			if max_score >= __score_upper_limit:
+				break
+	if max_score < __score_lower_limit:
+		return None, None
+
+	return max_hand, min(max_score, __score_upper_limit)
 
 def validate_hand(fixed_hand, hand, additional_tile):
 	new_hand = list(hand)
@@ -65,18 +90,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 			if count == 0:
 				continue
 			tile = Tile.Tile(suit, tile_val)
-			if count == 4:
-				grouped_hand.append(("kong", (tile, tile, tile, tile)))
-				tile_map[suit][tile_val] -= 4
-				suit_map[suit] -= 4
-
-				tmp_result = __validate_helper(tile_map, suit_map, tile_count - 4, grouped_hand)
-
-				grouped_hand.pop()
-				tile_map[suit][tile_val] += 4
-				suit_map[suit] += 4
-				result.extend(tmp_result)
-
+			
 			if count >= 3:
 				grouped_hand.append(("pong", (tile, tile, tile)))
 				tile_map[suit][tile_val] -= 3
@@ -112,42 +126,233 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 
 			return result
 
+def score_drawn_tile(additional_tile_src, **kwargs):
+	if additional_tile_src == "drawn":
+		return 1
 
-def score_all_chows(fixed_hand, grouped_hand):
-	pass
+	return 0
 
-def score_honor_tiles(fixed_hand, grouped_hand):
-	pass
+def score_all_chows(fixed_hand, grouped_hand, **kwargs):
+	for meld_type, _, _ in fixed_hand:
+		if meld_type != "chow":
+			return 0
 
-def score_ones_nines(fixed_hand, grouped_hand):
-	pass
+	for meld_type, _ in grouped_hand:
+		if meld_type != "chow" and meld_type != "pair":
+			return 0
 
-def score_stolen_last_tile(additional_tile_src, game):
-	pass
+	return 1
 
-def score_mixed_suit(fixed_hand, grouped_hand):
-	pass
+def score_honor_tiles(fixed_hand, grouped_hand, **kwargs):
+	matched_count = 0
+	pair_involved = False
 
-def score_all_pongs(fixed_hand, grouped_hand):
-	pass
+	for meld_type, _, tiles in fixed_hand:
+		is_matched = tiles[0] == Tile.tile_map["honor"]["red"]
+		is_matched = is_matched or tiles[0] == Tile.tile_map["honor"]["green"]
+		is_matched = is_matched or tiles[0] == Tile.tile_map["honor"]["white"]
+		matched_count += is_matched
 
-def score_three_honors(fixed_hand, grouped_hand):
-	pass
+	for meld_type, tiles in grouped_hand:
+		is_matched = tiles[0] == Tile.tile_map["honor"]["red"]
+		is_matched = is_matched or tiles[0] == Tile.tile_map["honor"]["green"]
+		is_matched = is_matched or tiles[0] == Tile.tile_map["honor"]["white"]
+		matched_count += is_matched
 
-def score_pure_non_honor_suit(fixed_hand, grouped_hand):
-	pass
+		if is_matched and meld_type == "pair":
+			pair_involved = True
 
-def score_four_winds(fixed_hand, grouped_hand):
-	pass
+	if matched_count == 3:
+		if not pair_involved:
+			return __score_upper_limit
 
-def score_pure_honor_suit(fixed_hand, grouped_hand):
-	pass
+		return 5
 
-def score_pure_ones_nines(fixed_hand, grouped_hand):
-	pass
+	return matched_count
 
-def score_all_pongs_with_steal(fixed_hand, grouped_hand, additional_tile_src):
-	pass
+def score_ones_nines(fixed_hand, grouped_hand, **kwargs):
+	honor_involved = False
 
-def score_pure_one_to_nine(fixed_hand, grouped_hand, additional_tile_src):
-	pass
+	for meld_type, _, tiles in fixed_hand:
+		if meld_type == "chow":
+			return 0
+
+		if tiles[0].value != 1 and tiles[0].value != 9:
+			if tiles[0].suit != "honor":
+				return 0
+			honor_involved = True
+
+	for meld_type, tiles in grouped_hand:
+		if meld_type == "chow":
+			return 0
+			
+		if tiles[0].value != 1 and tiles[0].value != 9:
+			if tiles[0].suit != "honor":
+				return 0
+			honor_involved = True
+
+	if honor_involved:
+		return 1
+	return __score_upper_limit
+
+def score_drawn_last_tile(additional_tile_src, game, **kwargs):
+	if additional_tile_src == "draw" and game.deck_size == 0:
+		return 1
+
+	return 0
+
+def score_one_suit(fixed_hand, grouped_hand, **kwargs):
+	non_honor_suit = None
+	honor_involved = False
+
+	for _, _, tiles in fixed_hand:
+		if tiles[0].suit == "honor":
+			honor_involved = True
+			continue
+
+		if non_honor_suit is None:
+			non_honor_suit = tiles[0].suit
+			
+		if tiles[0].suit != non_honor_suit:
+			return 0
+
+	for _, tiles in grouped_hand:
+		if tiles[0].suit == "honor":
+			honor_involved = True
+			continue
+
+		if non_honor_suit is None:
+			non_honor_suit = tiles[0].suit
+			
+		if tiles[0].suit != non_honor_suit:
+			return 0
+	if honor_involved:
+		return 3
+
+	return 7
+
+def score_all_pongs(fixed_hand, grouped_hand, **kwargs):
+	for meld_type, _, _ in fixed_hand:
+		if meld_type == "chow":
+			return 0
+
+	for meld_type, _ in grouped_hand:
+		if meld_type == "chow":
+			return 0
+
+	return 3
+
+def score_four_winds(fixed_hand, grouped_hand, **kwargs):
+	match_count = 0
+	for _, _, tiles in fixed_hand:
+		if tiles[0].suit == "honor":
+			match_count += tiles[0] == Tile.tile_map["honor"]["east"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["south"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["west"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["north"]
+
+	for _, tiles in grouped_hand:
+		if tiles[0].suit == "honor":
+			match_count += tiles[0] == Tile.tile_map["honor"]["east"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["south"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["west"]
+			match_count += tiles[0] == Tile.tile_map["honor"]["north"]
+
+	if match_count == 4:
+		return __score_upper_limit
+
+	return 0
+
+def score_pure_honor_suit(fixed_hand, grouped_hand, **kwargs):
+	for _, _, tiles in fixed_hand:
+		if tiles[0].suit != "honor":
+			return 0
+
+	for _, tiles in grouped_hand:
+		if tiles[0].suit != "honor":
+			return 0
+	
+	return __score_upper_limit
+
+def score_secret_all_pongs_with_draw(fixed_hand, grouped_hand, additional_tile_src, **kwargs):
+	if additional_tile_src != "draw":
+		return 0
+
+	for meld_type, is_secret, _ in fixed_hand:
+		if not is_secret or meld_type == "chow":
+			return 0
+
+	for meld_type, _ in grouped_hand:
+		if meld_type == "chow":
+			return 0
+
+	return __score_upper_limit
+
+def score_pure_one_to_nine(fixed_hand, grouped_hand, **kwargs):
+	suit = None
+	record = [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	target = [-1, 3, 1, 1, 1, 1, 1, 1, 1, 3]
+	for _, is_secret, tiles in fixed_hand:
+		if not is_secret or tile[0].suit == "honor":
+			return 0
+
+		if suit is None:
+			suit = tiles[0].suit
+
+		for tile in tiles:
+			if tile.suit != suit:
+				return 0
+			record[tile.value] += 1
+
+	for meld_type, tiles in grouped_hand:
+		if tiles[0].suit == "honor":
+			return 0
+
+		if suit is None:
+			suit = tiles[0].suit
+
+		for tile in tiles:
+			if tile.suit != suit:
+				return 0
+
+			record[tile.value] += 1
+
+	diff = 0
+	for i in range(len(target)):
+		if record[i] < target[i]:
+			return 0
+
+		diff += target[i] - record[i]
+
+	if diff != 1:
+		return 0
+
+	return __score_upper_limit
+
+def score_four_kongs(fixed_hand, **kwargs):
+	count = 0
+	for meld_type, _, _ in fixed_hand:
+		if meld_type == "kong":
+			count += 1
+
+	if count >= 4:
+		return __score_upper_limit
+
+	return 0
+
+__score_lower_limit = 1
+__score_upper_limit = 10
+__score_funcs = [
+	score_drawn_tile,
+	score_all_chows,
+	score_honor_tiles, 
+	score_ones_nines,
+	#score_drawn_last_tile,
+	score_one_suit,
+	score_all_pongs,
+	score_four_winds,
+	score_pure_honor_suit,
+	score_secret_all_pongs_with_draw,
+	score_pure_one_to_nine,
+	score_four_kongs
+]
