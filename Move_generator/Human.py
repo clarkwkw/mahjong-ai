@@ -4,8 +4,8 @@ import Tile
 
 class Human(Move_generator):
 
-	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors):
-		self.print_game_board(fixed_hand, hand, neighbors, None)
+	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors, game):
+		self.print_game_board(fixed_hand, hand, neighbors, game, None)
 		print("Someone just discarded a %s."%dispose_tile.symbol)
 		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
 		str_choices = []
@@ -23,8 +23,8 @@ class Human(Move_generator):
 		else:
 			return True, choices[result]
 
-	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors):
-		self.print_game_board(fixed_hand, hand, neighbors, None)
+	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors, game):
+		self.print_game_board(fixed_hand, hand, neighbors, game, None)
 		if src == "steal":
 			print("Someone just discarded a %s."%dispose_tile.symbol)
 		elif src == "draw":
@@ -42,8 +42,8 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors):
-		self.print_game_board(fixed_hand, hand, neighbors, None)
+	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors, game):
+		self.print_game_board(fixed_hand, hand, neighbors, game, None)
 		print("Someone just discarded a %s."%dispose_tile.symbol)
 		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol)
 		str_choices = ["Yes", "No"]
@@ -53,8 +53,8 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors):
-		self.print_game_board(fixed_hand, hand, neighbors, new_tile)
+	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors, game):
+		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 		title = "Hey %s, which tile to drop?"%self.player_name
 		if new_tile is None:
 			result = utils.get_input_range(title, 0, len(hand) - 1)
@@ -66,8 +66,13 @@ class Human(Move_generator):
 		else:
 			return hand[result]
 
-	def decide_win(self, fixed_hand, hand, grouped_hand, score, neighbors):
-		self.print_game_board(fixed_hand, hand, neighbors)
+	def decide_win(self, fixed_hand, hand, grouped_hand, new_tile, src, score, neighbors, game):
+		if src == "steal":
+			self.print_game_board(fixed_hand, hand, neighbors, game)
+			print("Someone just discarded a %s."%new_tile.symbol)
+		else:
+			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile = new_tile)
+			
 		print("You can form a victory hand of: ")
 		utils.print_hand(fixed_hand, end = " ")
 		utils.print_hand(grouped_hand, end = " ")
@@ -79,7 +84,7 @@ class Human(Move_generator):
 
 		return result == 0
 
-	def print_game_board(self, fixed_hand, hand, neighbors, new_tile = None, print_stolen_tiles = False):
+	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		line_format_left = "|{next:<20s}|{opposite:<20s}|{prev:<20s}|"
 		line_format_right = "|{next:>20s}|{opposite:>20s}|{prev:>20s}|"
 		line_merged_format_left = "|{msg:<62s}|"
@@ -89,6 +94,8 @@ class Human(Move_generator):
 
 		print("Wake up %s!"%self.player_name)
 
+		print(horizontal_line)
+		print(line_merged_format_right.format(msg = "Game of %s wind"%game.game_wind))
 		print(horizontal_line)
 		print(line_format_left.format(next = "Next Player", opposite = "Opposite Player", prev = "Previous Player"))
 		print(line_format_left.format(next = "(%s)"%neighbors[0].name, opposite = "(%s)"%neighbors[1].name, prev = "(%s)"%neighbors[2].name))

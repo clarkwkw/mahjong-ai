@@ -25,7 +25,7 @@ def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src
 
 		if score > max_score:
 			max_score = score
-			max_hand = hand
+			max_hand = grouped_hand
 
 			if max_score >= __score_upper_limit:
 				break
@@ -126,6 +126,18 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 
 			return result
 
+def score_game_wind(fixed_hand, grouped_hand, game, **kwargs):
+	game_wind_tile = Tile.Tile("honor", game.game_wind)
+	for _, _, tiles in fixed_hand:
+		if tiles[0] == game_wind_tile:
+			return 1
+
+	for _, tiles in grouped_hand:
+		if tiles[0] == game_wind_tile:
+			return 1
+
+	return 0
+
 def score_drawn_tile(additional_tile_src, **kwargs):
 	if additional_tile_src == "drawn":
 		return 1
@@ -168,7 +180,7 @@ def score_honor_tiles(fixed_hand, grouped_hand, **kwargs):
 
 		return 5
 
-	return matched_count
+	return matched_count - pair_involved
 
 def score_ones_nines(fixed_hand, grouped_hand, **kwargs):
 	honor_involved = False
@@ -343,11 +355,12 @@ def score_four_kongs(fixed_hand, **kwargs):
 __score_lower_limit = 1
 __score_upper_limit = 10
 __score_funcs = [
+	score_game_wind,
 	score_drawn_tile,
 	score_all_chows,
 	score_honor_tiles, 
 	score_ones_nines,
-	#score_drawn_last_tile,
+	score_drawn_last_tile,
 	score_one_suit,
 	score_all_pongs,
 	score_four_winds,

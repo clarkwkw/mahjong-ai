@@ -4,16 +4,30 @@ import Tile
 class Game:
 	def __init__(self, players):
 		self.__players = players
-		self.__deck = Tile.get_tiles(shuffle = True)
-		for player in players:
-			hand = self.__deck[0:13]
-			self.__deck = self.__deck[13:len(self.__deck)]
-			player.reset_hand(hand)
+		self.__deck = None
+		self.__started = False
+		self.__game_wind = "north"
+
 	@property
 	def deck_size(self):
 		return len(self.__deck)
-		
+
+	@property
+	def game_wind(self):
+		return self.__game_wind	
+
 	def start_game(self):
+		if self.__started:
+			raise Exception("game already started")
+
+		self.__deck = Tile.get_tiles(shuffle = True)
+		self.__game_wind = self.__next_game_wind()
+		for player in self.__players:
+			hand = self.__deck[0:13]
+			self.__deck = self.__deck[13:len(self.__deck)]
+			player.reset_hand(hand)
+
+		self.__started = True
 		cur_player_id = 0
 		new_tile = None
 		is_ponged, is_chowed, is_vict = False, False, False
@@ -28,9 +42,10 @@ class Game:
 				else:
 					new_tile = None
 				
-				dispose_tile, score = cur_player.new_turn(new_tile, neighbors)
+				dispose_tile, score = cur_player.new_turn(new_tile, neighbors, self)
 				
 				if score is not None:
+					self.__started = False
 					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
 
 				if dispose_tile is not None:
@@ -43,9 +58,10 @@ class Game:
 			while check_player_id != cur_player_id:
 				check_player = self.__players[check_player_id]
 				neighbors = self.__get_neighbor_players(check_player_id)
-				is_able, is_wants_to, score = check_player.check_win(dispose_tile, "steal", neighbors)
+				is_able, is_wants_to, score = check_player.check_win(dispose_tile, "steal", neighbors, self)
 				
 				if is_wants_to is not None and is_wants_to:
+					self.__started = False
 					return check_player, [cur_player], score
 					
 				check_player_id = (check_player_id + 1)%4
@@ -59,7 +75,7 @@ class Game:
 				check_player = self.__players[check_player_id]
 
 				neighbors = self.__get_neighbor_players(check_player_id)
-				is_able_kong, is_wants_kong, location = check_player.check_kong(dispose_tile, include_non_fix_hand = True, neighbors = neighbors)
+				is_able_kong, is_wants_kong, location = check_player.check_kong(dispose_tile, include_non_fix_hand = True, neighbors = neighbors, game = self)
 				if is_able_kong and is_wants_kong:
 
 					check_player.kong(dispose_tile, location = location, source = "steal")
@@ -67,7 +83,7 @@ class Game:
 					cur_player_id = check_player_id
 				else:
 
-					is_able_pong, is_wants_pong = check_player.check_pong(dispose_tile, neighbors)
+					is_able_pong, is_wants_pong = check_player.check_pong(dispose_tile, neighbors, self)
 					if is_able_pong and is_wants_pong:
 						check_player.pong(dispose_tile)
 						tile_used = True
@@ -86,7 +102,7 @@ class Game:
 			# If no one wants to Pong/Kong, check whether the next player wants to Chow
 			next_player = self.__players[(cur_player_id+1)%4]
 			neighbors = self.__get_neighbor_players((cur_player_id + 1)%4)
-			is_able, is_wants_to, which = next_player.check_chow(dispose_tile, neighbors)
+			is_able, is_wants_to, which = next_player.check_chow(dispose_tile, neighbors, self)
 			if is_able and is_wants_to:
 				next_player.chow(dispose_tile, which)
 				tile_used = True
@@ -98,6 +114,7 @@ class Game:
 
 			cur_player_id = (cur_player_id+1)%4
 
+		self.__started = False
 		return None, None, None
 
 	def __get_neighbor_players(self, player_id, degenerated = True):
@@ -112,3 +129,8 @@ class Game:
 			tmp_player_id = (tmp_player_id + 1)%4
 
 		return tuple(neighbors)
+
+	def __next_game_wind(self):
+		game_wind = ["east", "south", "west", "north"]
+		index = game_wind.index(self.__game_wind)
+		return game_wind[(index + 1)%len(game_wind)]
