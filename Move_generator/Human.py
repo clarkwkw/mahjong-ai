@@ -4,15 +4,15 @@ import Tile
 
 class Human(Move_generator):
 
-	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors, game):
+	def decide_chow(self, fixed_hand, hand, new_tile, choices, neighbors, game):
 		self.print_game_board(fixed_hand, hand, neighbors, game, None)
-		print("Someone just discarded a %s."%dispose_tile.symbol)
+		print("Someone just discarded a %s."%new_tile.symbol)
 		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
 		str_choices = []
 		for choice in choices:
 			tiles = []
 			for i in range(choice - 1, choice + 2):
-				tile = dispose_tile.generate_neighbor_tile(offset = i)
+				tile = new_tile.generate_neighbor_tile(offset = i)
 				tiles.append(tile.symbol)
 			str_choices.append(" ".join(tiles))
 
@@ -23,18 +23,20 @@ class Human(Move_generator):
 		else:
 			return True, choices[result]
 
-	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors, game):
-		self.print_game_board(fixed_hand, hand, neighbors, game, None)
+	def decide_kong(self, fixed_hand, hand, new_tile, kong_tile, location, src, neighbors, game):
+		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 		if src == "steal":
-			print("Someone just discarded a %s."%dispose_tile.symbol)
+			print("Someone just discarded a %s."%kong_tile.symbol)
 		elif src == "draw":
-			print("You just drew a %s"%dispose_tile.symbol)
+			print("You just drew a %s"%kong_tile.symbol)
+		elif src == "existing":
+			print("You have 4 %s"%kong_tile.symbol)
 
 		if location == "fixed_hand":
 			location = "fixed hand"
 		else:
 			location = "hand"
-		title = "Hey %s, do you want to make a Kong of %s %s %s %s from %s ?"%(self.player_name, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol, location)
+		title = "Hey %s, do you want to make a Kong of %s %s %s %s from %s ?"%(self.player_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, location)
 		str_choices = ["Yes", "No"]
 		result = utils.get_input_list(title, str_choices)
 		if result == 0:
@@ -42,10 +44,10 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors, game):
+	def decide_pong(self, fixed_hand, hand, new_tile, neighbors, game):
 		self.print_game_board(fixed_hand, hand, neighbors, game, None)
-		print("Someone just discarded a %s."%dispose_tile.symbol)
-		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, dispose_tile.symbol, dispose_tile.symbol, dispose_tile.symbol)
+		print("Someone just discarded a %s."%new_tile.symbol)
+		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, new_tile.symbol, new_tile.symbol, new_tile.symbol)
 		str_choices = ["Yes", "No"]
 		result = utils.get_input_list(title, str_choices)
 		if result == 0:
@@ -108,12 +110,9 @@ class Human(Move_generator):
 
 		for neighbor in neighbors:
 			fixed_hand_str = ""
-			for meld_type, is_secret, tiles in neighbor.get_fixed_hand():
-				if tiles is None:
-					if meld_type == "kong":
-						fixed_hand_str += Tile.tile_back_symbol*4
-					else:
-						fixed_hand_str += Tile.tile_back_symbol*3
+			for meld_type, is_secret, tiles in neighbor.fixed_hand:
+				if is_secret is None:
+					fixed_hand_str += Tile.tile_back_symbol + tiles[0].symbol + tiles[0].symbol + Tile.tile_back_symbol
 				else:
 					fixed_hand_str += "".join([tile.symbol for tile in tiles])
 			fixed_hands_strs.append(fixed_hand_str)

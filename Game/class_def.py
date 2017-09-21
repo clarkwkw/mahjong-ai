@@ -42,7 +42,7 @@ class Game:
 				else:
 					new_tile = None
 				
-				dispose_tile, score = cur_player.new_turn(new_tile, neighbors, self)
+				dispose_tile, score, kong_info = cur_player.new_turn(new_tile, neighbors, self)
 				
 				if score is not None:
 					self.__started = False
@@ -51,20 +51,23 @@ class Game:
 				if dispose_tile is not None:
 					break
 
+				kong_tile, kong_location, kong_src = kong_info
+				if kong_location == "fixed_hand":
+					# Check if anyone can steal this Kong tile to form a winning hand (搶槓)
+					winner_id, score = self.__check_neighbor_winning(cur_player_id, kong_tile)
+					if winner_id is not None:
+						self.__started = False
+						return self.__players[winner_id], [cur_player], score
+				
+				cur_player.kong(kong_tile, location = kong_location, source = kong_src)
+
 			is_ponged, is_chowed = False, False
 
 			# Check whether any of the other players can win by stealing
-			check_player_id = (cur_player_id + 1)%4
-			while check_player_id != cur_player_id:
-				check_player = self.__players[check_player_id]
-				neighbors = self.__get_neighbor_players(check_player_id)
-				is_able, is_wants_to, score = check_player.check_win(dispose_tile, "steal", neighbors, self)
-				
-				if is_wants_to is not None and is_wants_to:
-					self.__started = False
-					return check_player, [cur_player], score
-					
-				check_player_id = (check_player_id + 1)%4
+			winner_id, score = self.__check_neighbor_winning(cur_player_id, dispose_tile)
+			if winner_id is not None:
+				self.__started = False
+				return self.__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
 			check_player_id = (cur_player_id + 1)%4
@@ -75,7 +78,7 @@ class Game:
 				check_player = self.__players[check_player_id]
 
 				neighbors = self.__get_neighbor_players(check_player_id)
-				is_able_kong, is_wants_kong, location = check_player.check_kong(dispose_tile, include_non_fix_hand = True, neighbors = neighbors, game = self)
+				is_able_kong, is_wants_kong, location = check_player.check_new_tile_kong(dispose_tile, search_hand = "hand", neighbors = neighbors, game = self)
 				if is_able_kong and is_wants_kong:
 
 					check_player.kong(dispose_tile, location = location, source = "steal")
@@ -124,11 +127,25 @@ class Game:
 		while tmp_player_id != player_id:
 			player = self.__players[tmp_player_id]
 			if degenerated:
-				player = player.degenerate(mask_secret_meld = True)
+				player = player.degenerate()
 			neighbors.append(player)
 			tmp_player_id = (tmp_player_id + 1)%4
 
 		return tuple(neighbors)
+
+	def __check_neighbor_winning(self, player_id, dispose_tile):
+		check_player_id = (player_id + 1)%4
+		while check_player_id != player_id:
+			check_player = self.__players[check_player_id]
+			neighbors = self.__get_neighbor_players(check_player_id)
+			is_able, is_wants_to, score = check_player.check_win(dispose_tile, "steal", neighbors, self)
+			
+			if is_wants_to is not None and is_wants_to:
+				return check_player_id, score
+				
+			check_player_id = (check_player_id + 1)%4
+
+		return None, score
 
 	def __next_game_wind(self):
 		game_wind = ["east", "south", "west", "north"]

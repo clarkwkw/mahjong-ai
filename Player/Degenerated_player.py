@@ -1,7 +1,10 @@
 class Degenerated_player:
-	def __init__(self, player, mask_secret_meld):
+	def __init__(self, player):
 		self.__player = player
-		self.__mask_secret_meld = mask_secret_meld
+
+	@property
+	def fixed_hand(self):
+		return self.__player.fixed_hand
 
 	@property
 	def hand_size(self):
@@ -14,7 +17,6 @@ class Degenerated_player:
 	def get_discarded_tiles(self, *args, **kwargs):
 		return self.__player.get_discarded_tiles(*args, **kwargs)
 
-	def get_fixed_hand(self, **kwargs):
-		return self.__player.get_fixed_hand(self.__mask_secret_meld, **kwargs)
+	
 
 	

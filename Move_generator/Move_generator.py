@@ -13,7 +13,7 @@ class Move_generator(metaclass = abc.ABCMeta):
 		pass
 
 	@abc.abstractmethod
-	def decide_kong(self, fixed_hand, hand, dispose_tile, location, src, neighbors, game):
+	def decide_kong(self, fixed_hand, hand, new_tile, kong_tile, location, src, neighbors, game):
 		pass
 
 	@abc.abstractmethod
