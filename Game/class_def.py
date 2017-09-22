@@ -145,7 +145,7 @@ class Game:
 				
 			check_player_id = (check_player_id + 1)%4
 
-		return None, score
+		return None, None
 
 	def __next_game_wind(self):
 		game_wind = ["east", "south", "west", "north"]
