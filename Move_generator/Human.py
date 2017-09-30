@@ -4,7 +4,7 @@ from . import utils
 class Human(Move_generator):
 
 	def decide_chow(self, fixed_hand, hand, new_tile, choices, neighbors, game):
-		self.print_game_board(fixed_hand, hand, neighbors, game, None)
+		self.print_game_board(fixed_hand, hand, neighbors, game)
 		print("Someone just discarded a %s."%new_tile.symbol)
 		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
 		str_choices = []
@@ -44,7 +44,7 @@ class Human(Move_generator):
 			return False
 
 	def decide_pong(self, fixed_hand, hand, new_tile, neighbors, game):
-		self.print_game_board(fixed_hand, hand, neighbors, game, None)
+		self.print_game_board(fixed_hand, hand, neighbors, game)
 		print("Someone just discarded a %s."%new_tile.symbol)
 		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, new_tile.symbol, new_tile.symbol, new_tile.symbol)
 		str_choices = ["Yes", "No"]

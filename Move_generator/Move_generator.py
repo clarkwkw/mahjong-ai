@@ -54,7 +54,7 @@ class Move_generator(metaclass = abc.ABCMeta):
 		for neighbor in neighbors:
 			fixed_hand_str = ""
 			for meld_type, is_secret, tiles in neighbor.fixed_hand:
-				if is_secret is None:
+				if is_secret:
 					fixed_hand_str += Tile.tile_back_symbol + tiles[0].symbol + tiles[0].symbol + Tile.tile_back_symbol
 				else:
 					fixed_hand_str += "".join([tile.symbol for tile in tiles])
