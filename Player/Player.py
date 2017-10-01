@@ -70,6 +70,7 @@ class Player:
 			is_able, is_wants_to, location = self.check_new_tile_kong(new_tile, search_hand = "both", src = "draw", neighbors = neighbors, game = game)
 			if is_able and is_wants_to:
 				# Tell others that I dont want to drop this tile, I will make a kong
+				print("Kong - draw: %s"%location)
 				return None, None, (new_tile, location, "draw")
 
 			possible_kongs = self.check_existing_tile_kongs()

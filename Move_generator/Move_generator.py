@@ -82,7 +82,10 @@ class Move_generator(metaclass = abc.ABCMeta):
 		print(line_merged_format_left.format(msg = "%s's tiles:"%(self.player_name)))
 		fixed_hand_str = ""
 		for meld_type, is_secret, tiles in fixed_hand:
-			fixed_hand_str += "".join([tile.symbol for tile in tiles])
+			if is_secret:
+				fixed_hand_str += "".join([Tile.tile_back_symbol, tiles[0].symbol, tiles[0].symbol, Tile.tile_back_symbol])
+			else:
+				fixed_hand_str += "".join([tile.symbol for tile in tiles])
 		print(line_merged_format_left.format(msg = fixed_hand_str))
 
 		line_1, line_2 = "", ""
