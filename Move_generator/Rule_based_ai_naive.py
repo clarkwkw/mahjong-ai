@@ -30,7 +30,9 @@ class RuleBasedAINaive(Move_generator):
 		self.__majority_suit = None
 		super().__init__(player_name)
 
-	def decide_chow(self, fixed_hand, hand, new_tile, choices, neighbors, game):
+	def decide_chow(self, player, new_tile, choices, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game)
 		print("Someone just discarded a %s."%new_tile.symbol)
 
@@ -45,7 +47,9 @@ class RuleBasedAINaive(Move_generator):
 			print("%s [%s] chooses to Chow %s."%(self.player_name, display_name, chow_tiles_str))
 			return True, choices[0]
 
-	def decide_kong(self, fixed_hand, hand, new_tile, kong_tile, location, src, neighbors, game):
+	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 		if src == "steal":
 			print("Someone just discarded a %s."%kong_tile.symbol)
@@ -66,7 +70,9 @@ class RuleBasedAINaive(Move_generator):
 			print("%s [%s] chooses not to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
 			return False
 
-	def decide_pong(self, fixed_hand, hand, new_tile, neighbors, game):
+	def decide_pong(self, player, new_tile, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
 		print("Someone just discarded a %s."%new_tile.symbol)
@@ -74,7 +80,9 @@ class RuleBasedAINaive(Move_generator):
 
 		return True
 
-	def decide_win(self, fixed_hand, hand, grouped_hand, new_tile, src, score, neighbors, game):
+	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		if src == "steal":
 			self.print_game_board(fixed_hand, hand, neighbors, game)
 			print("Someone just discarded a %s."%new_tile.symbol)
@@ -89,7 +97,9 @@ class RuleBasedAINaive(Move_generator):
 
 		return True
 
-	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors, game):
+	def decide_drop_tile(self, player, new_tile, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
 		drop_tile_score, drop_tile = None, None
@@ -102,14 +112,11 @@ class RuleBasedAINaive(Move_generator):
 		used_tiles_map = {}
 		hand_tiles_map = {}
 
-		for _, _, tiles in fixed_hand:
-			for tile in tiles:
+		all_players = list(neighbors) + [player]
+		for p in all_players:
+			for tile in p.get_discarded_tiles("unstolen"):
 				used_tiles_map = map_increment(used_tiles_map, str(tile), 1)
-
-		for neighbor in neighbors:
-			for tile in neighbor.get_discarded_tiles("unstolen"):
-				used_tiles_map = map_increment(used_tiles_map, str(tile), 1)
-			for _, _, tiles in neighbor.fixed_hand:
+			for _, _, tiles in p.fixed_hand:
 				for tile in tiles:
 					used_tiles_map = map_increment(used_tiles_map, str(tile), 1)
 
@@ -139,14 +146,13 @@ class RuleBasedAINaive(Move_generator):
 					for i in range(-1, 2):
 						chow_condition = 0
 						prob = 1
-						if tile.value + i - 1 >= 1 and tile.value + i + 2 <= 9:
-							for j in range(i - 1, i + 1):
-								neighbor_tile = tile.generate_neighbor_tile(offset = j)
-								if map_retrieve(hand_tiles_map, neighbor_tile) > 0:
-									chow_condition += 1
-								else:
-									used_count = map_retrieve(used_tiles_map, neighbor_tile)
-									prob = prob * (4 - used_count)/4.0
+						for j in range(i - 1, i + 1):
+							neighbor_tile = tile.generate_neighbor_tile(offset = j)
+							if map_retrieve(hand_tiles_map, neighbor_tile) > 0:
+								chow_condition += 1
+							else:
+								used_count = map_retrieve(used_tiles_map, neighbor_tile)
+								prob = prob * (4 - used_count)/4.0
 
 						if chow_condition >= 3:
 							score += eval_chow_score

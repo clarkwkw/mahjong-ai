@@ -18,6 +18,11 @@ class Player:
 		return result
 
 	@property
+	def hand(self):
+		result = list(self.__hand)
+		return result
+
+	@property
 	def hand_size(self):
 		return len(self.__hand)
 
@@ -76,14 +81,14 @@ class Player:
 			possible_kongs = self.check_existing_tile_kongs()
 			if len(possible_kongs) > 0:
 				for tile in possible_kongs:
-					is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, tile, "hand", "existing", neighbors, game)
+					is_wants_to = self.__move_generator.decide_kong(self, new_tile, tile, "hand", "existing", neighbors, game)
 					if is_wants_to:
 						self.__update_hand_count_map(new_tile, 1)
 						self.__hand.append(new_tile)
 						self.__hand = sorted(self.__hand)
 						return None, None, (tile, "hand", "existing")
 
-		dispose_tile = self.__move_generator.decide_drop_tile(self.__fixed_hand, self.__hand, new_tile, neighbors, game)
+		dispose_tile = self.__move_generator.decide_drop_tile(self, new_tile, neighbors, game)
 
 		
 		if dispose_tile != new_tile:
@@ -132,7 +137,7 @@ class Player:
 		
 		if criteria:
 			is_able = True
-			is_wants_to, which = self.__move_generator.decide_chow(self.__fixed_hand, self.__hand, new_tile, choices, neighbors, game)
+			is_wants_to, which = self.__move_generator.decide_chow(self, new_tile, choices, neighbors, game)
 
 		return is_able, is_wants_to, which
 
@@ -155,7 +160,7 @@ class Player:
 				location = "hand"
 
 		if is_able:
-			is_wants_to = self.__move_generator.decide_kong(self.__fixed_hand, self.__hand, new_tile, new_tile, location, src, neighbors, game)
+			is_wants_to = self.__move_generator.decide_kong(self, new_tile, new_tile, location, src, neighbors, game)
 		
 		return is_able, is_wants_to, location
 
@@ -172,13 +177,13 @@ class Player:
 		if self.get_tile_hand_count(new_tile) < 2:
 			return False, False
 		else:
-			is_wants_to = self.__move_generator.decide_pong(self.__fixed_hand, self.__hand, new_tile, neighbors, game)
+			is_wants_to = self.__move_generator.decide_pong(self, new_tile, neighbors, game)
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game):
 		grouped_hand, score = Scoring_rules.HK_rules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, game)
 		if grouped_hand is not None:
-			is_wants_to = self.__move_generator.decide_win(self.__fixed_hand, self.__hand, grouped_hand, new_tile, tile_src, score, neighbors, game)
+			is_wants_to = self.__move_generator.decide_win(self, grouped_hand, new_tile, tile_src, score, neighbors, game)
 			return True, is_wants_to, score
 		else:
 			return False, False, None

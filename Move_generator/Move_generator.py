@@ -10,23 +10,23 @@ class Move_generator(metaclass = abc.ABCMeta):
 		return self.__player_name
 
 	@abc.abstractmethod
-	def decide_chow(self, fixed_hand, hand, dispose_tile, choices, neighbors, game):
+	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		pass
 
 	@abc.abstractmethod
-	def decide_kong(self, fixed_hand, hand, new_tile, kong_tile, location, src, neighbors, game):
+	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
 		pass
 
 	@abc.abstractmethod
-	def decide_pong(self, fixed_hand, hand, dispose_tile, neighbors, game):
+	def decide_pong(self, player, new_tile, neighbors, game):
 		pass
 	
 	@abc.abstractmethod
-	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors, game):
+	def decide_drop_tile(self, player, new_tile, neighbors, game):
 		pass
 
 	@abc.abstractmethod
-	def decide_win(self, fixed_hand, grouped_hand, new_tile, src, score, neighbors, game):
+	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		pass
 
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):

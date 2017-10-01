@@ -3,6 +3,7 @@ import Player
 import Move_generator
 import Tile
 import Scoring_rules
+import test_cases
 import argparse
 import traceback
 import importlib
@@ -13,7 +14,7 @@ _test_cases_dir = "test_cases"
 
 def arg_parse():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("testcase", help = "testcase to call under ./%s"%_test_cases_dir)
+	parser.add_argument("testcase", type = str, choices = test_cases.test_cases, help = "testcase to call under ./%s"%_test_cases_dir)
 	args = parser.parse_args()
 	return args
 

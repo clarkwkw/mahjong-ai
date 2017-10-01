@@ -3,7 +3,8 @@ from . import utils
 
 class Human(Move_generator):
 
-	def decide_chow(self, fixed_hand, hand, new_tile, choices, neighbors, game):
+	def decide_chow(self, player, new_tile, choices, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
 		self.print_game_board(fixed_hand, hand, neighbors, game)
 		print("Someone just discarded a %s."%new_tile.symbol)
 		title = "Hey %s, do you want to make a Chow of the following?"%(self.player_name)
@@ -22,7 +23,9 @@ class Human(Move_generator):
 		else:
 			return True, choices[result]
 
-	def decide_kong(self, fixed_hand, hand, new_tile, kong_tile, location, src, neighbors, game):
+	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 		if src == "steal":
 			print("Someone just discarded a %s."%kong_tile.symbol)
@@ -43,7 +46,9 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_pong(self, fixed_hand, hand, new_tile, neighbors, game):
+	def decide_pong(self, player, new_tile, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game)
 		print("Someone just discarded a %s."%new_tile.symbol)
 		title = "Hey %s, do you want to make a Pong of %s %s %s ?"%(self.player_name, new_tile.symbol, new_tile.symbol, new_tile.symbol)
@@ -54,7 +59,9 @@ class Human(Move_generator):
 		else:
 			return False
 
-	def decide_drop_tile(self, fixed_hand, hand, new_tile, neighbors, game):
+	def decide_drop_tile(self, player, new_tile, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 		title = "Hey %s, which tile to drop?"%self.player_name
 		if new_tile is None:
@@ -67,7 +74,9 @@ class Human(Move_generator):
 		else:
 			return hand[result]
 
-	def decide_win(self, fixed_hand, hand, grouped_hand, new_tile, src, score, neighbors, game):
+	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
+		fixed_hand, hand = player.fixed_hand, player.hand
+		
 		if src == "steal":
 			self.print_game_board(fixed_hand, hand, neighbors, game)
 			print("Someone just discarded a %s."%new_tile.symbol)
