@@ -76,9 +76,13 @@ class RuleBasedAINaive(Move_generator):
 		self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
 		print("Someone just discarded a %s."%new_tile.symbol)
-		print("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
 
-		return True
+		if new_tile.suit in [self.__majority_suit, "honor"]:
+			print("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
+			return True
+		else:
+			print("%s [%s] chooses not to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
+			return False
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		fixed_hand, hand = player.fixed_hand, player.hand

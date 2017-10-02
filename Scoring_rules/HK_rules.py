@@ -305,7 +305,7 @@ def score_pure_one_to_nine(fixed_hand, grouped_hand, **kwargs):
 	record = [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 	target = [-1, 3, 1, 1, 1, 1, 1, 1, 1, 3]
 	for _, is_secret, tiles in fixed_hand:
-		if not is_secret or tile[0].suit == "honor":
+		if not is_secret or tiles[0].suit == "honor":
 			return 0
 
 		if suit is None:
