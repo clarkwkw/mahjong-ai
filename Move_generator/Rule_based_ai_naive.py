@@ -167,11 +167,7 @@ class RuleBasedAINaive(Move_generator):
 
 		score_tile_rank = sorted(score_tile_rank, key = lambda x: x[0])
 
-		if score_tile_rank[0][0] == -1:
-			drop_tile_score, drop_tile =  score_tile_rank[0]
-		else:
-			n_random_len = min(drop_tile_rand_len, len(score_tile_rank))
-			drop_tile_score, drop_tile = random.sample(score_tile_rank[0:n_random_len], k = 1)[0]
+		drop_tile_score, drop_tile =  score_tile_rank[0]
 		
 		print("%s [%s] chooses to drop %s (%.2f) [majority = %s]."%(self.player_name, display_name, drop_tile.symbol, drop_tile_score, self.__majority_suit))
 

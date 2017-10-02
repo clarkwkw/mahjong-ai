@@ -41,3 +41,26 @@ class Validate_hand_test(unittest.TestCase):
 		hand = [east, east, east, dots_1, dots_2, dots_3, dots_4, dots_5, dots_6, dots_8, dots_8, dots_8, white]
 		grouped_hands = Scoring_rules.HK_rules.validate_hand([], hand, white)
 		self.assertEqual(len(grouped_hands), 1)
+
+	def test_normal(self):
+		character_8 = Tile.Tile("characters", 8)
+		character_4 = Tile.Tile("characters", 4)
+		character_5 = Tile.Tile("characters", 5)
+		character_6 = Tile.Tile("characters", 6)
+		bamboo_3 = Tile.Tile("bamboo", 3)
+		north = Tile.Tile("honor", "north")
+		west = Tile.Tile("honor", "west")
+
+		fixed_hand = [
+		("pong", False, (character_8, character_8, character_8)),
+		("chow", False, (character_4, character_5, character_6)),
+		("kong", False, (bamboo_3, bamboo_3, bamboo_3)),
+		]
+
+		hand = [north, north, west, west]
+
+		grouped_hands = Scoring_rules.HK_rules.validate_hand(fixed_hand, hand, north)
+		self.assertEqual(len(grouped_hands), 1)
+
+
+
