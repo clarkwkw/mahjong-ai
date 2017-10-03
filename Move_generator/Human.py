@@ -93,3 +93,6 @@ class Human(Move_generator):
 		result = utils.get_input_list(title, str_choices)
 
 		return result == 0
+
+	def reset_new_game(self):
+		pass

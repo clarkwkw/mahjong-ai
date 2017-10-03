@@ -29,6 +29,10 @@ class Move_generator(metaclass = abc.ABCMeta):
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		pass
 
+	@abc.abstractmethod
+	def reset_new_game(self):
+		pass
+
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		line_format_left = "|{next:<20s}|{opposite:<20s}|{prev:<20s}|"
 		line_format_right = "|{next:>20s}|{opposite:>20s}|{prev:>20s}|"

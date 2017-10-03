@@ -75,7 +75,6 @@ class Player:
 			is_able, is_wants_to, location = self.check_new_tile_kong(new_tile, search_hand = "both", src = "draw", neighbors = neighbors, game = game)
 			if is_able and is_wants_to:
 				# Tell others that I dont want to drop this tile, I will make a kong
-				print("Kong - draw: %s"%location)
 				return None, None, (new_tile, location, "draw")
 
 			possible_kongs = self.check_existing_tile_kongs()
@@ -274,7 +273,7 @@ class Player:
 
 		self.__discarded_tiles[last_index] = (self.__discarded_tiles[last_index][0], False)
 
-	def reset_hand(self, hand):
+	def reset_new_game(self, hand):
 		self.__fixed_hand = []
 
 		# (Tile, is_stolen)[]
@@ -289,3 +288,4 @@ class Player:
 				self.__hand_count_map[name] += 1
 
 		self.__hand = sorted(self.__hand)
+		self.__move_generator.reset_new_game()

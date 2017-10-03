@@ -25,7 +25,7 @@ class Game:
 		for player in self.__players:
 			hand = self.__deck[0:13]
 			self.__deck = self.__deck[13:len(self.__deck)]
-			player.reset_hand(hand)
+			player.reset_new_game(hand)
 
 		self.__started = True
 		cur_player_id = 0
@@ -37,6 +37,10 @@ class Game:
 
 			# If the player formed Kong, let him/her draw again
 			while True:
+				if len(self.__deck) == 0:
+					self.__started = False
+					return None, None, None
+
 				if not is_ponged and not is_chowed:
 					new_tile = self.__deck.pop(0)
 				else:
