@@ -2,32 +2,14 @@ from .Move_generator import Move_generator
 from . import utils
 import random
 
-eval_pong_score = 5
-eval_chow_score = 3
-eval_singular_score = 1
-drop_tile_rand_len = 2
 display_name = "RNAI"
 
-def map_increment(map, index, increment = 1):
-	if type(index) is not str:
-		index = str(index)
-	if index in map:
-		map[index] += increment
-	else:
-		map[index] = increment
-	return map
-
-def map_retrieve(map, index, default_val = 0):
-	if type(index) is not str:
-		index = str(index)
-	if index is not None and index in map:
-		return map[index]
-	else:
-		return default_val
-
 class RuleBasedAINaive(Move_generator):
-	def __init__(self, player_name):
+	def __init__(self, player_name, s_chow = 3, s_pong = 5, s_future = 1):
 		self.__majority_suit = None
+		self.__s_chow = s_chow
+		self.__s_pong = s_pong
+		self.__s_future = s_future
 		super().__init__(player_name)
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
@@ -119,13 +101,13 @@ class RuleBasedAINaive(Move_generator):
 		all_players = list(neighbors) + [player]
 		for p in all_players:
 			for tile in p.get_discarded_tiles("unstolen"):
-				used_tiles_map = map_increment(used_tiles_map, str(tile), 1)
+				used_tiles_map = utils.map_increment(used_tiles_map, str(tile), 1)
 			for _, _, tiles in p.fixed_hand:
 				for tile in tiles:
-					used_tiles_map = map_increment(used_tiles_map, str(tile), 1)
+					used_tiles_map = utils.map_increment(used_tiles_map, str(tile), 1)
 
 		for tile in hand:
-			hand_tiles_map = map_increment(hand_tiles_map, str(tile), 1)
+			hand_tiles_map = utils.map_increment(hand_tiles_map, str(tile), 1)
 		'''
 		Scoring scheme:
 		0. whether it belongs to the majority suit or honor suit
@@ -141,9 +123,9 @@ class RuleBasedAINaive(Move_generator):
 			if tile.suit in ["honor", self.__majority_suit]:
 				score = 0
 				if hand_tiles_map[str(tile)] >= 3:
-					score += eval_pong_score
-				elif hand_tiles_map[str(tile)] >= 2 and 4 - map_retrieve(used_tiles_map, tile) >= 3:
-					score += eval_pong_score * hand_tiles_map[str(tile)]/ 3 +  eval_pong_score * (1 - hand_tiles_map[str(tile)]/ 3) * (4 - hand_tiles_map[str(tile)] - map_retrieve(used_tiles_map, tile))/4
+					score += self.__s_pong
+				elif hand_tiles_map[str(tile)] >= 2 and 4 - utils.map_retrieve(used_tiles_map, tile) >= 3:
+					score += self.__s_pong * hand_tiles_map[str(tile)]/ 3 +  self.__s_pong * (1 - hand_tiles_map[str(tile)]/ 3) * (4 - hand_tiles_map[str(tile)] - utils.map_retrieve(used_tiles_map, tile))/4
 
 				if tile.suit != "honor":
 
@@ -152,15 +134,15 @@ class RuleBasedAINaive(Move_generator):
 						prob = 1
 						for j in range(i - 1, i + 2):
 							neighbor_tile = tile.generate_neighbor_tile(offset = j)
-							if map_retrieve(hand_tiles_map, neighbor_tile) > 0:
+							if utils.map_retrieve(hand_tiles_map, neighbor_tile) > 0:
 								chow_condition += 1
 							else:
-								used_count = map_retrieve(used_tiles_map, neighbor_tile)
+								used_count = utils.map_retrieve(used_tiles_map, neighbor_tile)
 								prob = prob * (4 - used_count)/4.0
 
-						score += eval_chow_score * chow_condition / 3.0 * prob
+						score += self.__s_chow * chow_condition / 3.0 * prob
 
-				score += eval_singular_score*(4 - map_retrieve(used_tiles_map, tile) - hand_tiles_map[str(tile)])/4
+				score += self.__s_future*(4 - utils.map_retrieve(used_tiles_map, tile) - hand_tiles_map[str(tile)])/4
 
 			print("%s: %.2f"%(tile.symbol, score))
 			score_tile_rank.append((score, tile))
@@ -212,7 +194,7 @@ class RuleBasedAINaive(Move_generator):
 			pong_condition = min(hand_count_arr[i], 3)
 			if pong_condition >= 2:
 				hand_count_arr[i] -= pong_condition
-				meld_formed = eval_pong_score * pong_condition/3.0
+				meld_formed = self.__s_pong * pong_condition/3.0
 				result = max(result, self.__recursive_eval_pure_hand(hand_count_arr, considering = i, meld_count = meld_count + meld_formed))
 				hand_count_arr[i] += pong_condition
 
@@ -220,7 +202,7 @@ class RuleBasedAINaive(Move_generator):
 				chow_condition = (hand_count_arr[i] > 0) + (hand_count_arr[i + 1] > 0) + (hand_count_arr[i + 2] > 0)
 				if chow_condition >= 2:
 					backup_arr = [0, 0, 0]
-					meld_formed = eval_chow_score*chow_condition/3.0
+					meld_formed = self.__s_chow*chow_condition/3.0
 					for j in range(3):
 						backup_arr[j] = hand_count_arr[i + j]
 						hand_count_arr[i+j] = max(0, hand_count_arr[i + j] - 1)

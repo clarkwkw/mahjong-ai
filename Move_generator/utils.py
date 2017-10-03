@@ -45,6 +45,23 @@ def get_input_range(title, lower_bound, upper_bound, lb_inclusive = True, ub_inc
 		except ValueError:
 			print("Input must be an integer within the range, try again")
 
+def map_increment(map, index, increment = 1):
+	if type(index) is not str:
+		index = str(index)
+	if index in map:
+		map[index] += increment
+	else:
+		map[index] = increment
+	return map
+
+def map_retrieve(map, index, default_val = 0):
+	if type(index) is not str:
+		index = str(index)
+	if index is not None and index in map:
+		return map[index]
+	else:
+		return default_val
+
 def print_hand(hand, end = "\n"):
 	meld_type, is_secret, tiles = None, None, None
 	for meld in hand:
