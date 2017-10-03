@@ -150,7 +150,7 @@ class RuleBasedAINaive(Move_generator):
 					for i in range(-1, 2):
 						chow_condition = 0
 						prob = 1
-						for j in range(i - 1, i + 1):
+						for j in range(i - 1, i + 2):
 							neighbor_tile = tile.generate_neighbor_tile(offset = j)
 							if map_retrieve(hand_tiles_map, neighbor_tile) > 0:
 								chow_condition += 1
@@ -158,11 +158,7 @@ class RuleBasedAINaive(Move_generator):
 								used_count = map_retrieve(used_tiles_map, neighbor_tile)
 								prob = prob * (4 - used_count)/4.0
 
-						if chow_condition >= 3:
-							score += eval_chow_score
-
-						elif chow_condition >= 2:
-							score += eval_chow_score*chow_condition / 3 * prob
+						score += eval_chow_score * chow_condition / 3.0 * prob
 
 				score += eval_singular_score*(4 - map_retrieve(used_tiles_map, tile) - hand_tiles_map[str(tile)])/4
 
