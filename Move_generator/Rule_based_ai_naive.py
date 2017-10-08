@@ -5,7 +5,7 @@ import random
 display_name = "RNAI"
 
 class RuleBasedAINaive(Move_generator):
-	def __init__(self, player_name, s_chow = 3, s_pong = 5, s_future = 1, display_step = False):
+	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1, display_step = False):
 		self.__majority_suit = None
 		self.__s_chow = s_chow
 		self.__s_pong = s_pong

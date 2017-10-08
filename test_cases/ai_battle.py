@@ -5,10 +5,10 @@ import numpy as np
 import random
 
 _player_parameters = [
-	{"player_name": "Amy", "display_step": False},
-	{"player_name": "Billy", "display_step": False},
-	{"player_name": "Clark", "display_step": False},
-	{"player_name": "David", "display_step": False}
+	{"player_name": "Amy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0},
+	{"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0.5},
+	{"player_name": "Clark", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0},
+	{"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0.5}
 ]
 
 _scoring_scheme = [
@@ -39,7 +39,7 @@ def test():
 
 	scoring_matrix = np.zeros((_n_game, _n_round, 4))
 
-	print("               %s"%("\t".join(player["player_name"] for player in _player_parameters)))
+	print("\t%s"%("\t".join(player["player_name"] for player in _player_parameters)))
 	for i in range(_n_game):
 		players = random.sample(_player_master_list, k = len(_player_master_list))
 		game = Game.Game(players)
@@ -57,7 +57,7 @@ def test():
 			score_strs = []
 			for k in range(4):
 				score_strs.append("{:4.0f}".format(scoring_matrix[i, j, k]))
-			print("Game #{:04d}-{:02d}: {:s}".format(i, j, '\t'.join(score_strs)))
+			print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
 
-	print("Average      : {:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(scoring_matrix[:, :, 0].mean(), scoring_matrix[:, :, 1].mean(), scoring_matrix[:, :, 2].mean(), scoring_matrix[:, :, 3].mean()))
-	print("Total        : {:4.0f}\t{:4.0f}\t{:4.0f}\t{:4.0f}".format(scoring_matrix[:, :, 0].sum(), scoring_matrix[:, :, 1].sum(), scoring_matrix[:, :, 2].sum(), scoring_matrix[:, :, 3].sum()))
+	print("Average      :\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(scoring_matrix[:, :, 0].mean(), scoring_matrix[:, :, 1].mean(), scoring_matrix[:, :, 2].mean(), scoring_matrix[:, :, 3].mean()))
+	print("Total        :\t{:4.0f}\t{:4.0f}\t{:4.0f}\t{:4.0f}".format(scoring_matrix[:, :, 0].sum(), scoring_matrix[:, :, 1].sum(), scoring_matrix[:, :, 2].sum(), scoring_matrix[:, :, 3].sum()))
