@@ -5,10 +5,10 @@ import numpy as np
 import random
 
 _player_parameters = [
-	{"player_name": "Amy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0},
-	{"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0.5},
-	{"player_name": "Clark", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0},
-	{"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 0.5}
+	(Move_generator.RuleBasedAINaiveExp, {"player_name": "Amy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_explore": 0.2, "s_neighbor_suit": 0.2}),
+	(Move_generator.RuleBasedAINaiveExp, {"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_explore": 0, "s_neighbor_suit": 0}),
+	(Move_generator.RuleBasedAINaiveExp, {"player_name": "Clark", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_explore": 0.2,"s_neighbor_suit": 0.2}),
+	(Move_generator.RuleBasedAINaiveExp, {"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_explore": 0, "s_neighbor_suit": 0})
 ]
 
 _scoring_scheme = [
@@ -34,12 +34,12 @@ def test():
 
 	players = []
 	game = None
-	for player_para in _player_parameters:
-		_player_master_list.append(Player.Player(Move_generator.RuleBasedAINaive, **player_para))
+	for Generator_class, player_para in _player_parameters:
+		_player_master_list.append(Player.Player(Generator_class, **player_para))
 
 	scoring_matrix = np.zeros((_n_game, _n_round, 4))
 
-	print("\t%s"%("\t".join(player["player_name"] for player in _player_parameters)))
+	print("\t%s"%("\t".join(player[1]["player_name"] for player in _player_parameters)))
 	for i in range(_n_game):
 		players = random.sample(_player_master_list, k = len(_player_master_list))
 		game = Game.Game(players)

@@ -1,4 +1,5 @@
 import Tile
+import numpy as np
 
 def get_input_list(title, options):
 	i = 0
@@ -79,3 +80,17 @@ def print_hand(hand, end = "\n"):
 				print(tile.symbol, end = "")
 			print(" ", end = "")
 	print("", end = end)
+
+def softmax(x):
+	e_x = np.exp(x - np.max(x))
+	return e_x / e_x.sum(axis=0)
+
+def random_choice(objs, p):
+	s = 0
+	target = np.random.uniform()
+	n_item = len(p) if type(p) is list else p.shape[0]
+	for i in range(n_item):
+		s += p[i]
+		if s >= target:
+			return objs[i]
+	return objs[n_item - 1]

@@ -5,7 +5,7 @@ import random
 display_name = "RNAI"
 
 class RuleBasedAINaive(Move_generator):
-	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1, display_step = False):
+	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1.5, display_step = False):
 		self.__majority_suit = None
 		self.__s_chow = s_chow
 		self.__s_pong = s_pong
@@ -126,7 +126,6 @@ class RuleBasedAINaive(Move_generator):
 		2. if not, whether it is possible (and how possible) to form a pong
 		3. whether it can form a chow with tiles in hand
 		4. if not, whether it is possible (and how possible) to form a chow
-
 		'''
 		score_tile_rank = []
 		for tile in hand:
@@ -180,7 +179,7 @@ class RuleBasedAINaive(Move_generator):
 
 		max_score = float("-inf")
 		max_suit = None
-		for suit, tiles in suit_score_map.items():
+		for suit, tiles in suit_tiles_map.items():
 			hand_count_arr = self.__get_hand_count_arr(hand, suit)
 			suit_score_map[suit] = self.__recursive_eval_pure_hand(hand_count_arr)
 			self.__print_msg("Score %s: %f"%(suit, suit_score_map[suit]))
@@ -230,4 +229,3 @@ class RuleBasedAINaive(Move_generator):
 				return result
 
 		return meld_count
-

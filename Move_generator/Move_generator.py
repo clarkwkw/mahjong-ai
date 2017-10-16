@@ -44,7 +44,7 @@ class Move_generator(metaclass = abc.ABCMeta):
 		print("Wake up %s!"%self.player_name)
 
 		print(horizontal_line)
-		print(line_merged_format_right.format(msg = "Game of %s wind"%game.game_wind))
+		print(line_merged_format_right.format(msg = "Game of %s wind [%d]"%(game.game_wind, game.deck_size)))
 		print(horizontal_line)
 		print(line_format_left.format(next = "Next Player", opposite = "Opposite Player", prev = "Previous Player"))
 		print(line_format_left.format(next = "(%s)"%neighbors[0].name, opposite = "(%s)"%neighbors[1].name, prev = "(%s)"%neighbors[2].name))
