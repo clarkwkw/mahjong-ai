@@ -1,5 +1,6 @@
 import Tile
 import numpy as np
+import collections
 
 def get_input_list(title, options):
 	i = 0
@@ -46,22 +47,30 @@ def get_input_range(title, lower_bound, upper_bound, lb_inclusive = True, ub_inc
 		except ValueError:
 			print("Input must be an integer within the range, try again")
 
-def map_increment(map, index, increment = 1):
-	if type(index) is not str:
-		index = str(index)
+def map_increment(map, index, increment = 1, remove_zero = False):
+	if index is None:
+		raise Exception("Index cannot be None")
+
 	if index in map:
 		map[index] += increment
 	else:
 		map[index] = increment
+	
+	if remove_zero and map[index] == 0:
+		del map[index]
+		
 	return map
 
 def map_retrieve(map, index, default_val = 0):
-	if type(index) is not str:
-		index = str(index)
-	if index is not None and index in map:
-		return map[index]
-	else:
+	if index is None:
 		return default_val
+
+	if not isinstance(index, collections.Hashable):
+		index = str(index)
+
+	if index in map:
+		return map[index]
+	return default_val
 
 def print_hand(hand, end = "\n"):
 	meld_type, is_secret, tiles = None, None, None

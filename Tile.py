@@ -23,13 +23,19 @@ class Tile:
 	def value(self):
 		return self.__value
 
-	def __str__(self):
-		return "%s-%s"%(self.__suit, self.__value)
+	def __hash__(self):
+		return hash("%s-%s"%(self.__suit, self.__value))
+
+	#def __str__(self):
+	#	return "%s-%s"%(self.__suit, self.__value)
 
 	def __eq__(self, other):
 		if other is None:
 			return False
 		return (self.__suit == other.__suit) and (self.__value == other.__value)
+
+	def __ne__(self, other):
+		return not self == other
 
 	def __lt__(self, other):
 		if self.__suit_id < other.__suit_id:
@@ -55,6 +61,15 @@ def get_tiles(shuffle = True):
 	if shuffle:
 		random.shuffle(result_tiles)
 	return result_tiles
+
+def get_tile_map(default_val = 4):
+	result = {}
+	for suit, collection in tile_symbols.items():
+		for value, symbol in collection.items():
+			tile = Tile(suit = suit, value = value)
+			result[tile] = default_val
+
+	return result
 
 def get_tile_classification_map(default_val = None):
 	result = {}

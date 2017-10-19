@@ -127,14 +127,15 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 			return result
 
 def score_game_wind(fixed_hand, grouped_hand, game, **kwargs):
-	game_wind_tile = Tile.Tile("honor", game.game_wind)
-	for _, _, tiles in fixed_hand:
-		if tiles[0] == game_wind_tile:
-			return 1
+	if game is not None:
+		game_wind_tile = Tile.Tile("honor", game.game_wind)
+		for _, _, tiles in fixed_hand:
+			if tiles[0] == game_wind_tile:
+				return 1
 
-	for _, tiles in grouped_hand:
-		if tiles[0] == game_wind_tile:
-			return 1
+		for _, tiles in grouped_hand:
+			if tiles[0] == game_wind_tile:
+				return 1
 
 	return 0
 
@@ -208,7 +209,7 @@ def score_ones_nines(fixed_hand, grouped_hand, **kwargs):
 	return __score_upper_limit
 
 def score_drawn_last_tile(additional_tile_src, game, **kwargs):
-	if additional_tile_src == "draw" and game.deck_size == 0:
+	if game is not None and additional_tile_src == "draw" and game.deck_size == 0:
 		return 1
 
 	return 0

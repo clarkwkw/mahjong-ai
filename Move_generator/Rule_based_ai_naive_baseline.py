@@ -7,13 +7,14 @@ import Tile
 display_name = "RNAIE"
 suits = ["dots", "characters", "bamboo"]
 
-class RuleBasedAINaiveExp(Move_generator):
-	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1.5, s_neighbor_suit = 0, s_explore = 0, display_step = True):
+class RuleBasedAINaive(Move_generator):
+	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1.5, s_neighbor_suit = 0, s_explore = 0, s_mixed_suit = 0, display_step = True):
 		self.majority_suit = None
 		self.s_chow = s_chow
 		self.s_pong = s_pong
 		self.s_future = s_future
 		self.s_explore = s_explore
+		self.s_mixed_suit = s_mixed_suit
 		self.display_step = display_step
 		self.s_neighbor_suit = s_neighbor_suit
 		super().__init__(player_name)
@@ -58,7 +59,8 @@ class RuleBasedAINaiveExp(Move_generator):
 		else:
 			location = "hand"
 
-		if kong_tile.suit in [self.majority_suit, "honor"]:
+		criteria = self.majority_suit == "mixed" or kong_tile.suit in [self.majority_suit, "honor"]
+		if criteria:
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
 			return True
 		else:
@@ -73,7 +75,8 @@ class RuleBasedAINaiveExp(Move_generator):
 
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		if new_tile.suit in [self.majority_suit, "honor"]:
+		criteria = self.majority_suit == "mixed" or new_tile.suit in [self.majority_suit, "honor"]
+		if criteria:
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
 			return True
 		else:
@@ -112,7 +115,7 @@ class RuleBasedAINaiveExp(Move_generator):
 		used_tiles_map, hand_tiles_map, neighbor_suit_prob = self.preprocess_info(hand, player, neighbors)
 
 		if (136-13*4)*(1-self.s_explore) >= game.deck_size and self.majority_suit is None:
-			self.decide_strategy(hand, used_tiles_map, neighbor_suit_prob)
+			self.majority_suit = self.decide_strategy(hand, used_tiles_map, neighbor_suit_prob)
 
 		melds_distribution = self.scoring_distribution_melds(hand, used_tiles_map, hand_tiles_map)
 
@@ -141,14 +144,14 @@ class RuleBasedAINaiveExp(Move_generator):
 		scores = []
 		for tile in merged_hand:
 			score = -1
-			if self.majority_suit is None or tile.suit in ["honor", self.majority_suit]:
+			if self.majority_suit in [None, "mixed"] or tile.suit in ["honor", self.majority_suit]:
 				score = 0
-				if hand_tiles_map[str(tile)] >= 3:
+				if hand_tiles_map[tile] >= 3:
 					score += self.s_pong
-				elif hand_tiles_map[str(tile)] >= 2 and 4 - utils.map_retrieve(used_tiles_map, tile) >= 3:
-					score += self.s_pong * hand_tiles_map[str(tile)]/ 3 +  self.s_pong * (1 - hand_tiles_map[str(tile)]/ 3) * (4 - hand_tiles_map[str(tile)] - utils.map_retrieve(used_tiles_map, tile))/4
+				elif hand_tiles_map[tile] >= 2 and 4 - utils.map_retrieve(used_tiles_map, tile) >= 3:
+					score += self.s_pong * hand_tiles_map[tile]/ 3 +  self.s_pong * (1 - hand_tiles_map[tile]/ 3) * (4 - hand_tiles_map[tile] - utils.map_retrieve(used_tiles_map, tile))/4
 
-				if tile.suit != "honor":
+				if self.majority_suit != "mixed" and tile.suit != "honor":
 
 					for i in range(-1, 2):
 						chow_condition = 0
@@ -163,7 +166,7 @@ class RuleBasedAINaiveExp(Move_generator):
 
 						score += self.s_chow * chow_condition / 3.0 * prob
 
-				score += self.s_future*(4 - utils.map_retrieve(used_tiles_map, tile) - hand_tiles_map[str(tile)])/4
+				score += self.s_future*(4 - utils.map_retrieve(used_tiles_map, tile) - hand_tiles_map[tile])/4
 
 			scores.append(score)
 		return scores
@@ -181,13 +184,13 @@ class RuleBasedAINaiveExp(Move_generator):
 		all_players = list(neighbors) + [player]
 		for p in all_players:
 			for tile in p.get_discarded_tiles("unstolen"):
-				used_tiles_map = utils.map_increment(used_tiles_map, str(tile), 1)
+				used_tiles_map = utils.map_increment(used_tiles_map, tile, 1)
 			for _, _, tiles in p.fixed_hand:
 				for tile in tiles:
-					used_tiles_map = utils.map_increment(used_tiles_map, str(tile), 1)
+					used_tiles_map = utils.map_increment(used_tiles_map, tile, 1)
 
 		for tile in merged_hand:
-			hand_tiles_map = utils.map_increment(hand_tiles_map, str(tile), 1)
+			hand_tiles_map = utils.map_increment(hand_tiles_map, tile, 1)
 
 
 		for i in range(len(neighbors)):
@@ -243,13 +246,18 @@ class RuleBasedAINaiveExp(Move_generator):
 			hand_count_arr = self.get_hand_count_arr(hand, suit)
 			expected_adopt_no = expected_adopt_nos[suits.index(suit)]
 			suit_score_map[suit] = self.recursive_eval_pure_hand(suit, hand_count_arr, used_tiles_map)
-			suit_score_map[suit] += suit_score_map[suit] * self.s_neighbor_suit * (1.0/6*pow(expected_adopt_no, 2) -7.0/6*expected_adopt_no + 1)
+			suit_score_map[suit] += suit_score_map[suit] * self.s_neighbor_suit * ( 1.0/15*pow(expected_adopt_no,3) + -0.4*pow(expected_adopt_no, 2) + 7/30*expected_adopt_no + 0.1)
 			self.print_msg("Score %s: %f"%(suit, suit_score_map[suit]))
 			if suit_score_map[suit] > max_score:
 				max_score = suit_score_map[suit]
 				max_suit = suit
 
-		self.majority_suit = max_suit
+		if self.s_mixed_suit != 0:
+			mixed_score = self.s_mixed_suit*self.recursive_eval_mixed_hand(hand, used_tiles_map)
+			if mixed_score > max_score:
+				max_suit = "mixed"
+
+		return max_suit
 
 	def get_hand_count_arr(self, hand, suit):
 		hand_count_arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -257,6 +265,22 @@ class RuleBasedAINaiveExp(Move_generator):
 			if tile.suit == suit:
 				hand_count_arr[tile.value] += 1
 		return hand_count_arr
+
+	def recursive_eval_mixed_hand(self, hand, used_tiles_map):
+		pong_count = 0
+		tmp_count = 0
+		prev_tile = None
+		hand = sorted(hand) + [None]
+		while len(hand) > 0:
+			tile = hand.pop(0)
+			if tile == prev_tile:
+				tmp_count += 1
+			else:
+				if tmp_count >= 2:
+					pong_count += self.s_pong * (tmp_count/ 3 +  (1 - tmp_count/ 3) * (4 - tmp_count - utils.map_retrieve(used_tiles_map, prev_tile))/4)
+				prev_tile = tile
+				tmp_count = 1
+		return pong_count
 
 	def recursive_eval_pure_hand(self, suit, hand_count_arr, used_tiles_map, considering = 1, meld_count = 0):
 		if considering >= 10:

@@ -1,1 +1,1 @@
-test_cases = ["ai_battle", "calculate_score", "rule_base_naive", "start_game", "validate_hand"]
+test_cases = ["ai_battle", "calculate_score", "rule_base_naive", "rule_base_mcts", "start_game", "validate_hand"]

@@ -45,8 +45,6 @@ class Player:
 			raise Exception("Unknown filter_state '%s'"%filter_state)
 
 	def get_tile_hand_count(self, tile):
-		if type(tile) is not str:
-			tile = str(tile)
 		if tile in self.__hand_count_map:
 			return self.__hand_count_map[tile]
 		else:
@@ -58,10 +56,10 @@ class Player:
 	def __update_hand_count_map(self, tile, adjustment):
 		if self.get_tile_hand_count(tile) + adjustment < 0:
 			raise Exception("Invalid adjustment")
-		if str(tile) in self.__hand_count_map:
-			self.__hand_count_map[str(tile)] += adjustment
+		if tile in self.__hand_count_map:
+			self.__hand_count_map[tile] += adjustment
 		else:
-			self.__hand_count_map[str(tile)] = adjustment
+			self.__hand_count_map[tile] = adjustment
 
 	def new_turn(self, new_tile, neighbors, game):
 		dispose_tile = None
@@ -113,10 +111,10 @@ class Player:
 		is_able, is_wants_to, which = False, False, None
 
 		# Needs to check the availability of the neighbor tiles (2 preceding and 2 succeeding tiles)
-		preceding_2_count = self.get_tile_hand_count(str(new_tile.generate_neighbor_tile(offset = -2)))
-		preceding_1_count = self.get_tile_hand_count(str(new_tile.generate_neighbor_tile(offset = -1)))
-		succeeding_1_count = self.get_tile_hand_count(str(new_tile.generate_neighbor_tile(offset = 1)))
-		succeeding_2_count = self.get_tile_hand_count(str(new_tile.generate_neighbor_tile(offset = 2)))
+		preceding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = -2))
+		preceding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = -1))
+		succeeding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = 1))
+		succeeding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = 2))
 
 		choices = []
 		criteria = False
@@ -167,9 +165,9 @@ class Player:
 		possible_kongs = []
 		checked = {}
 		for tile in self.__hand:
-			if str(tile) not in checked and self.__hand_count_map[str(tile)] == 4:
+			if tile not in checked and self.__hand_count_map[tile] == 4:
 				possible_kongs.append(tile)
-				checked[str(tile)] = True
+				checked[tile] = True
 		return possible_kongs
 
 	def check_pong(self, new_tile, neighbors, game):
@@ -225,13 +223,9 @@ class Player:
 				
 		elif location == "hand":
 			tiles = [] if source == "existing" else [new_tile]
-			tile_name = str(new_tile)
 			deduct_count = 4 if source == "existing" else 3
 
 			for i in range(deduct_count):
-				if tile_name not in self.__hand_count_map or self.__hand_count_map[tile_name] <= 0:
-					raise Exception("Not enough tile in hand for Kong")
-
 				index = self.__hand.index(new_tile)
 				tiles.append(self.__hand.pop(index))
 
@@ -253,7 +247,6 @@ class Player:
 		tiles = []
 		tiles.append(new_tile)
 
-		tile_name = str(new_tile)
 		self.__update_hand_count_map(new_tile, -2)
 
 		for i in range(2):
@@ -281,11 +274,10 @@ class Player:
 		self.__hand = hand
 		self.__hand_count_map = {}
 		for tile in hand:
-			name = str(tile)
-			if name not in self.__hand_count_map:
-				self.__hand_count_map[name] = 1
+			if tile not in self.__hand_count_map:
+				self.__hand_count_map[tile] = 1
 			else:
-				self.__hand_count_map[name] += 1
+				self.__hand_count_map[tile] += 1
 
 		self.__hand = sorted(self.__hand)
 		self.__move_generator.reset_new_game()
