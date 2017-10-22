@@ -42,6 +42,12 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand):
 
 	for i in range(len(unique_tiles)):
 		if map_hand[unique_tiles[i]] >= 2:
+			 new_pong_suits = pong_suits
+			 if unique_tiles[i].suit not in new_pong_suits:
+			 	new_pong_suits = new_pong_suits + [unique_tiles[i].suit]
+			 	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, new_pong_suits, True):
+			 		continue
+
 			 map_hand[unique_tiles[i]] -= 2
 			 new_unique_tiles = []
 			 if i == 0:
@@ -50,7 +56,8 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand):
 			 	new_unique_tiles = unique_tiles[0:(len(unique_tiles) - 1)]
 			 else:
 			 	new_unique_tiles = unique_tiles[0:i] + unique_tiles[(i+1):len(unique_tiles)]
-			 score = default_mcts_map_hand_eval_func_helper(map_hand, new_unique_tiles, chow_suits, pong_suits, is_honor)
+
+			 score = default_mcts_map_hand_eval_func_helper(map_hand, new_unique_tiles, chow_suits, new_pong_suits, is_honor)
 			 max_score = max(max_score, score + 1 + len(fixed_hand))
 			 map_hand[unique_tiles[i]] += 2
 
@@ -58,18 +65,19 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand):
 
 def default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, pong_suits, is_honor, processing = 0, meld_count = 0):
 	max_score = meld_count
-	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, True):
-		return 0
 
 	for i in range(processing, len(unique_tiles)):
 		tile = unique_tiles[i]
 		if map_hand[tile] >= 3:
 			map_hand[tile] -= 3
 			new_pong_suits = pong_suits
-			new_is_honor = tile.suit == "honor"
+			new_is_honor = is_honor or tile.suit == "honor"
 			if tile.suit != "honor" and tile.suit not in new_pong_suits:
 				new_pong_suits = new_pong_suits + [tile.suit]
-			tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, new_pong_suits, new_is_honor, i, meld_count = meld_count + 1)
+
+			tmp_count = float("-inf")
+			if not failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, new_pong_suits, True):
+				tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, new_pong_suits, new_is_honor, i, meld_count = meld_count + 1)
 			map_hand[tile] += 3
 			max_score = max(max_score, tmp_count)
 
@@ -83,15 +91,16 @@ def default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, p
 				new_chow_suits = chow_suits
 				if tile.suit not in new_chow_suits:
 					new_chow_suits = new_chow_suits + [tile.suit]
-			
-				tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, new_chow_suits, pong_suits, is_honor, i, meld_count = meld_count + 1)
+				tmp_count = float("-inf")
+				if not failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](new_chow_suits, pong_suits, True):
+					tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, new_chow_suits, pong_suits, is_honor, i, meld_count = meld_count + 1)
 				max_score = max(max_score, tmp_count)
 				map_hand[tile] += 1
 				map_hand[neighbor_1] += 1
 				map_hand[neighbor_2] += 1
 
 	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, is_honor):
-		return 0
+		return float("-inf")
 
 	total_count = 0
 	for tile in unique_tiles:
