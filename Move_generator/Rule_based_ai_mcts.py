@@ -56,7 +56,7 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_re
 		return 0
 
 	if Scoring_rules.HK_rules.__score_lower_limit == 1:
-		return base_score + scoring_matrix[0, :].sum()
+		return base_score + scoring_matrix[1, :].sum()
 
 	else:
 		# Possible cases reaching here:
@@ -118,7 +118,7 @@ def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
 	return max_score
 
 class RuleBasedAINaiveMCTS(Move_generator):
-	def __init__(self, player_name, mcts_max_iter = 1000, mcts_ucb_policy = 0.1, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
+	def __init__(self, player_name, mcts_max_iter = 1500, mcts_ucb_policy = 2, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.map_hand_eval_func = mcts_map_hand_eval_func
@@ -132,7 +132,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		if self.display_step:
 			self.print_game_board(player.fixed_hand, player.hand, neighbors, game)
 
-		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
+		self.print_msg("Someone just discarded a %s. (%s)"%(new_tile.symbol, ", ".join([str(choice) for choice in choices])))
 
 		best_choice = -1
 		if game.deck_size//4 > 0:
