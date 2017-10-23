@@ -3,8 +3,10 @@ from .Move_generator import Move_generator
 from . import utils
 import Scoring_rules
 import Tile
+import numpy as np
 
 display_name = "RNAIM"
+suits = ["bamboo", "characters", "dots"]
 
 def one_faan_failing_criterion(chow_suits, pong_suits, is_honor):
 	return not is_honor
@@ -18,9 +20,12 @@ failing_criteria = {
 	3: three_faan_failing_criterion
 }
 
-def default_mcts_map_hand_eval_func(fixed_hand, map_hand):
-	unique_tiles = list(map_hand.keys())
+def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_remaining):
+	unique_tiles = []
+	suit_tiles = {suit: [] for suit in suits}
+	scoring_matrix = np.zeros((2, 3))
 	max_score = 0
+	base_score = len(fixed_hand)
 
 	chow_suits = []
 	pong_suits = []
@@ -37,82 +42,83 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand):
 		if meld_type != "chow" and tiles[0].suit not in pong_suits:
 			pong_suits.append(tiles[0].suit)
 
-	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, True):
+
+	for tile, count in map_hand.items():
+		if tile.suit == "honor":
+			if count >= 3:
+				map_hand[tile] -= 3
+				base_score += 1
+				is_honor = True
+		else:
+			suit_tiles[tile.suit].append(tile)
+
+	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, is_honor):
 		return 0
 
-	for i in range(len(unique_tiles)):
-		if map_hand[unique_tiles[i]] >= 2:
-			 new_pong_suits = pong_suits
-			 if unique_tiles[i].suit not in new_pong_suits:
-			 	new_pong_suits = new_pong_suits + [unique_tiles[i].suit]
-			 	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, new_pong_suits, True):
-			 		continue
+	if Scoring_rules.HK_rules.__score_lower_limit == 1:
+		return base_score + scoring_matrix[0, :].sum()
 
-			 map_hand[unique_tiles[i]] -= 2
-			 new_unique_tiles = []
-			 if i == 0:
-			 	new_unique_tiles = unique_tiles[1:len(unique_tiles)]
-			 elif i == len(unique_tiles) - 1:
-			 	new_unique_tiles = unique_tiles[0:(len(unique_tiles) - 1)]
-			 else:
-			 	new_unique_tiles = unique_tiles[0:i] + unique_tiles[(i+1):len(unique_tiles)]
+	else:
+		# Possible cases reaching here:
+		# 1. only 1 chow suit 
+		# 2. 0 chow suit with 0 pong suit
+		# 3. 0 chow suit with 1 pong suit
+		# 4. 0 chow suit with >1 pong suit
+		if len(chow_suits) == 1:
+			chow_suit_index = suits.index(chow_suits[0])
+			return base_score + scoring_matrix[1, chow_suit_index]
 
-			 score = default_mcts_map_hand_eval_func_helper(map_hand, new_unique_tiles, chow_suits, new_pong_suits, is_honor)
-			 max_score = max(max_score, score + 1 + len(fixed_hand))
-			 map_hand[unique_tiles[i]] += 2
+		mixed_pong_score = 0
+		suits_count = 0
+		for i in range(len(suits)):
+			if scoring_matrix[0, i] > 0:
+				mixed_pong_score += scoring_matrix[0, i]
+				suits_count += 1
+		mixed_pong_score -= suits_count - 1
+
+		if len(pong_suits) == 0:
+			return base_score + max(mixed_pong_score, scoring_matrix[1].max())
+
+		elif len(pong_suits) == 1:
+			pong_suit_index = suits.index(pong_suits[0])
+			return base_score + max(mixed_pong_score, scoring_matrix[1, pong_suit_index])
+
+		else:
+			return base_score + mixed_pong_score
+
+def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
+	max_score = 0
+	max_path = len(suit_tiles)
+
+	for i in range(processing, len(suit_tiles)):
+		tile = suit_tiles[i]
+		if map_hand[tile] >= 3:
+			map_hand[tile] -= 3
+			pong_score = eval_suit(map_hand, suit_tiles, is_chow, processing, tmp_score = tmp_score + 1)
+			if pong_score > max_score:
+				max_score = pong_score
+				max_path = i
+			map_hand[tile] += 3
+
+		if is_chow:
+			tile_neighbor_1 = tile.generate_neighbor_tile(offset = 1)
+			tile_neighbor_2 = tile.generate_neighbor_tile(offset = 2)
+			if map_hand[tile] > 0 and utils.map_retrieve(map_hand, tile_neighbor_1) > 0 and utils.map_retrieve(tile_neighbor_2) > 0:
+				map_hand[tile] -= 1
+				map_hand[tile_neighbor_1] -= 1
+				map_hand[tile_neighbor_2] -= 1
+				chow_score =  eval_suit(map_hand, suit_tiles, is_chow, processing + 1, tmp_score = tmp_score + 1)
+				if chow_score > max_score:
+					max_score = chow_score
+					max_path = i
+				map_hand[tile] += 1
+				map_hand[tile_neighbor_1] += 1
+				map_hand[tile_neighbor_2] += 1
 
 	return max_score
 
-def default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, pong_suits, is_honor, processing = 0, meld_count = 0):
-	max_score = meld_count
-
-	for i in range(processing, len(unique_tiles)):
-		tile = unique_tiles[i]
-		if map_hand[tile] >= 3:
-			map_hand[tile] -= 3
-			new_pong_suits = pong_suits
-			new_is_honor = is_honor or tile.suit == "honor"
-			if tile.suit != "honor" and tile.suit not in new_pong_suits:
-				new_pong_suits = new_pong_suits + [tile.suit]
-
-			tmp_count = float("-inf")
-			if not failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, new_pong_suits, True):
-				tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, chow_suits, new_pong_suits, new_is_honor, i, meld_count = meld_count + 1)
-			map_hand[tile] += 3
-			max_score = max(max_score, tmp_count)
-
-		if map_hand[tile] >= 1:
-			neighbor_1 = tile.generate_neighbor_tile(1)
-			neighbor_2 = tile.generate_neighbor_tile(2)
-			if neighbor_1 in map_hand and neighbor_2 in map_hand and map_hand[neighbor_1] > 0 and  map_hand[neighbor_2] > 0:
-				map_hand[tile] -= 1
-				map_hand[neighbor_1] -= 1
-				map_hand[neighbor_2] -= 1
-				new_chow_suits = chow_suits
-				if tile.suit not in new_chow_suits:
-					new_chow_suits = new_chow_suits + [tile.suit]
-				tmp_count = float("-inf")
-				if not failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](new_chow_suits, pong_suits, True):
-					tmp_count = default_mcts_map_hand_eval_func_helper(map_hand, unique_tiles, new_chow_suits, pong_suits, is_honor, i, meld_count = meld_count + 1)
-				max_score = max(max_score, tmp_count)
-				map_hand[tile] += 1
-				map_hand[neighbor_1] += 1
-				map_hand[neighbor_2] += 1
-
-	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, is_honor):
-		return float("-inf")
-
-	total_count = 0
-	for tile in unique_tiles:
-		total_count += map_hand[tile]
-	#print(total_count)
-	if total_count <= 4:
-		return max_score
-
-	return 0
-
 class RuleBasedAINaiveMCTS(Move_generator):
-	def __init__(self, player_name, mcts_max_iter = 1000, mcts_ucb_policy = 1, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
+	def __init__(self, player_name, mcts_max_iter = 1000, mcts_ucb_policy = 0.1, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.map_hand_eval_func = mcts_map_hand_eval_func

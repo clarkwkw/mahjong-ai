@@ -60,7 +60,7 @@ class MCTSwapTileNode:
 			tile_remaining -= 1
 			swapped_count += 1
 
-		score = map_hand_eval_func(self.fixed_hand, map_hand)
+		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining)
 
 		self.new_visit(prior, score)
 		
@@ -71,13 +71,11 @@ class MCTSwapTileNode:
 		for i in range(max_iter):
 			current = self
 			prev_action = None
-			while len(current.children) > 0 or current.count_visit > 0:
+			while current is not None and (len(current.children) > 0 or current.count_visit > 0):
 				action, child = current.argmax_ucb(ucb_policy = ucb_policy, is_root = current == self)
-				if child is None:
-					break
 				stack.append((prev_action, current))
 				current = child
-				prev_action = action
+				prev_action = action				
 
 			prior, score = current.rollout(map_hand_eval_func = map_hand_eval_func)
 
@@ -92,7 +90,7 @@ class MCTSwapTileNode:
 				max_score = child.avg_score
 				max_action = action
 			action_str = action if type(action) is not Tile.Tile else action.symbol
-			#print("%s: %.4f"%(action_str, child.avg_score))
+			print("%s: %.4f"%(action_str, child.avg_score))
 		return max_action
 
 	def argmax_ucb(self, ucb_policy = 1, is_root = False):
