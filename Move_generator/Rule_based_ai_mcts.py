@@ -8,10 +8,15 @@ import numpy as np
 display_name = "RNAIM"
 suits = ["bamboo", "characters", "dots"]
 
-def one_faan_failing_criterion(chow_suits, pong_suits, is_honor):
-	return not is_honor
+def one_faan_failing_criterion(chow_suits, pong_suits, is_honor, is_rgw):
+	one_faan_criteria_1 = is_rgw
 
-def three_faan_failing_criterion(chow_suits, pong_suits, is_honor):
+	# approximation to all_chows
+	one_faan_criteria_2 = len(pong_suits) == 0 and not is_honor
+
+	return not (one_faan_criteria_1 or one_faan_criteria_2)
+
+def three_faan_failing_criterion(chow_suits, pong_suits, is_honor, is_rgw):
 	failing_criteria = len(chow_suits) > 1 or (len(chow_suits) == 1 and (len(pong_suits) - (chow_suits[0] in pong_suits)) > 0)
 	return failing_criteria
 
@@ -20,7 +25,18 @@ failing_criteria = {
 	3: three_faan_failing_criterion
 }
 
-def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_remaining):
+def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_remaining, additional_tile = None):
+	'''
+	hand = []
+	for tile, count in map_hand.items():
+		for i in range(count):
+			hand.append(tile)
+	_, score = calculate_total_score(fixed_hand, hand, additional_tile, "draw", game)
+	if score is None:
+		return 0
+	return score
+	'''
+
 	unique_tiles = []
 	suit_tiles = {suit: [] for suit in suits}
 	scoring_matrix = np.zeros((2, 3))
@@ -29,11 +45,13 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_re
 
 	chow_suits = []
 	pong_suits = []
-	is_honor = False
+	is_honor, is_rgw = False, False
 
 	for meld_type, _, tiles in fixed_hand:
 		if tiles[0].suit == "honor":
 			is_honor = True
+			if tiles[0].value in ["red", "green", "white"]:
+				is_rgw = True
 			continue
 
 		if meld_type == "chow" and tiles[0].suit not in chow_suits:
@@ -49,12 +67,19 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_re
 				map_hand[tile] -= 3
 				base_score += 1
 				is_honor = True
+				if tile.value in ["red", "green", "white"]:
+					is_rgw = True
 		else:
 			suit_tiles[tile.suit].append(tile)
 
-	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, is_honor):
+	if failing_criteria[Scoring_rules.HK_rules.__score_lower_limit](chow_suits, pong_suits, is_honor, is_rgw):
 		return 0
 
+	for i in range(len(suits)):
+		suit = suits[i]
+		for j in range(2):
+			scoring_matrix[j, i] = eval_suit(map_hand, suit_tiles[suit], j > 0)
+	
 	if Scoring_rules.HK_rules.__score_lower_limit == 1:
 		return base_score + scoring_matrix[1, :].sum()
 
@@ -77,7 +102,7 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_re
 		mixed_pong_score -= suits_count - 1
 
 		if len(pong_suits) == 0:
-			return base_score + max(mixed_pong_score, scoring_matrix[1].max())
+			return base_score + max(mixed_pong_score, scoring_matrix[1, :].max())
 
 		elif len(pong_suits) == 1:
 			pong_suit_index = suits.index(pong_suits[0])
@@ -103,7 +128,7 @@ def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
 		if is_chow:
 			tile_neighbor_1 = tile.generate_neighbor_tile(offset = 1)
 			tile_neighbor_2 = tile.generate_neighbor_tile(offset = 2)
-			if map_hand[tile] > 0 and utils.map_retrieve(map_hand, tile_neighbor_1) > 0 and utils.map_retrieve(tile_neighbor_2) > 0:
+			if map_hand[tile] > 0 and utils.map_retrieve(map_hand, tile_neighbor_1) > 0 and utils.map_retrieve(map_hand, tile_neighbor_2) > 0:
 				map_hand[tile] -= 1
 				map_hand[tile_neighbor_1] -= 1
 				map_hand[tile_neighbor_2] -= 1
@@ -158,11 +183,11 @@ class RuleBasedAINaiveMCTS(Move_generator):
 				child = MCTSwapTileNode(child_fixed_hand, child_map_hand, child_map_remaining, child_tile_remaining, game.deck_size//4)
 				root.children[choice] = child
 
-			root.children[-1] = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4)
+			root.children[-10] = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4)
 			
 			best_choice = root.search(self.mcts_max_iter, self.mcts_ucb_policy, self.map_hand_eval_func)
 
-		if best_choice == -1:
+		if best_choice == -10:
 			self.print_msg("%s [%s] chooses not to Chow."%(self.player_name, display_name))
 			return False, None
 		else:
@@ -322,6 +347,3 @@ class RuleBasedAINaiveMCTS(Move_generator):
 	def print_msg(self, msg):
 		if self.display_step:
 			print(msg)
-
-
-

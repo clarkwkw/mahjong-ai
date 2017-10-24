@@ -2,6 +2,7 @@ from . import utils
 import random
 import math
 import Tile
+import numpy as np
 
 class MCTSwapTileNode:
 	def __init__(self, fixed_hand, map_hand, map_remaining, tile_remaining, round_remaining, prior = 1):
@@ -32,6 +33,8 @@ class MCTSwapTileNode:
 				utils.map_increment(map_hand, new_tile, 1)
 				self.children[(dispose_tile, new_tile)] = MCTSwapTileNode(self.fixed_hand, map_hand, map_remaining, self.tile_remaining - 1, self.round_remaining - 1, prior)
 				self.grouped_actions[dispose_tile]["conseqs"].append(self.children[(dispose_tile, new_tile)])
+			
+		self.grouped_actions["stop"] = {"avg_score": 0, "sum_rollouts_prob": 0, "count_visit": 0, "conseqs": []}
 
 	def new_visit(self, prior, score, action = None):
 		self.avg_score = (self.sum_rollouts_prob*self.avg_score + prior*score)/(self.sum_rollouts_prob + prior)
@@ -49,7 +52,7 @@ class MCTSwapTileNode:
 		tile_remaining = self.tile_remaining
 		swapped_count = 0
 
-		while self.round_remaining > swapped_count:
+		while self.round_remaining > swapped_count + 1:
 			dispose_tile = random.sample(map_hand.keys(), k = 1)[0]
 			new_tile = random.sample(map_remaining.keys(), k = 1)[0]
 			prior *= map_remaining[new_tile]/tile_remaining
@@ -62,27 +65,36 @@ class MCTSwapTileNode:
 
 		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining)
 
-		#self.new_visit(prior, score)
-		#return prior, score
+		self.new_visit(prior, score)
+		return prior, score
 
-		self.new_visit(1.0, score)
-		return 1.0, score
+		#self.new_visit(1.0, score)
+		#return 1.0, score
 		
 
 	def search(self, max_iter, ucb_policy, map_hand_eval_func):
 		stack = []
 		for i in range(max_iter):
 			current = self
-			prev_action = None
+			prev_action, action = None, None
 			while len(current.children) > 0 or current.count_visit > 0:
 				action, child = current.argmax_ucb(ucb_policy = ucb_policy, is_root = current == self)
 				stack.append((prev_action, current))
-				if child is None:
+				if child is None or (type(action) == str and action == "stop"):
 					break
 				current = child
 				prev_action = action				
 
-			prior, score = current.rollout(map_hand_eval_func = map_hand_eval_func)
+			if type(action) == str and action == "stop":
+				if current.grouped_actions["stop"]["count_visit"] == 0:
+					score = map_hand_eval_func(current.fixed_hand, current.map_hand, current.map_remaining, current.tile_remaining)
+				else:
+					score = current.grouped_actions["stop"]["avg_score"]
+				prior = current.prior
+				current.grouped_actions["stop"]["sum_rollouts_prob"] += prior
+				current.grouped_actions["stop"]["count_visit"] += 1
+			else:
+				prior, score = current.rollout(map_hand_eval_func = map_hand_eval_func)
 
 			while len(stack) > 0:
 				action, parent = stack.pop()
@@ -95,7 +107,7 @@ class MCTSwapTileNode:
 				max_score = child.avg_score
 				max_action = action
 			action_str = action if type(action) is not Tile.Tile else action.symbol
-			#print("%s: %.4f"%(action_str, child.avg_score))
+			print("%s: %.4f"%(action_str, child.avg_score))
 		return max_action
 
 	def argmax_ucb(self, ucb_policy = 1, is_root = False):
@@ -103,26 +115,46 @@ class MCTSwapTileNode:
 			return None, None
 
 		self.expand()
-		max_ucb_score = float("-inf")
-		max_child = None
-		max_action = None
+
+		actions = []
 		i = 0
 		if not is_root:
+			scores = np.zeros((len(self.grouped_actions), 2))
 			for action, info in self.grouped_actions.items():
+
 				if info["count_visit"] == 0:
-					return action, random.sample(info["conseqs"], k = 1)[0]
-				score = info["avg_score"] + ucb_policy*math.sqrt(math.log(self.count_visit)/info["count_visit"])
-				if score > max_ucb_score:
-					max_ucb_score = score
-					max_child = random.sample(info["conseqs"], k = 1)[0]
-					max_action = action
+					if len(info["conseqs"]) > 0:
+						return action, random.sample(info["conseqs"], k = 1)[0]
+					return action, None
+
+				scores[i, 0] = info["avg_score"]
+				scores[i, 1] = math.sqrt(math.log(self.count_visit)/info["count_visit"])
+				actions.append(action)
+				i += 1
+
+			if scores[:, 0].max() != scores[:, 0].min():
+				scores[:, 0] =  (scores[:, 0] - scores[:, 0].min()) / (scores[:, 0].max() - scores[:, 0].min())
+			else:
+				score[:, 0] = 0
+			scores[:, 1] = scores[:, 0] + ucb_policy*scores[:, 1]
+			max_action_i = scores[:, 1].argmax()
+			if len(self.grouped_actions[actions[max_action_i]]["conseqs"]) > 0:
+				return actions[max_action_i], random.sample(self.grouped_actions[actions[max_action_i]]["conseqs"], k = 1)[0]
+			return actions[max_action_i], None
 		else:
+			scores = np.zeros((len(self.children), 2))
 			for key, child in self.children.items():
 				if child.count_visit == 0:
 					return None, child
-				score = child.avg_score + ucb_policy*math.sqrt(math.log(self.count_visit)/child.count_visit)
-				if score > max_ucb_score:
-					max_ucb_score = score
-					max_child = child
+				scores[i, 0] = child.avg_score
+				scores[i, 1] = math.sqrt(math.log(self.count_visit)/child.count_visit)
+				actions.append(key)
+				i += 1
 
-		return max_action, max_child
+			if scores[:, 0].max() != scores[:, 0].min():
+				scores[:, 0] =  (scores[:, 0] - scores[:, 0].min()) / (scores[:, 0].max() - scores[:, 0].min())
+			else:
+				scores[:, 0] = 0
+			scores[:, 1] = scores[:, 0] + ucb_policy*scores[:, 1]
+			max_action_i = scores[:, 1].argmax()
+			return actions[max_action_i], self.children[actions[max_action_i]]

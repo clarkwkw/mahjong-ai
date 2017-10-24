@@ -359,7 +359,7 @@ def get_score_upper_limit():
 def get_score_lower_limit():
 	return __score_lower_limit
 
-__score_lower_limit = 1
+__score_lower_limit = 3
 __score_upper_limit = 10
 __score_funcs = [
 	score_game_wind,
