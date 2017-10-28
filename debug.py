@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 __debug_mode = False
 
 def print_hand(hand, mask_secret_tile = False):

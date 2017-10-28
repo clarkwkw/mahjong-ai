@@ -51,12 +51,10 @@ def map_increment(map, index, increment = 1, remove_zero = False):
 	if index is None:
 		raise Exception("Index cannot be None")
 
-	if index in map:
-		map[index] += increment
-	else:
-		map[index] = increment
-	
-	if remove_zero and map[index] == 0:
+	result = map.get(index, 0) + increment
+	map[index] = result
+
+	if remove_zero and result == 0:
 		del map[index]
 		
 	return map
@@ -68,9 +66,7 @@ def map_retrieve(map, index, default_val = 0):
 	if not isinstance(index, collections.Hashable):
 		index = str(index)
 
-	if index in map:
-		return map[index]
-	return default_val
+	return map.get(index, default_val)
 
 def print_hand(hand, end = "\n"):
 	meld_type, is_secret, tiles = None, None, None

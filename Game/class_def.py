@@ -57,7 +57,7 @@ class Game:
 
 				kong_tile, kong_location, kong_src = kong_info
 				if kong_location == "fixed_hand":
-					# Check if anyone can steal this Kong tile to form a winning hand (搶槓)
+					# Check if anyone can steal this Kong tile to form a winning hand
 					winner_id, score = self.__check_neighbor_winning(cur_player_id, kong_tile)
 					if winner_id is not None:
 						self.__started = False

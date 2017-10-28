@@ -99,7 +99,8 @@ def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_re
 			if scoring_matrix[0, i] > 0:
 				mixed_pong_score += scoring_matrix[0, i]
 				suits_count += 1
-		mixed_pong_score -= suits_count - 1
+
+		mixed_pong_score -= max(suits_count - 1, 0)
 
 		if len(pong_suits) == 0:
 			return base_score + max(mixed_pong_score, scoring_matrix[1, :].max())
@@ -128,7 +129,7 @@ def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
 		if is_chow:
 			tile_neighbor_1 = tile.generate_neighbor_tile(offset = 1)
 			tile_neighbor_2 = tile.generate_neighbor_tile(offset = 2)
-			if map_hand[tile] > 0 and utils.map_retrieve(map_hand, tile_neighbor_1) > 0 and utils.map_retrieve(map_hand, tile_neighbor_2) > 0:
+			if map_hand[tile] > 0 and map_hand.get(tile_neighbor_1, 0) > 0 and map_hand.get(tile_neighbor_2, 0) > 0:
 				map_hand[tile] -= 1
 				map_hand[tile_neighbor_1] -= 1
 				map_hand[tile_neighbor_2] -= 1
@@ -143,7 +144,7 @@ def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
 	return max_score
 
 class RuleBasedAINaiveMCTS(Move_generator):
-	def __init__(self, player_name, mcts_max_iter = 1500, mcts_ucb_policy = 2, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
+	def __init__(self, player_name, mcts_max_iter = 1000, mcts_ucb_policy = 2, mcts_map_hand_eval_func = default_mcts_map_hand_eval_func, display_step = True):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.map_hand_eval_func = mcts_map_hand_eval_func
