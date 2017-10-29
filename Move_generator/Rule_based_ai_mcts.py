@@ -26,16 +26,16 @@ failing_criteria = {
 }
 
 def default_mcts_map_hand_eval_func(fixed_hand, map_hand, map_remaining, tile_remaining, additional_tile = None):
-	'''
+	
 	hand = []
 	for tile, count in map_hand.items():
 		for i in range(count):
 			hand.append(tile)
-	_, score = calculate_total_score(fixed_hand, hand, additional_tile, "draw", game)
+	_, score = Scoring_rules.HK_rules.calculate_total_score(fixed_hand, hand, additional_tile, "draw", None)
 	if score is None:
 		return 0
 	return score
-	'''
+	
 
 	unique_tiles = []
 	suit_tiles = {suit: [] for suit in suits}
@@ -167,8 +167,8 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			
 			for choice in choices:
 				tiles = []
-				child_map_hand = dict(map_hand)
-				child_map_remaining = dict(map_remaining)
+				child_map_hand = map_hand.copy()
+				child_map_remaining = map_remaining.copy()
 				child_tile_remaining = tile_remaining - 1
 				child_fixed_hand = player.fixed_hand
 
@@ -207,7 +207,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		root = MCTSwapTileNode(None, None, None, None, game.deck_size//4)
 
 		# To kong
-		kong_fixed_hand, kong_map_hand, kong_map_remaining = list(original_fixed_hand), dict(map_hand), dict(map_remaining)
+		kong_fixed_hand, kong_map_hand, kong_map_remaining = list(original_fixed_hand), map_hand.copy(), map_remaining.copy()
 		kong_tile_remaining = tile_remaining - 1
 		if location == "fixed_hand":
 			utils.map_increment(kong_map_remaining, kong_tile, -1, remove_zero = True)
@@ -264,7 +264,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 
 			root = MCTSwapTileNode(None, None, None, None, game.deck_size//4)
 
-			pong_fixed_hand, pong_map_hand, pong_map_remaining = list(original_fixed_hand), dict(map_hand), dict(map_remaining)
+			pong_fixed_hand, pong_map_hand, pong_map_remaining = list(original_fixed_hand), map_hand.copy(), map_remaining.copy()
 			
 
 			utils.map_increment(pong_map_hand, new_tile, -2, remove_zero = True)
@@ -313,7 +313,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 
 			root = MCTSwapTileNode(None, None, None, None, game.deck_size//4)	
 			for tile in map_hand:
-				child_map_hand, child_map_remaining, = dict(map_hand), dict(map_remaining)
+				child_map_hand, child_map_remaining, = map_hand.copy(), map_remaining.copy()
 				utils.map_increment(child_map_hand, tile, -1, remove_zero = True)
 				child = MCTSwapTileNode(fixed_hand, child_map_hand, child_map_remaining, tile_remaining - 1, game.deck_size//4)			
 				root.children[tile] = child

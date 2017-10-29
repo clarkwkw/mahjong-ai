@@ -25,8 +25,8 @@ class MCTSwapTileNode:
 		for dispose_tile in self.map_hand:
 			self.grouped_actions[dispose_tile] = {"avg_score": 0, "sum_rollouts_prob": 0, "count_visit": 0, "conseqs": []}
 			for new_tile in self.map_remaining:
-				map_hand = dict(self.map_hand)
-				map_remaining = dict(self.map_remaining)
+				map_hand = self.map_hand.copy()
+				map_remaining = self.map_remaining.copy()
 				prior = self.prior*map_remaining[new_tile]/self.tile_remaining 
 				utils.map_increment(map_hand, dispose_tile, -1, remove_zero = True)
 				utils.map_increment(map_remaining, new_tile, -1, remove_zero = True)
@@ -47,8 +47,8 @@ class MCTSwapTileNode:
 
 	def rollout(self, map_hand_eval_func):
 		prior = self.prior
-		map_hand = dict(self.map_hand)
-		map_remaining = dict(self.map_remaining)
+		map_hand = self.map_hand.copy()
+		map_remaining = self.map_remaining.copy()
 		tile_remaining = self.tile_remaining
 		swapped_count = 0
 
@@ -63,13 +63,13 @@ class MCTSwapTileNode:
 			tile_remaining -= 1
 			swapped_count += 1
 
-		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining)
+		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining, random.sample(map_remaining.keys(), k = 1)[0])
 
-		self.new_visit(prior, score)
-		return prior, score
+		#self.new_visit(prior, score)
+		#return prior, score
 
-		#self.new_visit(1.0, score)
-		#return 1.0, score
+		self.new_visit(1.0, score)
+		return 1.0, score
 		
 
 	def search(self, max_iter, ucb_policy, map_hand_eval_func):
