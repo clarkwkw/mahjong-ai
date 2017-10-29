@@ -1,3 +1,5 @@
 .DS_Store
 __pycache__
 *.pyc
+Tile.cpp
+Move_generator/Swap_tile_mcts.cpp
