@@ -1,7 +1,13 @@
 import json
 import random
+from libcpp.string cimport string
+cdef extern from "CppTile.h":
+	cdef cppclass CppTile:
+		CppTile() except +
+		CppTile(string suit, string value) except +
 
-class Tile:
+
+cdef class Tile:
 	def __init__(self, suit, value):
 		self.__suit = suit
 		self.__suit_id = suit_order.index(suit)
@@ -45,6 +51,10 @@ class Tile:
 			return self.__value < other.__value
 
 		return False
+
+	cdef CppTile to_cpp(self):
+		return CppTile(self._suit.encode('UTF-8'), str(self._value).encode('UTF-8'))
+
 
 	def generate_neighbor_tile(self, offset):
 		if type(self.__value) is int and self.__value + offset >= 1 and self.__value + offset <= 9:
