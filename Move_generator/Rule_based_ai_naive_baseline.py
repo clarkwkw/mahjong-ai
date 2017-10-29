@@ -157,7 +157,7 @@ class RuleBasedAINaive(Move_generator):
 						chow_condition = 0
 						prob = 1
 						for j in range(i - 1, i + 2):
-							neighbor_tile = tile.generate_neighbor_tile(offset = j)
+							neighbor_tile = tile.generate_neighbor_tile(j)
 							if utils.map_retrieve(hand_tiles_map, neighbor_tile) > 0:
 								chow_condition += 1
 							else:

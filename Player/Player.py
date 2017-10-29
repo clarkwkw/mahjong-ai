@@ -111,10 +111,10 @@ class Player:
 		is_able, is_wants_to, which = False, False, None
 
 		# Needs to check the availability of the neighbor tiles (2 preceding and 2 succeeding tiles)
-		preceding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = -2))
-		preceding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = -1))
-		succeeding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = 1))
-		succeeding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(offset = 2))
+		preceding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(-2))
+		preceding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(-1))
+		succeeding_1_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(1))
+		succeeding_2_count = self.get_tile_hand_count(new_tile.generate_neighbor_tile(2))
 
 		choices = []
 		criteria = False
@@ -193,7 +193,7 @@ class Player:
 				tiles.append(new_tile)
 				continue
 
-			neighbor_tile = new_tile.generate_neighbor_tile(offset = offset)
+			neighbor_tile = new_tile.generate_neighbor_tile(offset)
 			index = self.__hand.index(neighbor_tile)
 			tiles.append(self.__hand.pop(index))
 			self.__update_hand_count_map(neighbor_tile, -1)

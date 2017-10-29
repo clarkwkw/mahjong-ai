@@ -12,7 +12,7 @@ class Human(Move_generator):
 		for choice in choices:
 			tiles = []
 			for i in range(choice - 1, choice + 2):
-				tile = new_tile.generate_neighbor_tile(offset = i)
+				tile = new_tile.generate_neighbor_tile(i)
 				tiles.append(tile.symbol)
 			str_choices.append(" ".join(tiles))
 

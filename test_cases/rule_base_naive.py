@@ -6,9 +6,9 @@ def test():
 
 	player_names = [
 	("Amy", Move_generator.Human, {}), 
-	("Billy", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "is_explore": False, "s_neighbor_suit": 0.2}), 
+	("Billy", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
 	("Clark", Move_generator.Human, {}), 
-	("Doe", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "is_explore": False, "s_neighbor_suit": 0.2})]
+	("Doe", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})]
 
 	players = []
 	game = None

@@ -1,66 +1,98 @@
+# distutils: language = c++
+# distutils: sources = CppTile.cpp
+
 import json
 import random
 from libcpp.string cimport string
 cdef extern from "CppTile.h":
 	cdef cppclass CppTile:
-		CppTile() except +
-		CppTile(string suit, string value) except +
+		CppTile()
+		CppTile(string suit, string value)
 
 
 cdef class Tile:
+	cdef string __suit, __symbol, __s_value
+	cdef int __i_value, __is_i_value, __suit_id
+
 	def __init__(self, suit, value):
-		self.__suit = suit
+		if type(suit) is bytes or type(value) is bytes:
+			raise Exception("Cannot initialize a Tile with bytes")
+
+		self.__symbol = tile_symbols[suit][str(value)].encode("utf8")
 		self.__suit_id = suit_order.index(suit)
+
+		if type(suit) is str:
+			suit = suit.encode("utf8")
+		self.__suit = suit
+		
+		if type(value) is str:
+			value = value.encode("utf8")
 		try:
-			self.__value = int(value)
+			self.__i_value = int(value)
+			self.__is_i_value = True
 		except ValueError:
-			self.__value = value
-		self.__symbol = tile_symbols[suit][str(value)]
+			self.__s_value = value
+			self.__is_i_value = False
 
 	@property
 	def suit(self):
+		return self.__suit.decode("utf8")
+
+	@property
+	def usuit(self):
 		return self.__suit
 
 	@property
+	def suit_id(self):
+		return self.__suit_id
+
+	@property
 	def symbol(self):
-		return self.__symbol
+		return self.__symbol.decode("utf8")
 
 	@property
 	def value(self):
-		return self.__value
+		if self.__is_i_value:
+			return self.__i_value
+		return self.__s_value.decode("utf8")
+
+	def __str__(self):
+		return "%s-%s"%(self.__suit.decode("utf8"), self.__value.decode("utf8"))
 
 	def __hash__(self):
-		return hash("%s-%s"%(self.__suit, self.__value))
-
-	#def __str__(self):
-	#	return "%s-%s"%(self.__suit, self.__value)
+		if self.__is_i_value:
+			return hash("%s-%s"%(self.__suit.decode("utf8"), self.__i_value)) 
+		return hash("%s-%s"%(self.__suit.decode("utf8"), self.__s_value.decode("utf8")))
 
 	def __eq__(self, other):
 		if other is None:
 			return False
-		return (self.__suit == other.__suit) and (self.__value == other.__value)
+
+		return (self.__suit == (<string> other.usuit)) and (self.value == other.value)
 
 	def __ne__(self, other):
 		return not self == other
 
 	def __lt__(self, other):
-		if self.__suit_id < other.__suit_id:
+		if self.__suit_id < other.suit_id:
 			return True
 
-		elif self.__suit == other.__suit:
-			return self.__value < other.__value
+		elif self.__suit == (<string> other.usuit):
+			return self.value < other.value
 
 		return False
 
-	cdef CppTile to_cpp(self):
-		return CppTile(self._suit.encode('UTF-8'), str(self._value).encode('UTF-8'))
-
-
 	def generate_neighbor_tile(self, offset):
-		if type(self.__value) is int and self.__value + offset >= 1 and self.__value + offset <= 9:
-			tile = Tile(self.__suit, self.__value + offset)
+		if self.__is_i_value and self.__i_value + offset >= 1 and self.__i_value + offset <= 9:
+			tile = Tile(self.suit, self.__i_value + offset)
 			return tile
 		return None
+
+	cdef CppTile to_cpp(self):
+		if self.__is_i_value:
+			return CppTile(self.__suit, str(self.__i_value).encode('utf8'))
+
+		return CppTile(self.__suit, self.__s_value)
 
 def get_tiles(shuffle = True):
 	result_tiles = []

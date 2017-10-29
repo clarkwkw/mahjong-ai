@@ -127,8 +127,8 @@ def eval_suit(map_hand, suit_tiles, is_chow, processing = 0, tmp_score = 0):
 			map_hand[tile] += 3
 
 		if is_chow:
-			tile_neighbor_1 = tile.generate_neighbor_tile(offset = 1)
-			tile_neighbor_2 = tile.generate_neighbor_tile(offset = 2)
+			tile_neighbor_1 = tile.generate_neighbor_tile(1)
+			tile_neighbor_2 = tile.generate_neighbor_tile(2)
 			if map_hand[tile] > 0 and map_hand.get(tile_neighbor_1, 0) > 0 and map_hand.get(tile_neighbor_2, 0) > 0:
 				map_hand[tile] -= 1
 				map_hand[tile_neighbor_1] -= 1
