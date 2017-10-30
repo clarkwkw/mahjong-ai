@@ -17,7 +17,7 @@ CppMCTGroupAction::CppMCTGroupAction(){
 	this->avg_score = 0;
 }
 
-CppMCTSwapTileNode* CppMCTGroupAction::expand(string drop_tile, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prev_prior){
+CppMCTSwapTileNode* CppMCTGroupAction::expand(string drop_tile, FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prev_prior){
 	if(this->actions.size() > 0) return NULL;
 
 	CppMCTSwapTileNode* last_node;
@@ -29,7 +29,7 @@ CppMCTSwapTileNode* CppMCTGroupAction::expand(string drop_tile, TMap& map_hand, 
 
 		new_tile_info.second -= 1;
 		map_hand[new_tile_info.first] += 1;
-		last_node = new CppMCTSwapTileNode(map_hand, map_remaining, tile_remaining - 1, round_remaining - 1, prior);
+		last_node = new CppMCTSwapTileNode(fixed_hand, map_hand, map_remaining, tile_remaining - 1, round_remaining - 1, prior);
 		this->actions.push_back(last_node);
 		map_hand[new_tile_info.first] -= 1;
 		new_tile_info.second += 1;
@@ -43,7 +43,8 @@ CppMCTSwapTileNode::CppMCTSwapTileNode(){
 
 }
 
-CppMCTSwapTileNode::CppMCTSwapTileNode(TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prior){
+CppMCTSwapTileNode::CppMCTSwapTileNode(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prior){
+	this->fixed_hand = fixed_hand;
 	this->map_hand = map_hand;
 	this->map_remaining = map_remaining;
 	this->tile_remaining = tile_remaining;
@@ -56,7 +57,7 @@ CppMCTSwapTileNode::CppMCTSwapTileNode(TMap& map_hand, TMap& map_remaining, int 
 	this->min_action_avg_score = 0;
 }
 
-string CppMCTSwapTileNode::search(FHand& fixed_hand, int max_iter, double ucb_policy){
+string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 	stack <UCBResult> st;
 	for(int i = 0; i < max_iter; i++){
 		CppMCTSwapTileNode* current = this;
@@ -73,13 +74,13 @@ string CppMCTSwapTileNode::search(FHand& fixed_hand, int max_iter, double ucb_po
 
 		if(result.first == "stop"){
 			if(current->grouped_actions["stop"].count_visit == 0){
-				score = map_hand_eval_func(fixed_hand, current->map_hand);
+				score = map_hand_eval_func(current->fixed_hand, current->map_hand);
 			}else{
 				score = current->grouped_actions["stop"].avg_score;
 			}
 			prior = current->prior;
 		}else{
-			pair<double, double> rollout_result = current->rollout(fixed_hand);
+			pair<double, double> rollout_result = current->rollout();
 			prior = rollout_result.first;
 			score = rollout_result.second;
 		}
@@ -131,7 +132,7 @@ void CppMCTSwapTileNode::new_visit(double prior, double score, string& action){
 	}
 }
 
-pair<double, double> CppMCTSwapTileNode::rollout(FHand& fixed_hand){
+pair<double, double> CppMCTSwapTileNode::rollout(){
 	double prior = this->prior;
 	int swapped_count = 0;
 	vector <string> tiles, deck;
@@ -166,7 +167,7 @@ pair<double, double> CppMCTSwapTileNode::rollout(FHand& fixed_hand){
 		final_map_hand[tiles[i]] += 1;
 	}
 
-	double score = map_hand_eval_func(fixed_hand, final_map_hand);
+	double score = map_hand_eval_func(this->fixed_hand, final_map_hand);
 	string emptys = "";
 	this->new_visit(prior, score, emptys);
 	return make_pair(prior, score);
@@ -184,7 +185,7 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 	double max_ucb_score = 0;
 	for(auto& gaction_info: this->grouped_actions){
 		if(gaction_info.first != "stop" && gaction_info.second.actions.size() == 0){
-			CppMCTSwapTileNode* node = (gaction_info.second).expand(gaction_info.first, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
+			CppMCTSwapTileNode* node = (gaction_info.second).expand(gaction_info.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
 			return (UCBResult) make_pair(gaction_info.first, node);
 		}
 
