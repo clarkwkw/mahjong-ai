@@ -40,6 +40,19 @@ CppMCTSwapTileNode* CppMCTGroupAction::expand(string drop_tile, FHand& fixed_han
 	return last_node;
 }
 
+CppMCTSwapTileNode* CppMCTGroupAction::get_least_visited_node(){
+	int min_visit_count = std::numeric_limits<int>::max(), tmp;
+	CppMCTSwapTileNode* result = NULL;
+	for(unsigned long i = 0; i<this->actions.size() && min_visit_count > 0; i++){
+		tmp = this->actions[i]->get_count_visit();
+		if(tmp < min_visit_count){
+			min_visit_count = tmp;
+			result = this->actions[i];
+		}
+	}
+	return result;
+}
+
 CppMCTSwapTileNode::CppMCTSwapTileNode(){
 
 }
@@ -102,7 +115,6 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 			score = rollout_result.second;
 			
 		}
-		//cout<<"st size: "<<st.size()<<endl;
 		while(st.size() > 0){
 			UCBResult result = st.top();
 			result.second->new_visit(prior, score, result.first);
@@ -113,7 +125,7 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 	double max_score = -1 * numeric_limits<float>::infinity();
 	string max_action = "";
 	for(auto const &ent: this->grouped_actions){
-		cout<<ent.first<<": "<<ent.second.avg_score<<endl;
+		//cout<<ent.first<<": "<<ent.second.avg_score<<endl;
 		if(ent.first == "stop")continue;
 		if(ent.second.avg_score > max_score){
 			max_score = ent.second.avg_score;
@@ -200,20 +212,17 @@ pair<double, double> CppMCTSwapTileNode::rollout(){
 //Stopping --> action "stop"
 UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 	this->expand();
-	//cout<<"Finding child action node"<<endl;
 	string max_action = "";
 	double max_ucb_score = 0;
 	for(auto& gaction_info: this->grouped_actions){
 
 		if(gaction_info.second.actions.size() == 0 && gaction_info.first != "stop"){
 			CppMCTSwapTileNode* node = (gaction_info.second).expand(gaction_info.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
-			//cout<<"Returning an unvisited node"<<endl;
 			return (UCBResult) make_pair(gaction_info.first, node);
 		}
 
 		if(gaction_info.second.count_visit == 0){
 			if(gaction_info.first == "stop"){
-				//cout<<"Returning an unvisited stopping node"<<endl;
 				return (UCBResult) make_pair("stop", (CppMCTSwapTileNode*) NULL);
 			}else{
 				return (UCBResult) make_pair(gaction_info.first, gaction_info.second.actions[0]);
@@ -222,12 +231,15 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 		}
 
 		double ucb_score = 0;
-		
+		/*
 		if(this->max_action_avg_score > this->min_action_avg_score)
 			ucb_score = (gaction_info.second.avg_score - this->min_action_avg_score)/(this->max_action_avg_score - this->min_action_avg_score);
-		//cout<<"normalized avg: "<<ucb_score<<endl;
+		*/
+		if(this->max_action_avg_score > 0)
+			ucb_score = (gaction_info.second.avg_score )/(this->max_action_avg_score);
+
 		ucb_score += ucb_policy*sqrt(log(this->count_visit)/gaction_info.second.count_visit);
-		//cout<<"final ucb: "<<ucb_score<<endl;
+
 		if(ucb_score > max_ucb_score){
 			max_ucb_score = ucb_score;
 			max_action = gaction_info.first;
@@ -235,12 +247,10 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 	}
 
 	if(max_action != "stop"){
-		int conseq_index = rand() % this->grouped_actions[max_action].actions.size();
-		//cout<<"Returning a normal max node"<<endl;
-
-		return (UCBResult) make_pair(max_action, this->grouped_actions[max_action].actions[conseq_index]);
+		//int conseq_index = rand() % this->grouped_actions[max_action].actions.size();
+		//return (UCBResult) make_pair(max_action, this->grouped_actions[max_action].actions[conseq_index]);
+		return (UCBResult) make_pair(max_action, this->grouped_actions[max_action].get_least_visited_node());
 	}else{
-		//cout<<"Returning a stopping max node"<<endl;
 		return (UCBResult) make_pair("stop", (CppMCTSwapTileNode*) NULL);
 	}
 		
@@ -253,4 +263,8 @@ void CppMCTSwapTileNode::add_branch_action(string identifier, CppMCTSwapTileNode
 	CppMCTGroupAction gaction = CppMCTGroupAction();
 	gaction.actions.push_back(node);
 	this->grouped_actions[identifier] = gaction;
+}
+
+int CppMCTSwapTileNode::get_count_visit(){
+	return this->count_visit;
 }

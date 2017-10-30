@@ -19,6 +19,7 @@ public:
 	vector <CppMCTSwapTileNode*> actions;
 	CppMCTGroupAction();
 	CppMCTSwapTileNode* expand(string drop_tile, FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prev_prior);
+	CppMCTSwapTileNode* get_least_visited_node();
 };
 
 class CppMCTSwapTileNode{
@@ -32,6 +33,7 @@ public:
 	pair<double, double>  rollout();
 	pair<string, CppMCTSwapTileNode*> argmax_ucb(double ucb_policy, bool is_root);
 	void add_branch_action(string identifier, CppMCTSwapTileNode* node);
+	int get_count_visit();
 private:
 	TMap map_hand, map_remaining;
 	int tile_remaining, round_remaining;

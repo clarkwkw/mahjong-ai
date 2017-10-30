@@ -45,5 +45,4 @@ cdef class MCTSwapTileNode:
 		return result.decode("utf8")
 
 	def add_branch_action(self, identifier, MCTSwapTileNode node):
-		print("Adding branching action:", identifier)
 		self.cpp_node.add_branch_action(identifier.encode("utf8"), node.cpp_node)
