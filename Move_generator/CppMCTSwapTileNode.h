@@ -14,7 +14,7 @@ typedef vector< vector<string> > FHand;
 
 class CppMCTGroupAction{
 public:
-	int count_visit;
+	long count_visit;
 	double avg_score, sum_rollout_prob;
 	vector <CppMCTSwapTileNode*> actions;
 	CppMCTGroupAction();
@@ -26,7 +26,7 @@ public:
 	map<string, CppMCTGroupAction> grouped_actions;
 
 	CppMCTSwapTileNode();
-	CppMCTSwapTileNode(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prior);
+	CppMCTSwapTileNode(FHand& fixed_hand, TMap map_hand, TMap map_remaining, int tile_remaining, int round_remaining, double prior);
 	string search(int max_iter, double ucb_policy);
 	void new_visit(double prior, double score, string& action);
 	pair<double, double>  rollout();

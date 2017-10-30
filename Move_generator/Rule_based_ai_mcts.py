@@ -170,19 +170,12 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		if game.deck_size//4 > 0:
 			fixed_hand = player.fixed_hand
 			map_hand, map_remaining, tile_remaining = self.preprocess_info(player, neighbors)
-			if new_tile is not None:
-				utils.map_increment(map_remaining, new_tile, -1, remove_zero = True)
-				utils.map_increment(map_hand, new_tile, 1, remove_zero = True)
-				tile_remaining -= 1
-
-			root = MCTSwapTileNode(round_remaining = game.deck_size//4)	
-			for tile in map_hand:
-				child_map_hand, child_map_remaining, = map_hand.copy(), map_remaining.copy()
-				utils.map_increment(child_map_hand, tile, -1, remove_zero = True)
-				child = MCTSwapTileNode(fixed_hand, child_map_hand, child_map_remaining, tile_remaining - 1, game.deck_size//4)			
-				root.add_branch_action(str(tile), child)
+			
+			root = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4)	
+			
 			drop_tile_str = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
-			drop_tile = Tile.Tile(drop_tile.split("-")[0], drop_tile.split("-")[1])
+			drop_tile = Tile.Tile(drop_tile_str.split("-")[0], drop_tile_str.split("-")[1])
+
 		self.print_msg("%s [%s] chooses to drop %s."%(self.player_name, display_name, drop_tile.symbol))
 		return drop_tile
 

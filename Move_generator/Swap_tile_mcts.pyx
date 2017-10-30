@@ -20,13 +20,12 @@ cdef class MCTSwapTileNode:
 		cdef TMap cpp_map_hand, cpp_map_remaining
 		cdef FHand cpp_fixed_hand
 		cdef vector[string] hand
-
 		if map_hand is not None:
 			for tile, count in map_hand.items():
 				cpp_map_hand[str(tile).encode("utf8")] = count
 
 		if map_remaining is not None:
-			for tile, count in map_hand.items():
+			for tile, count in map_remaining.items():
 				cpp_map_remaining[str(tile).encode("utf8")] = count
 
 		if fixed_hand is not None:
@@ -36,7 +35,6 @@ cdef class MCTSwapTileNode:
 				for tile in tiles:
 					hand.push_back(str(tile).encode("utf8"))
 				cpp_fixed_hand.push_back(hand)
-
 		self.cpp_node = new CppMCTSwapTileNode(cpp_fixed_hand, cpp_map_hand, cpp_map_remaining, tile_remaining, round_remaining, prior)
 
 	def search(self, max_iter, ucb_policy):
@@ -47,4 +45,5 @@ cdef class MCTSwapTileNode:
 		return result.decode("utf8")
 
 	def add_branch_action(self, identifier, MCTSwapTileNode node):
+		print("Adding branching action:", identifier)
 		self.cpp_node.add_branch_action(identifier.encode("utf8"), node.cpp_node)

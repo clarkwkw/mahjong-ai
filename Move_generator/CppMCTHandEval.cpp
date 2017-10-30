@@ -86,7 +86,7 @@ double eval_suit(TMap& map_hand, vector<CppTile>& suit_tiles, bool is_chow, int 
 			}
 		}
 	}
-	return max_score;
+	return max(max_score, tmp_score);
 }
 double map_hand_eval_func(FHand fixed_hand, TMap map_hand){
 	vector<CppTile> unique_tiles;
