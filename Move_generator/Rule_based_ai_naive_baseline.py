@@ -17,7 +17,7 @@ class RuleBasedAINaive(Move_generator):
 		self.s_mixed_suit = s_mixed_suit
 		self.display_step = display_step
 		self.s_neighbor_suit = s_neighbor_suit
-		super().__init__(player_name)
+		super(RuleBasedAINaive, self).__init__(player_name)
 
 	def reset_new_game(self):
 		self.majority_suit = None

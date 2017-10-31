@@ -12,7 +12,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.display_step = display_step
-		super().__init__(player_name)
+		super(RuleBasedAINaiveMCTS, self).__init__(player_name)
 
 	def reset_new_game(self):
 		pass

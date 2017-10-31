@@ -1,7 +1,9 @@
-import abc
+from __future__ import print_function
+import six, abc
 import Tile
 
-class Move_generator(metaclass = abc.ABCMeta):
+@six.add_metaclass(abc.ABCMeta)
+class Move_generator:
 	def __init__(self, player_name):
 		self.__player_name = player_name
 
@@ -34,10 +36,10 @@ class Move_generator(metaclass = abc.ABCMeta):
 		pass
 
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
-		line_format_left = "|{next:<20s}|{opposite:<20s}|{prev:<20s}|"
-		line_format_right = "|{next:>20s}|{opposite:>20s}|{prev:>20s}|"
-		line_merged_format_left = "|{msg:<62s}|"
-		line_merged_format_right = "|{msg:>62s}|"
+		line_format_left = u"|{next:<20s}|{opposite:<20s}|{prev:<20s}|"
+		line_format_right = u"|{next:>20s}|{opposite:>20s}|{prev:>20s}|"
+		line_merged_format_left = u"|{msg:<62s}|"
+		line_merged_format_right = u"|{msg:>62s}|"
 
 		horizontal_line = line_merged_format_left.format(msg = '-'*62)
 
