@@ -5,9 +5,11 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <cmath>
+using namespace std;
 
-int _min_faan = 3;
-double s_chow = 2, s_pong = 6;
+int const _min_faan = 3;
+double const s_chow = 2, s_pong = 6;
 
 map <string, CppTile> st_map;
 
@@ -65,7 +67,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 		if(map_hand[tile_name] >= 2){
 			matching_count = max(map_hand[tile_name], 3);
 			map_hand[tile_name] -= matching_count;
-			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * (4 - map_remaining[tile_name]) / 4.0);
+			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * pow((4 - map_remaining[tile_name]) / 4.0, 3 - matching_count));
 			pong_score = eval_suit(map_hand, map_remaining, suit_tiles, is_chow, processing, tmp_score + contribution);
 			if(pong_score > max_score){
 				max_score = pong_score;
@@ -174,17 +176,15 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 		return base_score + scoring_matrix[1][chow_suit_index];
 	}
 
-	double mixed_pong_score = 0, mixed_pong_suits_count = 0, max_chow_score = 0;
+	double mixed_pong_score = 0, max_chow_score = 0;
 	for(unsigned long i = 0; i<suits.size(); i++){
 		if(scoring_matrix[0][i] > 0){
-			mixed_pong_suits_count += 1;
+			mixed_pong_score += scoring_matrix[0][i];
 		}
 		if(scoring_matrix[1][i] > max_chow_score){
 			max_chow_score = scoring_matrix[1][i];
 		}
 	}
-
-	mixed_pong_score -= max(mixed_pong_suits_count - 1, 0.0);
 
 	if(pong_suits.size() == 0){
 		return base_score + max(mixed_pong_score, max_chow_score);

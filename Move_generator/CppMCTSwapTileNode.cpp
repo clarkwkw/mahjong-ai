@@ -102,7 +102,7 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 			}else{
 				score = current->grouped_actions["stop"].avg_score;
 			}
-			prior = current->prior;
+			//prior = current->prior;
 			current->grouped_actions["stop"].count_visit += 1;
 			current->grouped_actions["stop"].avg_score = score;
 			current->grouped_actions["stop"].sum_rollout_prob += prior;
@@ -125,7 +125,7 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 	double max_score = -1 * numeric_limits<float>::infinity();
 	string max_action = "";
 	for(auto const &ent: this->grouped_actions){
-		cout<<ent.first<<": "<<ent.second.avg_score<<endl;
+		//cout<<ent.first<<": "<<ent.second.avg_score<<endl;
 		if(ent.first == "stop")continue;
 		if(ent.second.avg_score > max_score){
 			max_score = ent.second.avg_score;
