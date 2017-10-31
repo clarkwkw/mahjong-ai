@@ -10,6 +10,7 @@ public:
 	string as_string();
 	bool operator<(const CppTile& other);
 	string generate_neighbor_tile_str(int offset);
+	int get_i_value();
 	
 	string _suit, _value;
 private:

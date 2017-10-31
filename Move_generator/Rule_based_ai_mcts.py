@@ -8,7 +8,7 @@ import numpy as np
 display_name = "RNAIM"
 
 class RuleBasedAINaiveMCTS(Move_generator):
-	def __init__(self, player_name, mcts_max_iter = 3000, mcts_ucb_policy = 2.5, display_step = True):
+	def __init__(self, player_name, mcts_max_iter = 10000, mcts_ucb_policy = 2.5, display_step = True):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.display_step = display_step

@@ -98,7 +98,7 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 		if(result.first == "stop"){
 			
 			if(current->grouped_actions["stop"].count_visit == 0){
-				score = map_hand_eval_func(current->fixed_hand, current->map_hand);
+				score = map_hand_eval_func(current->fixed_hand, current->map_hand, current->map_remaining);
 			}else{
 				score = current->grouped_actions["stop"].avg_score;
 			}
@@ -125,7 +125,7 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy){
 	double max_score = -1 * numeric_limits<float>::infinity();
 	string max_action = "";
 	for(auto const &ent: this->grouped_actions){
-		//cout<<ent.first<<": "<<ent.second.avg_score<<endl;
+		cout<<ent.first<<": "<<ent.second.avg_score<<endl;
 		if(ent.first == "stop")continue;
 		if(ent.second.avg_score > max_score){
 			max_score = ent.second.avg_score;
@@ -169,7 +169,7 @@ pair<double, double> CppMCTSwapTileNode::rollout(){
 	double prior = this->prior;
 	int swapped_count = 0;
 	vector <string> tiles, deck;
-	map <string, int> used_count, final_map_hand;
+	TMap final_map_hand,final_map_remaining = this->map_remaining;
 	
 	for(auto const& t_info: this->map_hand){
 		for(int i = 0; i<t_info.second; i++){
@@ -189,11 +189,11 @@ pair<double, double> CppMCTSwapTileNode::rollout(){
 		int dispose_tile_index = rand() % tiles.size();
 		string new_tile = deck[deck.size() - 1];
 
-		prior *= 1.0*(this->map_remaining[new_tile] - used_count[new_tile])/deck.size();
+		prior *= 1.0*(final_map_remaining[new_tile])/deck.size();
 
 		tiles[dispose_tile_index] = new_tile;
 
-		used_count[new_tile] += 1;
+		final_map_remaining[new_tile] -= 1;
 		deck.pop_back();
 		++swapped_count;
 	}
@@ -202,7 +202,7 @@ pair<double, double> CppMCTSwapTileNode::rollout(){
 		final_map_hand[tiles[i]] += 1;
 	}
 
-	double score = map_hand_eval_func(this->fixed_hand, final_map_hand);
+	double score = map_hand_eval_func(this->fixed_hand, final_map_hand, final_map_remaining);
 	string emptys = "";
 	this->new_visit(prior, score, emptys);
 	return make_pair(prior, score);

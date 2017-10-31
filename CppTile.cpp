@@ -9,7 +9,8 @@ CppTile::CppTile(string suit, string value){
 	this->_suit = suit;
 	this->_value = value;
 	this->_is_digit = isdigit(value[0]);
-
+	this->_i_value = 0;
+	
 	if(this->_is_digit){
 		this->_i_value = stoi(value.c_str());
 	}
@@ -22,6 +23,10 @@ string CppTile::get_suit(){
 string CppTile::get_value(){
 	return this->_value;
 }
+
+int CppTile::get_i_value(){
+	return this->_i_value;
+} 
 
 string CppTile::as_string(){
 	return this->_suit+"-"+this->_value;

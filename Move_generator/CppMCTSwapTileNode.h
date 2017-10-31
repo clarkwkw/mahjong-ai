@@ -43,4 +43,4 @@ private:
 	void expand();
 };
 
-double map_hand_eval_func(FHand fixed_hand, TMap map_hand);
+double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining);
