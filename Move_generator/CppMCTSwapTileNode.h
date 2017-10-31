@@ -1,3 +1,5 @@
+#ifndef MCT_INCLUDE_FLAG
+#define MCT_INCLUDE_FLAG 1
 #include <map>
 #include <string>
 #include <vector>
@@ -28,9 +30,9 @@ public:
 
 	CppMCTSwapTileNode();
 	CppMCTSwapTileNode(FHand& fixed_hand, TMap map_hand, TMap map_remaining, int tile_remaining, int round_remaining, double prior);
-	string search(int max_iter, double ucb_policy);
+	string search(int max_iter, double ucb_policy, int _min_faan);
 	void new_visit(double prior, double score, string& action);
-	pair<double, double>  rollout();
+	pair<double, double>  rollout(int _min_faan);
 	pair<string, CppMCTSwapTileNode*> argmax_ucb(double ucb_policy, bool is_root);
 	void add_branch_action(string identifier, CppMCTSwapTileNode* node);
 	int get_count_visit();
@@ -43,4 +45,5 @@ private:
 	void expand();
 };
 
-double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining);
+double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int _min_faan);
+#endif

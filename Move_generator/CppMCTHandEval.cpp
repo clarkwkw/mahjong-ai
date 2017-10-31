@@ -8,7 +8,6 @@
 #include <cmath>
 using namespace std;
 
-int const _min_faan = 3;
 double const s_chow = 1, s_pong = 1, s_future = 0.04;
 
 map <string, CppTile> st_map;
@@ -116,7 +115,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 	}
 	return max(max_score, tmp_score);
 }
-double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining){
+double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int _min_faan){
 	vector<CppTile> unique_tiles;
 	map<string, vector<CppTile> > suit_tiles;
 	double base_score = fixed_hand.size();

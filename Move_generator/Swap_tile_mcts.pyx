@@ -1,15 +1,17 @@
 from libcpp.string cimport string
 from libcpp.map cimport map
 from libcpp.vector cimport vector
+import Scoring_rules
 
 ctypedef map[string, int] TMap;
 ctypedef vector[ vector[string] ] FHand;
 
 cdef extern from "CppMCTSwapTileNode.h":
+
 	cdef cppclass CppMCTSwapTileNode:
 		CppMCTSwapTileNode() except +
 		CppMCTSwapTileNode(FHand fixed_hand, TMap map_hand, TMap map_remaining, int tile_remaining, int round_remaining, double prior) except +
-		string search(int max_iter, double ucb_policy)
+		string search(int max_iter, double ucb_policy, int _min_faan)
 		void add_branch_action(string identifier, CppMCTSwapTileNode* node)
 
 
@@ -40,7 +42,7 @@ cdef class MCTSwapTileNode:
 	def search(self, max_iter, ucb_policy):
 		cdef string result
 		
-		result = self.cpp_node.search(max_iter, ucb_policy)
+		result = self.cpp_node.search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
 
 		return result.decode("utf8")
 
