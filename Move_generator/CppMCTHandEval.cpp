@@ -9,7 +9,7 @@
 using namespace std;
 
 int const _min_faan = 3;
-double const s_chow = 2, s_pong = 6;
+double const s_chow = 1, s_pong = 1, s_future = 0.04;
 
 map <string, CppTile> st_map;
 
@@ -67,7 +67,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 		if(map_hand[tile_name] >= 2){
 			matching_count = max(map_hand[tile_name], 3);
 			map_hand[tile_name] -= matching_count;
-			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * pow((4 - map_remaining[tile_name]) / 4.0, 3 - matching_count));
+			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * (4 - map_remaining[tile_name]) / 4.0);
 			pong_score = eval_suit(map_hand, map_remaining, suit_tiles, is_chow, processing, tmp_score + contribution);
 			if(pong_score > max_score){
 				max_score = pong_score;
@@ -105,6 +105,15 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 			}
 		}
 	}
+	string tile_name;
+	if(max_path == suit_tiles.size()){
+		for(unsigned long i = 0; i < suit_tiles.size(); i++){
+			tile_name = suit_tiles[i].as_string();
+			if(map_hand[tile_name] > 0){
+				tmp_score += s_future * map_remaining[tile_name] / 4.0;
+			}
+		}
+	}
 	return max(max_score, tmp_score);
 }
 double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining){
@@ -136,9 +145,9 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 	for(auto& t_info: map_hand){
 		CppTile tile = str_to_tile(t_info.first);
 		if(tile._suit == "honor"){
-			if(t_info.second >= 3){
+			if(t_info.second >= 2){
 				t_info.second -= 3;
-				base_score += 1;
+				base_score += s_pong * (t_info.second / 3.0 + (1 - t_info.second / 3.0) * (4 - map_remaining[t_info.first]) / 4.0);
 				is_honor = true;
 				is_rgw = tile._value == "red" || tile._value == "green" || tile._value == "white";
 			}

@@ -170,7 +170,11 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		if game.deck_size//4 > 0:
 			fixed_hand = player.fixed_hand
 			map_hand, map_remaining, tile_remaining = self.preprocess_info(player, neighbors)
-			
+
+			if new_tile is not None:
+				utils.map_increment(map_hand, new_tile, 1)
+				utils.map_increment(map_remaining, new_tile, -1, remove_zero = True)
+
 			root = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4)	
 			
 			drop_tile_str = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
