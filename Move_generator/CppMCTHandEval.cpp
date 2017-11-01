@@ -89,7 +89,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 					chow_prob *= (4 - map_remaining[tile_strs[i]])/4.0;
 				}
 			}
-			if(matching_count >= 2){
+			if(matching_count >= 2 && chow_prob > 0){
 				contribution = s_chow * matching_count/3.0 * chow_prob;
 				chow_score = eval_suit(map_hand, map_remaining, suit_tiles, is_chow, processing + 1, tmp_score + contribution);
 				if(chow_score > max_score){
