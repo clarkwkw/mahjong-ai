@@ -26,7 +26,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		best_choice = -1
 		if game.deck_size//4 > 0:
 			map_hand, map_remaining, tile_remaining = self.preprocess_info(player, neighbors)
-			root = MCTSwapTileNode(round_remaining = game.deck_size//4)
+			root = MCTSwapTileNode(round_remaining = game.deck_size//4, is_root = True)
 			
 			for choice in choices:
 				tiles = []
@@ -68,7 +68,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		
 		original_fixed_hand = player.fixed_hand
 		map_hand, map_remaining, tile_remaining = self.preprocess_info(player, neighbors)
-		root = MCTSwapTileNode(round_remaining = game.deck_size//4)
+		root = MCTSwapTileNode(round_remaining = game.deck_size//4, is_root = True)
 
 		# To kong
 		kong_fixed_hand, kong_map_hand, kong_map_remaining = list(original_fixed_hand), map_hand.copy(), map_remaining.copy()
@@ -126,7 +126,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			utils.map_increment(map_remaining, new_tile, -1, remove_zero = True)
 			tile_remaining = tile_remaining - 1
 
-			root = MCTSwapTileNode(round_remaining = game.deck_size//4)
+			root = MCTSwapTileNode(round_remaining = game.deck_size//4, is_root = True)
 
 			pong_fixed_hand, pong_map_hand, pong_map_remaining = list(original_fixed_hand), map_hand.copy(), map_remaining.copy()
 			
@@ -175,7 +175,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 				utils.map_increment(map_hand, new_tile, 1)
 				utils.map_increment(map_remaining, new_tile, -1, remove_zero = True)
 
-			root = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4)	
+			root = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4, is_root = True)	
 			
 			drop_tile_str = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
 			drop_tile = Tile.Tile(drop_tile_str.split("-")[0], drop_tile_str.split("-")[1])

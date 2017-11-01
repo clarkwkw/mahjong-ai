@@ -53,6 +53,13 @@ CppMCTSwapTileNode* CppMCTGroupAction::get_least_visited_node(){
 	return result;
 }
 
+void CppMCTGroupAction::destroy(){
+	for(unsigned long i = 0; i<this->actions.size(); i++){
+		this->actions[i]->destroy();
+		delete this->actions[i];
+	}
+}
+
 CppMCTSwapTileNode::CppMCTSwapTileNode(){
 
 }
@@ -322,4 +329,10 @@ void CppMCTSwapTileNode::add_branch_action(string identifier, CppMCTSwapTileNode
 
 int CppMCTSwapTileNode::get_count_visit(){
 	return this->count_visit;
+}
+
+void CppMCTSwapTileNode::destroy(){
+	for(auto& gaction_info: this->grouped_actions){
+		gaction_info.second.destroy();
+	}
 }

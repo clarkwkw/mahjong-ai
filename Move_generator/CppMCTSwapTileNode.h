@@ -1,6 +1,6 @@
 #ifndef MCT_INCLUDE_FLAG
 #define MCT_INCLUDE_FLAG 1
-#define MCT_PRINT_SCORES_FLAG 1
+#define MCT_PRINT_SCORES_FLAG 0
 #include <map>
 #include <string>
 #include <vector>
@@ -23,6 +23,7 @@ public:
 	CppMCTGroupAction();
 	CppMCTSwapTileNode* expand(string drop_tile, FHand& fixed_hand, TMap& map_hand, TMap& map_remaining, int tile_remaining, int round_remaining, double prev_prior);
 	CppMCTSwapTileNode* get_least_visited_node();
+	void destroy();
 };
 
 class CppMCTSwapTileNode{
@@ -37,6 +38,8 @@ public:
 	pair<string, CppMCTSwapTileNode*> argmax_ucb(double ucb_policy, bool is_root);
 	void add_branch_action(string identifier, CppMCTSwapTileNode* node);
 	int get_count_visit();
+	void destroy();
+	
 private:
 	TMap map_hand, map_remaining;
 	int tile_remaining, round_remaining;

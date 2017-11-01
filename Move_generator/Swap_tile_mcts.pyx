@@ -14,15 +14,19 @@ cdef extern from "CppMCTSwapTileNode.h":
 		string search(int max_iter, double ucb_policy, int _min_faan)
 		string parallel_search(int max_iter, double ucb_policy, int _min_faan)
 		void add_branch_action(string identifier, CppMCTSwapTileNode* node)
+		void destroy()
 
 
 cdef class MCTSwapTileNode:
 	cdef CppMCTSwapTileNode* cpp_node
+	cdef int is_root
 
-	def __cinit__(self, fixed_hand = None, map_hand = None, map_remaining = None, tile_remaining = 0, round_remaining = 0, prior = 1):
+	def __cinit__(self, fixed_hand = None, map_hand = None, map_remaining = None, tile_remaining = 0, round_remaining = 0, prior = 1, is_root = False):
 		cdef TMap cpp_map_hand, cpp_map_remaining
 		cdef FHand cpp_fixed_hand
 		cdef vector[string] hand
+
+		self.is_root = is_root
 		if map_hand is not None:
 			for tile, count in map_hand.items():
 				cpp_map_hand[str(tile).encode("utf8")] = count
@@ -50,3 +54,8 @@ cdef class MCTSwapTileNode:
 
 	def add_branch_action(self, identifier, MCTSwapTileNode node):
 		self.cpp_node.add_branch_action(identifier.encode("utf8"), node.cpp_node)
+
+	def __dealloc__(self):
+		if self.is_root:
+			self.cpp_node.destroy()
+			del self.cpp_node
