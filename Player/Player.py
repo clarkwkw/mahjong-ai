@@ -45,21 +45,16 @@ class Player:
 			raise Exception("Unknown filter_state '%s'"%filter_state)
 
 	def get_tile_hand_count(self, tile):
-		if tile in self.__hand_count_map:
-			return self.__hand_count_map[tile]
-		else:
-			return 0
+		return self.__hand_count_map.get(tile, 0)
 
 	def add_cumulate_score(self, score):
 		self.__cumulate_score += score
 
 	def __update_hand_count_map(self, tile, adjustment):
-		if self.get_tile_hand_count(tile) + adjustment < 0:
+		new_value = self.__hand_count_map.get(tile, 0) + adjustment
+		if new_value < 0:
 			raise Exception("Invalid adjustment")
-		if tile in self.__hand_count_map:
-			self.__hand_count_map[tile] += adjustment
-		else:
-			self.__hand_count_map[tile] = adjustment
+		self.__hand_count_map[tile] = new_value
 
 	def new_turn(self, new_tile, neighbors, game):
 		dispose_tile = None
