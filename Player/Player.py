@@ -130,7 +130,8 @@ class Player:
 		if criteria:
 			is_able = True
 			is_wants_to, which = self.__move_generator.decide_chow(self, new_tile, choices, neighbors, game)
-
+			if which not in choices:
+				raise Exception("Choice (%d) not found, %s given"%(which, ','.join([str(choice) for choice in choices])))
 		return is_able, is_wants_to, which
 
 	#search_hand: "fixed_hand" / "hand" / "both"
