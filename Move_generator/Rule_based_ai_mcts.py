@@ -23,7 +23,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 
 		self.print_msg("Someone just discarded a %s. (%s)"%(new_tile.symbol, ", ".join([str(choice) for choice in choices])))
 
-		best_choice = -1
+		best_choice = choices[0]
 		if game.deck_size//4 > 0:
 			map_hand, map_remaining, tile_remaining = self.preprocess_info(player, neighbors)
 			root = MCTSwapTileNode(round_remaining = game.deck_size//4, is_root = True)
