@@ -2,10 +2,12 @@ from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 from Cython.Build import cythonize
-import os
+import platform, os
 
-os.environ["CC"] = "g++-6"
-os.environ["CXX"] = "g++-6"
+if platform.system().lower() == "darwin":
+	os.environ["CC"] = "g++-6"
+	os.environ["CXX"] = "g++-6"
+
 ext_modules=[
 	Extension(
 		"Move_generator.Swap_tile_mcts", 
