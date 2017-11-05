@@ -66,7 +66,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 		if(map_hand[tile_name] >= 2){
 			matching_count = max(map_hand[tile_name], 3);
 			map_hand[tile_name] -= matching_count;
-			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * (4 - map_remaining[tile_name]) / 4.0);
+			contribution = s_pong * (matching_count / 3.0 + (1 - matching_count / 3.0) * (map_remaining[tile_name]) / 4.0);
 			pong_score = eval_suit(map_hand, map_remaining, suit_tiles, is_chow, processing, tmp_score + contribution);
 			if(pong_score > max_score){
 				max_score = pong_score;
@@ -86,7 +86,7 @@ double eval_suit(TMap& map_hand, TMap& map_remaining, vector<CppTile>& suit_tile
 					map_hand[tile_strs[i]] -= 1;
 				}else{
 					chow_matching.push_back(false);
-					chow_prob *= (4 - map_remaining[tile_strs[i]])/4.0;
+					chow_prob *= (map_remaining[tile_strs[i]])/4.0;
 				}
 			}
 			if(matching_count >= 2 && chow_prob > 0){
@@ -146,7 +146,7 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 		if(tile._suit == "honor"){
 			if(t_info.second >= 2){
 				t_info.second -= 3;
-				base_score += s_pong * (t_info.second / 3.0 + (1 - t_info.second / 3.0) * (4 - map_remaining[t_info.first]) / 4.0);
+				base_score += s_pong * (t_info.second / 3.0 + (1 - t_info.second / 3.0) * (map_remaining[t_info.first]) / 4.0);
 				is_honor = true;
 				is_rgw = tile._value == "red" || tile._value == "green" || tile._value == "white";
 			}
