@@ -9,6 +9,14 @@ class Player:
 		self.__name = player_name
 
 	@property
+	def avg_drop_tile_time(self):
+		return self.__move_generator.avg_drop_tile_time
+
+	@property
+	def avg_decision_time(self):
+		return self.__move_generator.avg_decision_time
+
+	@property
 	def cumulate_score(self):
 		return self.__cumulate_score
 
@@ -60,8 +68,8 @@ class Player:
 		dispose_tile = None
 
 		if new_tile is not None:
-
 			is_able, is_wants_to, score = self.check_win(new_tile, "draw", neighbors, game)
+
 			if is_able and is_wants_to:
 				return None, score, None
 

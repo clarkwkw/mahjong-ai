@@ -8,7 +8,7 @@
 #include <cmath>
 using namespace std;
 
-double const s_chow = 1, s_pong = 1, s_future = 0.04;
+double const s_chow = 1, s_pong = 1.2, s_future = 0.15;
 
 map <string, CppTile> st_map;
 

@@ -1,11 +1,25 @@
 from __future__ import print_function
 import six, abc
 import Tile
+from timeit import default_timer as timer
 
 @six.add_metaclass(abc.ABCMeta)
 class Move_generator:
 	def __init__(self, player_name):
 		self.__player_name = player_name
+		self.__start_time = None
+		self.__avg_drop_tile_time = 0
+		self.__avg_decision_time = 0
+		self.__decision_count = 0
+		self.__drop_tile_count = 0
+
+	@property
+	def avg_drop_tile_time(self):
+		return self.__avg_drop_tile_time
+
+	@property
+	def avg_decision_time(self):
+		return self.__avg_decision_time
 
 	@property
 	def player_name(self):
@@ -34,6 +48,23 @@ class Move_generator:
 	@abc.abstractmethod
 	def reset_new_game(self):
 		pass
+
+	def begin_decision(self):
+		self.__start_time = timer()
+
+	def end_decision(self, is_drop_tile = False):
+		if self.__start_time is None:
+			raise Exception("Have not started a decision yet")
+
+		time_elapsed = timer() - self.__start_time
+		self.__start_time = None
+
+		self.__avg_decision_time = (self.__avg_decision_time * self.__decision_count + time_elapsed)/(self.__decision_count + 1)
+		self.__decision_count += 1
+
+		if is_drop_tile:
+			self.__avg_drop_tile_time = (self.__avg_drop_tile_time * self.__drop_tile_count + time_elapsed)/(self.__drop_tile_count + 1)
+			self.__drop_tile_count += 1
 
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		line_format_left = u"|{next:<20s}|{opposite:<20s}|{prev:<20s}|"

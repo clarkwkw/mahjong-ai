@@ -23,6 +23,8 @@ class RuleBasedAINaive(Move_generator):
 		self.majority_suit = None
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
+		self.begin_decision()
+
 		fixed_hand, hand = player.fixed_hand, player.hand
 
 		if self.display_step:
@@ -34,6 +36,7 @@ class RuleBasedAINaive(Move_generator):
 		for i in range(choices[0] - 1, choices[0] + 2):
 			chow_tiles_str += new_tile.generate_neighbor_tile(i).symbol
 
+		self.end_decision()
 		if new_tile.suit != self.majority_suit:
 			self.print_msg("%s [%s] chooses not to Chow %s."%(self.player_name, display_name, chow_tiles_str))
 			return False, None
@@ -42,6 +45,7 @@ class RuleBasedAINaive(Move_generator):
 			return True, choices[0]
 
 	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
+		self.begin_decision()
 		fixed_hand, hand = player.fixed_hand, player.hand
 
 		if self.display_step:
@@ -60,6 +64,7 @@ class RuleBasedAINaive(Move_generator):
 			location = "hand"
 
 		criteria = self.majority_suit == "mixed" or kong_tile.suit in [self.majority_suit, "honor"]
+		self.end_decision()
 		if criteria:
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
 			return True
@@ -68,6 +73,8 @@ class RuleBasedAINaive(Move_generator):
 			return False
 
 	def decide_pong(self, player, new_tile, neighbors, game):
+		self.begin_decision()
+
 		fixed_hand, hand = player.fixed_hand, player.hand
 
 		if self.display_step:
@@ -76,6 +83,8 @@ class RuleBasedAINaive(Move_generator):
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
 		criteria = self.majority_suit == "mixed" or new_tile.suit in [self.majority_suit, "honor"]
+		
+		self.end_decision()
 		if criteria:
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
 			return True
@@ -84,6 +93,8 @@ class RuleBasedAINaive(Move_generator):
 			return False
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
+		self.begin_decision()
+
 		fixed_hand, hand = player.fixed_hand, player.hand
 		if self.display_step:
 			if src == "steal":
@@ -99,9 +110,12 @@ class RuleBasedAINaive(Move_generator):
 			utils.print_hand(grouped_hand, end = " ")
 			self.print_msg("[%d]"%score)
 
+		self.end_decision()
 		return True
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
+		self.begin_decision()
+
 		fixed_hand, hand = player.fixed_hand, player.hand
 
 		if self.display_step:
@@ -128,7 +142,8 @@ class RuleBasedAINaive(Move_generator):
 
 		drop_tile_score, drop_tile =  score_tile_rank[0]
 		self.print_msg("%s [%s] chooses to drop %s (%.2f) [majority = %s]."%(self.player_name, display_name, drop_tile.symbol, drop_tile_score, self.majority_suit))
-
+		self.end_decision(True)
+		
 		return drop_tile
 
 	'''

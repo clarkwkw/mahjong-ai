@@ -18,6 +18,8 @@ class RuleBasedAINaiveMCTS(Move_generator):
 		pass
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
+		self.begin_decision()
+
 		if self.display_step:
 			self.print_game_board(player.fixed_hand, player.hand, neighbors, game)
 
@@ -50,7 +52,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			root.add_branch_action("no_action", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))
 			
 			best_choice = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
-
+		self.end_decision()
 		if best_choice == "no_action":
 			self.print_msg("%s [%s] chooses not to Chow."%(self.player_name, display_name))
 			return False, None
@@ -63,6 +65,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			return True, best_choice
 
 	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
+		self.begin_decision()
 		if self.display_step:
 			self.print_game_board(player.fixed_hand, player.hand, neighbors, game)
 		
@@ -104,7 +107,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			root.add_branch_action("True", MCTSwapTileNode(kong_fixed_hand, kong_map_hand, kong_map_remaining, kong_tile_remaining, game.deck_size//4))
 			root.add_branch_action("False", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))
 			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
-		
+		self.end_decision()
 		if result == "True":
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
 			return True
@@ -113,6 +116,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			return False
 
 	def decide_pong(self, player, new_tile, neighbors, game):
+		self.begin_decision()
 		if self.display_step:
 			self.print_game_board(player.fixed_hand, player.hand, neighbors, game)
 		
@@ -137,7 +141,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			root.add_branch_action("True", MCTSwapTileNode(pong_fixed_hand, pong_map_hand, pong_map_remaining, tile_remaining, game.deck_size//4))
 			root.add_branch_action("False", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))			
 			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
-			
+		self.end_decision()
 		if result == "True":
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
 			return True
@@ -146,6 +150,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			return False
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
+		self.begin_decision()
 		if self.display_step:
 			if src == "steal":
 				self.print_game_board(player.fixed_hand, player.hand, neighbors, game)
@@ -159,10 +164,11 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			utils.print_hand(fixed_hand, end = " ")
 			utils.print_hand(grouped_hand, end = " ")
 			self.print_msg("[%d]"%score)
-
+		self.end_decision()
 		return True
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
+		self.begin_decision()
 		if self.display_step:
 			self.print_game_board(player.fixed_hand, player.hand, neighbors, game, new_tile)
 
@@ -181,6 +187,7 @@ class RuleBasedAINaiveMCTS(Move_generator):
 			drop_tile = Tile.Tile(drop_tile_str.split("-")[0], drop_tile_str.split("-")[1])
 
 		self.print_msg("%s [%s] chooses to drop %s."%(self.player_name, display_name, drop_tile.symbol))
+		self.end_decision(True)
 		return drop_tile
 
 	def preprocess_info(self, player, neighbors):
