@@ -68,5 +68,6 @@ def test():
 
 	print("Average      :\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(scoring_matrix[:, :, 0].mean(), scoring_matrix[:, :, 1].mean(), scoring_matrix[:, :, 2].mean(), scoring_matrix[:, :, 3].mean()))
 	print("Total        :\t{:4.0f}\t{:4.0f}\t{:4.0f}\t{:4.0f}".format(scoring_matrix[:, :, 0].sum(), scoring_matrix[:, :, 1].sum(), scoring_matrix[:, :, 2].sum(), scoring_matrix[:, :, 3].sum()))
+	print("Average time spent on deciding which tile to discard:")
 	for player in _player_master_list:
 		print("%s: %.5f"%(player.name, player.avg_drop_tile_time))
