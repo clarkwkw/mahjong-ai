@@ -6,7 +6,7 @@
 #include <vector>
 #include <utility>
 #include <tuple>
-#include "../Tile/CppTile.h"
+#include "../../Tile/CppTile.h"
 using namespace std;
 
 class CppMCTGroupAction;

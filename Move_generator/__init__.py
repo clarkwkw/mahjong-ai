@@ -1,4 +1,5 @@
 from .Human import Human
+from .Move_generator import Move_generator
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
-from .Rule_based_ai_mcts import RuleBasedAINaiveMCTS
-from .Rule_based_ai_mcts_py import RuleBasedAINaiveMCTSPy
+from .MCTSCpp import RuleBasedAINaiveMCTSCpp
+from .MCTSPy import RuleBasedAINaiveMCTSPy

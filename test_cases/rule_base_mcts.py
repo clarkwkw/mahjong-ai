@@ -3,12 +3,12 @@ import Player
 import Move_generator
 
 def test():
-
 	player_names = [
 	("Amy", Move_generator.Human, {}), 
-	("Billy", Move_generator.RuleBasedAINaiveMCTS, {"display_step": True}), 
+	("Billy", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True}), 
 	("Clark", Move_generator.Human, {}), 
-	("Doe", Move_generator.RuleBasedAINaiveMCTS, {"display_step": True})]
+	("Doe", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True})
+	]
 
 	players = []
 	game = None

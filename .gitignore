@@ -1,5 +1,5 @@
 .DS_Store
 __pycache__
 *.pyc
-Move_generator/Swap_tile_mcts.cpp
+Move_generator/MCTSCpp/cpp_interface.cpp
 *.so
