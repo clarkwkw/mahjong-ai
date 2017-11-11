@@ -5,9 +5,9 @@ import Move_generator
 def test():
 	player_names = [
 	("Amy", Move_generator.Human, {}), 
-	("Billy", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True, "parallel": False}), 
+	("Billy", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True, "parallel": True}), 
 	("Clark", Move_generator.Human, {}), 
-	("Doe", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True, "parallel": False})
+	("Doe", Move_generator.RuleBasedAINaiveMCTSCpp, {"display_step": True, "parallel": True})
 	]
 
 	players = []

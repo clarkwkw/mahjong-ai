@@ -87,7 +87,6 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 		}
 	}
 	max_iter = max_iter / this->grouped_actions.size() + 1;
-
 	#pragma omp parallel for
 	for(unsigned long j = 0; j < this->grouped_actions.size(); j++){
 		auto it = this->grouped_actions.begin();
@@ -110,7 +109,7 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 				it->second.count_visit += 1;
 			}
 		}
-
+		
 	}
 	double max_score = -1 * numeric_limits<float>::infinity();
 	string max_action = "";
