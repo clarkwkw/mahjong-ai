@@ -3,3 +3,5 @@ __pycache__
 *.pyc
 Move_generator/MCTSCpp/cpp_interface.cpp
 *.so
+output
+mahjong-ai.zip

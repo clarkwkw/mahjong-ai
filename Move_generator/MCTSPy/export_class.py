@@ -150,7 +150,7 @@ class RuleBasedAINaiveMCTSPy(Move_generator):
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.map_hand_eval_func = mcts_map_hand_eval_func
 		self.display_step = display_step
-		super(RuleBasedAINaiveMCTSCpp, self).__init__(player_name)
+		super(RuleBasedAINaiveMCTSPy, self).__init__(player_name)
 
 	def reset_new_game(self):
 		pass
