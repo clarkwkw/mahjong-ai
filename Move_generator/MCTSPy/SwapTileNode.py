@@ -41,7 +41,7 @@ class MCTSwapTileNode:
 		self.sum_rollouts_prob += prior
 		self.count_visit += 1
 		if action in self.grouped_actions:
-			self.grouped_actions[action]["avg_score"] = (self.grouped_actions[action]["sum_rollouts_prob"]*self.grouped_actions[action]["avg_score"] + prior*score)/(self.grouped_actions[action]["sum_rollouts_prob"] + prior)
+			self.grouped_actions[action]["avg_score"] = 1.0*(self.grouped_actions[action]["sum_rollouts_prob"]*self.grouped_actions[action]["avg_score"] + prior*score)/(self.grouped_actions[action]["sum_rollouts_prob"] + prior)
 			self.grouped_actions[action]["sum_rollouts_prob"] += prior
 			self.grouped_actions[action]["count_visit"] += 1
 
@@ -65,11 +65,11 @@ class MCTSwapTileNode:
 
 		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining, random.sample(map_remaining.keys(), k = 1)[0])
 
-		#self.new_visit(prior, score)
-		#return prior, score
+		self.new_visit(prior, score)
+		return prior, score
 
-		self.new_visit(1.0, score)
-		return 1.0, score
+		#self.new_visit(1.0, score)
+		#return 1.0, score
 		
 
 	def search(self, max_iter, ucb_policy, map_hand_eval_func):
@@ -77,6 +77,7 @@ class MCTSwapTileNode:
 		for i in range(max_iter):
 			current = self
 			prev_action, action = None, None
+			prior, score = 0, 0
 			while len(current.children) > 0 or current.count_visit > 0:
 				action, child = current.argmax_ucb(ucb_policy = ucb_policy, is_root = current == self)
 				stack.append((prev_action, current))
@@ -90,7 +91,7 @@ class MCTSwapTileNode:
 					score = map_hand_eval_func(current.fixed_hand, current.map_hand, current.map_remaining, current.tile_remaining)
 				else:
 					score = current.grouped_actions["stop"]["avg_score"]
-				prior = current.prior
+				prior = 1
 				current.grouped_actions["stop"]["sum_rollouts_prob"] += prior
 				current.grouped_actions["stop"]["count_visit"] += 1
 			else:

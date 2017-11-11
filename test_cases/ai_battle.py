@@ -6,10 +6,10 @@ import random
 
 
 _player_parameters = [
-	(Move_generator.RuleBasedAINaiveMCTSPy, {"player_name": "Amy", "display_step": False}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0}),
-	(Move_generator.RuleBasedAINaiveMCTSPy, {"player_name": "Clark", "display_step": False}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5,"s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0})
+	(Move_generator.RuleBasedAINaiveMCTSCpp, {"player_name": "Amy", "display_step": False, "parallel": False, "mcts_max_iter": 1000}),
+	(Move_generator.RuleBasedAINaive, {"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1, "s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0}),
+	(Move_generator.RuleBasedAINaiveMCTSCpp, {"player_name": "Clark", "display_step": False, "parallel": False, "mcts_max_iter": 1000}),
+	(Move_generator.RuleBasedAINaive, {"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1,"s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0})
 ]
 '''
 _player_parameters = [

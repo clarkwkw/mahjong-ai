@@ -8,10 +8,11 @@ import numpy as np
 display_name = "RNAIM"
 
 class RuleBasedAINaiveMCTSCpp(Move_generator):
-	def __init__(self, player_name, mcts_max_iter = 800, mcts_ucb_policy = 2.5, display_step = True):
+	def __init__(self, player_name, mcts_max_iter = 1000, mcts_ucb_policy = 2.5, parallel = True, display_step = True):
 		self.mcts_max_iter = mcts_max_iter
 		self.mcts_ucb_policy = mcts_ucb_policy
 		self.display_step = display_step
+		self.parallel = parallel
 		super(RuleBasedAINaiveMCTSCpp, self).__init__(player_name)
 
 	def reset_new_game(self):
@@ -51,7 +52,7 @@ class RuleBasedAINaiveMCTSCpp(Move_generator):
 
 			root.add_branch_action("no_action", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))
 			
-			best_choice = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
+			best_choice = root.search(self.mcts_max_iter, self.mcts_ucb_policy, self.parallel)
 		self.end_decision()
 		if best_choice == "no_action":
 			self.print_msg("%s [%s] chooses not to Chow."%(self.player_name, display_name))
@@ -106,7 +107,7 @@ class RuleBasedAINaiveMCTSCpp(Move_generator):
 		if game.deck_size//4 > 0:
 			root.add_branch_action("True", MCTSwapTileNode(kong_fixed_hand, kong_map_hand, kong_map_remaining, kong_tile_remaining, game.deck_size//4))
 			root.add_branch_action("False", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))
-			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
+			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy, self.parallel)
 		self.end_decision()
 		if result == "True":
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
@@ -140,7 +141,7 @@ class RuleBasedAINaiveMCTSCpp(Move_generator):
 			
 			root.add_branch_action("True", MCTSwapTileNode(pong_fixed_hand, pong_map_hand, pong_map_remaining, tile_remaining, game.deck_size//4))
 			root.add_branch_action("False", MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4))			
-			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
+			result = root.search(self.mcts_max_iter, self.mcts_ucb_policy, self.parallel)
 		self.end_decision()
 		if result == "True":
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
@@ -183,7 +184,7 @@ class RuleBasedAINaiveMCTSCpp(Move_generator):
 
 			root = MCTSwapTileNode(player.fixed_hand, map_hand, map_remaining, tile_remaining, game.deck_size//4, is_root = True)	
 			
-			drop_tile_str = root.search(self.mcts_max_iter, self.mcts_ucb_policy)
+			drop_tile_str = root.search(self.mcts_max_iter, self.mcts_ucb_policy, self.parallel)
 			drop_tile = Tile.Tile(drop_tile_str.split("-")[0], drop_tile_str.split("-")[1])
 
 		self.print_msg("%s [%s] chooses to drop %s."%(self.player_name, display_name, drop_tile.symbol))

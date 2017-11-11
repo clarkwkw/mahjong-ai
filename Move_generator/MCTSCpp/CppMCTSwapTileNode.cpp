@@ -85,6 +85,7 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 			ent.second.expand(ent.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
 		}
 	}
+	max_iter = max_iter / this->grouped_actions.size() + 1;
 	#pragma omp parallel
 	#pragma omp single
 	for(auto it = this->grouped_actions.begin(); it != this->grouped_actions.end(); ++it){

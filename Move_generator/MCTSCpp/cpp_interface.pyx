@@ -44,11 +44,13 @@ cdef class MCTSwapTileNode:
 				cpp_fixed_hand.push_back(hand)
 		self.cpp_node = new CppMCTSwapTileNode(cpp_fixed_hand, cpp_map_hand, cpp_map_remaining, tile_remaining, round_remaining, prior)
 
-	def search(self, max_iter, ucb_policy):
+	def search(self, max_iter, ucb_policy, parallel):
 		cdef string result
 		
-		#result = self.cpp_node.search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
-		result = self.cpp_node.parallel_search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
+		if parallel:
+			result = self.cpp_node.parallel_search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
+		else:
+			result = self.cpp_node.search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
 
 		return result.decode("utf8")
 
