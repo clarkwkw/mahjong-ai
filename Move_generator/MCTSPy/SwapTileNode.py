@@ -65,11 +65,11 @@ class MCTSwapTileNode:
 
 		score = map_hand_eval_func(self.fixed_hand, map_hand, map_remaining, tile_remaining, random.sample(map_remaining.keys(), k = 1)[0])
 
-		self.new_visit(prior, score)
-		return prior, score
+		#self.new_visit(prior, score)
+		#return prior, score
 
-		#self.new_visit(1.0, score)
-		#return 1.0, score
+		self.new_visit(1.0, score)
+		return 1.0, score
 		
 
 	def search(self, max_iter, ucb_policy, map_hand_eval_func):
@@ -96,7 +96,6 @@ class MCTSwapTileNode:
 				current.grouped_actions["stop"]["count_visit"] += 1
 			else:
 				prior, score = current.rollout(map_hand_eval_func = map_hand_eval_func)
-
 			while len(stack) > 0:
 				action, parent = stack.pop()
 				parent.new_visit(prior, score, action = action)

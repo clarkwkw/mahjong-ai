@@ -267,8 +267,11 @@ pair<double, double> CppMCTSwapTileNode::rollout(int _min_faan){
 
 	double score = map_hand_eval_func(this->fixed_hand, final_map_hand, final_map_remaining, _min_faan);
 	string emptys = "";
-	this->new_visit(prior, score, emptys);
-	return make_pair(prior, score);
+	//this->new_visit(prior, score, emptys);
+	//return make_pair(prior, score);
+
+	this->new_visit(1, score, emptys);
+	return make_pair(1, score);
 }
 
 
