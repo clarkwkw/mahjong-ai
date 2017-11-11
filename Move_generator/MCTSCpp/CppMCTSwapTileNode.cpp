@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <iostream>
+#include <iterator>
 #include "CppMCTSwapTileNode.h"
 using namespace std;
 
@@ -86,11 +87,11 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 		}
 	}
 	max_iter = max_iter / this->grouped_actions.size() + 1;
-	#pragma omp parallel
-	#pragma omp single
-	for(auto it = this->grouped_actions.begin(); it != this->grouped_actions.end(); ++it){
-		#pragma omp task firstprivate(it)
 
+	#pragma omp parallel for
+	for(unsigned long j = 0; j < this->grouped_actions.size(); j++){
+		auto it = this->grouped_actions.begin();
+		advance(it, j);
 		if(it->first == "stop"){
 			double score = map_hand_eval_func(this->fixed_hand, this->map_hand, this->map_remaining, _min_faan);
 			double prior = this->prior;
