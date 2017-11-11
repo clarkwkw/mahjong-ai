@@ -83,30 +83,39 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 	this->expand();
 	for(auto &ent: this->grouped_actions){
 		if(ent.first != "stop"){
-			ent.second.expand(ent.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
+			ent.second->expand(ent.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
 		}
 	}
 	max_iter = max_iter / this->grouped_actions.size() + 1;
-	#pragma omp parallel for
+
+	auto it = this->grouped_actions.begin();
+	#pragma omp parallel for shared(it)
 	for(unsigned long j = 0; j < this->grouped_actions.size(); j++){
-		auto it = this->grouped_actions.begin();
-		advance(it, j);
-		if(it->first == "stop"){
+		string action_name;
+		CppMCTGroupAction* grouped_action;
+		#pragma omp critical
+		{
+			action_name = it->first;
+			grouped_action = it->second;
+			++it;
+		}
+		
+		if(action_name == "stop"){
 			double score = map_hand_eval_func(this->fixed_hand, this->map_hand, this->map_remaining, _min_faan);
 			double prior = this->prior;
-			it->second.count_visit += 1;
-			it->second.avg_score = score;
-			it->second.sum_rollout_prob += prior;
+			grouped_action->count_visit += 1;
+			grouped_action->avg_score = score;
+			grouped_action->sum_rollout_prob += prior;
 		}else{
 			double score, prior;
 			for(int i = 0; i < max_iter; i++){
-				CppMCTSwapTileNode* node = it->second.get_least_visited_node();
+				CppMCTSwapTileNode* node = grouped_action->get_least_visited_node();
 				pair<double, double> rollout_result = node->traverse_rollout(ucb_policy, _min_faan);
 				prior = rollout_result.first;
 				score = rollout_result.second;
-				it->second.avg_score = (it->second.sum_rollout_prob*it->second.avg_score + prior*score)/(it->second.sum_rollout_prob + prior);
-				it->second.sum_rollout_prob += prior;
-				it->second.count_visit += 1;
+				grouped_action->avg_score = (grouped_action->sum_rollout_prob*grouped_action->avg_score + prior*score)/(grouped_action->sum_rollout_prob + prior);
+				grouped_action->sum_rollout_prob += prior;
+				grouped_action->count_visit += 1;
 			}
 		}
 		
@@ -115,11 +124,11 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 	string max_action = "";
 	for(auto const &ent: this->grouped_actions){
 		#if MCT_PRINT_SCORES_FLAG == 1
-			cout<<ent.first<<": "<<ent.second.avg_score<<endl;
+			cout<<ent.first<<": "<<ent.second->avg_score<<endl;
 		#endif
 		if(ent.first == "stop")continue;
-		if(ent.second.avg_score > max_score){
-			max_score = ent.second.avg_score;
+		if(ent.second->avg_score > max_score){
+			max_score = ent.second->avg_score;
 			max_action = ent.first;
 		}
 	}
@@ -152,15 +161,15 @@ pair<double, double> CppMCTSwapTileNode::traverse_rollout(double ucb_policy, int
 
 	if(result.first == "stop"){
 		
-		if(current->grouped_actions["stop"].count_visit == 0){
+		if(current->grouped_actions["stop"]->count_visit == 0){
 			score = map_hand_eval_func(current->fixed_hand, current->map_hand, current->map_remaining, _min_faan);
 		}else{
-			score = current->grouped_actions["stop"].avg_score;
+			score = current->grouped_actions["stop"]->avg_score;
 		}
 		prior = current->prior;
-		current->grouped_actions["stop"].count_visit += 1;
-		current->grouped_actions["stop"].avg_score = score;
-		current->grouped_actions["stop"].sum_rollout_prob += prior;
+		current->grouped_actions["stop"]->count_visit += 1;
+		current->grouped_actions["stop"]->avg_score = score;
+		current->grouped_actions["stop"]->sum_rollout_prob += prior;
 
 
 	}else{
@@ -187,11 +196,11 @@ string CppMCTSwapTileNode::search(int max_iter, double ucb_policy, int _min_faan
 	string max_action = "";
 	for(auto const &ent: this->grouped_actions){
 		#if MCT_PRINT_SCORES_FLAG == 1
-			cout<<ent.first<<": "<<ent.second.avg_score<<endl;
+			cout<<ent.first<<": "<<ent.second->avg_score<<endl;
 		#endif
 		if(ent.first == "stop")continue;
-		if(ent.second.avg_score > max_score){
-			max_score = ent.second.avg_score;
+		if(ent.second->avg_score > max_score){
+			max_score = ent.second->avg_score;
 			max_action = ent.first;
 		}
 	}
@@ -205,12 +214,12 @@ void CppMCTSwapTileNode::expand(){
 		for(auto const &dispose_tile_info: this->map_hand){
 			if(dispose_tile_info.second == 0) continue;
 
-			this->grouped_actions[dispose_tile_info.first] = CppMCTGroupAction();
+			this->grouped_actions[dispose_tile_info.first] = new CppMCTGroupAction();
 
 		}
 	}
 
-	this->grouped_actions["stop"] = CppMCTGroupAction();
+	this->grouped_actions["stop"] = new CppMCTGroupAction();
 }
 
 void CppMCTSwapTileNode::new_visit(double prior, double score, string& action){
@@ -222,9 +231,9 @@ void CppMCTSwapTileNode::new_visit(double prior, double score, string& action){
 		this->max_action_avg_score = max(this->max_action_avg_score, score);
 		this->min_action_avg_score = min(this->min_action_avg_score, score);
 
-		this->grouped_actions[action].avg_score = (this->grouped_actions[action].sum_rollout_prob*this->grouped_actions[action].avg_score + prior*score)/(this->grouped_actions[action].sum_rollout_prob + prior);
-		this->grouped_actions[action].sum_rollout_prob += prior;
-		this->grouped_actions[action].count_visit += 1;
+		this->grouped_actions[action]->avg_score = (this->grouped_actions[action]->sum_rollout_prob*this->grouped_actions[action]->avg_score + prior*score)/(this->grouped_actions[action]->sum_rollout_prob + prior);
+		this->grouped_actions[action]->sum_rollout_prob += prior;
+		this->grouped_actions[action]->count_visit += 1;
 	}
 }
 
@@ -282,16 +291,16 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 	double max_ucb_score = 0;
 	for(auto& gaction_info: this->grouped_actions){
 
-		if(gaction_info.second.actions.size() == 0 && gaction_info.first != "stop"){
-			CppMCTSwapTileNode* node = (gaction_info.second).expand(gaction_info.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
+		if(gaction_info.second->actions.size() == 0 && gaction_info.first != "stop"){
+			CppMCTSwapTileNode* node = gaction_info.second->expand(gaction_info.first, this->fixed_hand, this->map_hand, this->map_remaining, this->tile_remaining, this->round_remaining, this->prior);
 			return (UCBResult) make_pair(gaction_info.first, node);
 		}
 
-		if(gaction_info.second.count_visit == 0){
+		if(gaction_info.second->count_visit == 0){
 			if(gaction_info.first == "stop"){
 				return (UCBResult) make_pair("stop", (CppMCTSwapTileNode*) NULL);
 			}else{
-				return (UCBResult) make_pair(gaction_info.first, gaction_info.second.actions[0]);
+				return (UCBResult) make_pair(gaction_info.first, gaction_info.second->actions[0]);
 
 			}
 		}
@@ -299,12 +308,12 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 		double ucb_score = 0;
 		/*
 		if(this->max_action_avg_score > this->min_action_avg_score)
-			ucb_score = (gaction_info.second.avg_score - this->min_action_avg_score)/(this->max_action_avg_score - this->min_action_avg_score);
+			ucb_score = (gaction_info.second->avg_score - this->min_action_avg_score)/(this->max_action_avg_score - this->min_action_avg_score);
 		*/
 		if(this->max_action_avg_score > 0)
-			ucb_score = (gaction_info.second.avg_score )/(this->max_action_avg_score);
+			ucb_score = (gaction_info.second->avg_score )/(this->max_action_avg_score);
 
-		ucb_score += ucb_policy*sqrt(log(this->count_visit)/gaction_info.second.count_visit);
+		ucb_score += ucb_policy*sqrt(log(this->count_visit)/gaction_info.second->count_visit);
 
 		if(ucb_score > max_ucb_score){
 			max_ucb_score = ucb_score;
@@ -313,9 +322,9 @@ UCBResult CppMCTSwapTileNode::argmax_ucb(double ucb_policy, bool is_root){
 	}
 
 	if(max_action != "stop"){
-		//int conseq_index = rand() % this->grouped_actions[max_action].actions.size();
-		//return (UCBResult) make_pair(max_action, this->grouped_actions[max_action].actions[conseq_index]);
-		return (UCBResult) make_pair(max_action, this->grouped_actions[max_action].get_least_visited_node());
+		//int conseq_index = rand() % this->grouped_actions[max_action]->actions.size();
+		//return (UCBResult) make_pair(max_action, this->grouped_actions[max_action]->actions[conseq_index]);
+		return (UCBResult) make_pair(max_action, this->grouped_actions[max_action]->get_least_visited_node());
 	}else{
 		return (UCBResult) make_pair("stop", (CppMCTSwapTileNode*) NULL);
 	}
@@ -326,8 +335,8 @@ void CppMCTSwapTileNode::add_branch_action(string identifier, CppMCTSwapTileNode
 	// "this" node will be considered as the current state
 	// so no need to perform rollout on this node
 	this->count_visit = 1;
-	CppMCTGroupAction gaction = CppMCTGroupAction();
-	gaction.actions.push_back(node);
+	CppMCTGroupAction* gaction = new CppMCTGroupAction();
+	gaction->actions.push_back(node);
 	this->grouped_actions[identifier] = gaction;
 }
 
@@ -337,6 +346,7 @@ int CppMCTSwapTileNode::get_count_visit(){
 
 void CppMCTSwapTileNode::destroy(){
 	for(auto& gaction_info: this->grouped_actions){
-		gaction_info.second.destroy();
+		gaction_info.second->destroy();
+		delete gaction_info.second;
 	}
 }

@@ -28,7 +28,7 @@ public:
 
 class CppMCTSwapTileNode{
 public:
-	map<string, CppMCTGroupAction> grouped_actions;
+	map<string, CppMCTGroupAction*> grouped_actions;
 	CppMCTSwapTileNode();
 	CppMCTSwapTileNode(FHand& fixed_hand, TMap map_hand, TMap map_remaining, int tile_remaining, int round_remaining, double prior);
 	string search(int max_iter, double ucb_policy, int _min_faan);
