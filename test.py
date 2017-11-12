@@ -15,11 +15,11 @@ _test_cases_dir = "test_cases"
 def arg_parse():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("testcase", type = str, choices = test_cases.test_cases, help = "testcase to call under ./%s"%_test_cases_dir)
-	args = parser.parse_args()
-	return args
+	args, extra_args = parser.parse_known_args()
+	return args, extra_args
 
 if __name__ == "__main__":
-	args = arg_parse()
+	args, extra_args = arg_parse()
 	try:
 		m = importlib.import_module("%s.%s"%(_test_cases_dir, args.testcase))
 	except ImportError:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 	#start = timer()
 	try:
 		#debug.__debug_mode = True
-		m.test()
+		m.test(extra_args)
 	except:
 		traceback.print_exc()
 	#end = timer()

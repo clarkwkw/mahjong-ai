@@ -4,21 +4,39 @@ import Move_generator
 import numpy as np
 import random
 import traceback
+import argparse
 
-'''
-_player_parameters = [
-	(Move_generator.RuleBasedAINaiveMCTSPy, {"player_name": "Amy", "display_step": False, "mcts_max_iter": 1000}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1, "s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0}),
-	(Move_generator.RuleBasedAINaiveMCTSPy, {"player_name": "Clark", "display_step": False, "mcts_max_iter": 1000}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1,"s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0})
-]
-'''
-_player_parameters = [
-	(Move_generator.RuleBasedAINaiveMCTSCpp, {"player_name": "Amy", "display_step": False, "parallel": True, "mcts_max_iter": 1000}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "Billy", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1, "s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0}),
-	(Move_generator.RuleBasedAINaiveMCTSCpp, {"player_name": "Clark", "display_step": False, "parallel": True, "mcts_max_iter": 1000}),
-	(Move_generator.RuleBasedAINaive, {"player_name": "David", "display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1,"s_explore": 0, "s_neighbor_suit": 0, "s_mixed_suit": 0})
-]
+_player_names = ["Amy", "Billy", "Clark", "David"]
+
+_models = {
+	"heuristics": {
+		"class": Move_generator.RuleBasedAINaive,
+		"parameters":{
+			 "display_step": False,
+			 "s_chow": 2,
+			 "s_pong": 6,
+			 "s_future": 1,
+			 "s_explore": 0,
+			 "s_neighbor_suit": 0,
+			 "s_mixed_suit": 0
+		}
+	},
+	"mctspy":{
+		"class": Move_generator.RuleBasedAINaiveMCTSPy,
+		"parameters":{
+			"display_step": False,
+			"mcts_max_iter": 1000
+		}
+	},
+	"mctscpp":{
+		"class": Move_generator.RuleBasedAINaiveMCTSCpp,
+		"parameters":{
+			"display_step": False,
+			"parallel": False,
+			"mcts_max_iter": 1000
+		}
+	}
+}
 
 _scoring_scheme = [
 	[0, 0],
@@ -37,12 +55,46 @@ _scoring_scheme = [
 _n_game = 1000
 _n_round = 8
 
+_player_parameters = [0, 0, 0, 0]
 _player_master_list = []
+_player_model_strs = [0, 0, 0, 0]
 
-def test():
+def parse_args(args_list):
+	parser = argparse.ArgumentParser()
+	parser.add_argument("m1", type = str, choices = _models.keys(), help = "Model 1")
+	parser.add_argument("--m2", type = str, choices = _models.keys(), default = "heuristics", help = "Model 2")
+	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
+	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
+	args = parser.parse_args(args_list)
+	
+	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
+	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
+
+
+def modify_player_model(model_index, model_str, **kwargs):
+	for i in range(2):
+		player_meta = (_models[model_str]["class"], dict(_models[model_str]["parameters"]))
+		player_meta[1]["player_name"] = _player_names[2 * i + model_index]
+		for arg, value in kwargs.items():
+			if arg in player_meta[1]:
+				player_meta[1][arg] = value
+
+		_player_model_strs[2 * i + model_index] = model_str
+		if "parallel" in player_meta[1]:
+			_player_model_strs[2 * i + model_index] += "-P" if player_meta[1] else "-NP"
+		if "mcts_max_iter" in player_meta[1]:
+			_player_model_strs[2 * i + model_index] += "-"+str(player_meta[1]["mcts_max_iter"])
+		_player_parameters[2 * i + model_index] = player_meta
+
+def test(args):
 	ex = None
 	players = []
 	game = None
+	parse_args(args)
+	
+	for i in range(4):
+		print("%s: %s"%(_player_names[i], _player_model_strs[i]))
+
 	for Generator_class, player_para in _player_parameters:
 		_player_master_list.append(Player.Player(Generator_class, **player_para))
 

@@ -2,7 +2,7 @@ import Game
 import Player
 import Move_generator
 
-def test():
+def test(args):
 
 	player_names = [
 	("Amy", Move_generator.Human, {}), 

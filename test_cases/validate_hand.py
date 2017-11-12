@@ -2,7 +2,7 @@ import Tile
 import Scoring_rules
 import unittest
 
-def test():
+def test(args):
 	suite = unittest.defaultTestLoader.loadTestsFromTestCase(Validate_hand_test)
 	unittest.TextTestRunner().run(suite)
 
