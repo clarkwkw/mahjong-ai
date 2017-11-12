@@ -3,6 +3,7 @@ import Player
 import Move_generator
 import numpy as np
 import random
+import traceback
 
 '''
 _player_parameters = [
@@ -33,13 +34,13 @@ _scoring_scheme = [
 	[2560, 3840]
 ]
 
-_n_game = 1
+_n_game = 1000
 _n_round = 8
 
 _player_master_list = []
 
 def test():
-
+	ex = None
 	players = []
 	game = None
 	for Generator_class, player_para in _player_parameters:
@@ -48,27 +49,34 @@ def test():
 	scoring_matrix = np.zeros((_n_game, _n_round, 4))
 
 	print("\t%s"%("\t".join(player[1]["player_name"] for player in _player_parameters)))
-	for i in range(_n_game):
-		players = random.sample(_player_master_list, k = len(_player_master_list))
-		game = Game.Game(players)
-		for j in range(_n_round):
-			winner, losers, penalty = game.start_game()
+	try:
+		for i in range(_n_game):
+			players = random.sample(_player_master_list, k = len(_player_master_list))
+			game = Game.Game(players)
+			for j in range(_n_round):
+				winner, losers, penalty = game.start_game()
 
-			if winner is not None:
-				index_winner = _player_master_list.index(winner)
-				scoring_matrix[i, j, index_winner] = _scoring_scheme[penalty][len(losers) > 1]
+				if winner is not None:
+					index_winner = _player_master_list.index(winner)
+					scoring_matrix[i, j, index_winner] = _scoring_scheme[penalty][len(losers) > 1]
 
-				for loser in losers:
-					index_loser = _player_master_list.index(loser)
-					scoring_matrix[i, j, index_loser] = -1*_scoring_scheme[penalty][len(losers) > 1]/len(losers)
+					for loser in losers:
+						index_loser = _player_master_list.index(loser)
+						scoring_matrix[i, j, index_loser] = -1*_scoring_scheme[penalty][len(losers) > 1]/len(losers)
 
-			score_strs = []
-			for k in range(4):
-				score_strs.append("{:4.0f}".format(scoring_matrix[i, j, k]))
-			print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
+				score_strs = []
+				for k in range(4):
+					score_strs.append("{:4.0f}".format(scoring_matrix[i, j, k]))
+				print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
 
+	except:
+		traceback.print_exc()
 	print("Average      :\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(scoring_matrix[:, :, 0].mean(), scoring_matrix[:, :, 1].mean(), scoring_matrix[:, :, 2].mean(), scoring_matrix[:, :, 3].mean()))
 	print("Total        :\t{:4.0f}\t{:4.0f}\t{:4.0f}\t{:4.0f}".format(scoring_matrix[:, :, 0].sum(), scoring_matrix[:, :, 1].sum(), scoring_matrix[:, :, 2].sum(), scoring_matrix[:, :, 3].sum()))
 	print("Average time spent on deciding which tile to discard:")
+
 	for player in _player_master_list:
 		print("%s: %.5f"%(player.name, player.avg_drop_tile_time))
+
+	if ex is not None:
+		raise ex

@@ -88,7 +88,7 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 	max_iter = max_iter / this->grouped_actions.size() + 1;
 
 	auto it = this->grouped_actions.begin();
-	#pragma omp parallel for shared(it)
+	#pragma omp parallel for num_threads(13) shared(it)
 	for(unsigned long j = 0; j < this->grouped_actions.size(); j++){
 		string action_name;
 		CppMCTGroupAction* grouped_action;
