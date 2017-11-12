@@ -36,17 +36,13 @@ bool three_faan_failing_criterion(SuitCollection chow_suits, SuitCollection pong
 map<int, FailingChecker> checkers = {{1, &one_faan_failing_criterion}, {3, &three_faan_failing_criterion}};
 
 CppTile str_to_tile(string s){
-	if(st_map.count(s) > 0){
-		return st_map[s];
-	}
  	vector<string> strings;
 	istringstream sstream(s);
 	string tmp;
 	while(getline(sstream, tmp, '-')){
 		strings.push_back(tmp);
 	}
-	st_map[s] = CppTile(strings[0], strings[1]);
-	return st_map[s];
+	return CppTile(strings[0], strings[1]);
 }
 
 string get_one_suit(SuitCollection suits){
@@ -122,7 +118,6 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 	double scoring_matrix[2][3] = {{0}};
 	SuitCollection chow_suits, pong_suits;
 	bool is_honor = false, is_rgw = false;
-
 	// Gather fixed hand information
 	for(unsigned long i = 0; i<fixed_hand.size(); i++){
 		CppTile tile = str_to_tile(fixed_hand[i][1]);
@@ -135,7 +130,6 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 			pong_suits[tile._suit] = true;
 		}
 	}
-
 	// Classifiy tiles in hand to different suits
 	for(unsigned long i = 0; i<suits.size(); i++){
 		suit_tiles[suits[i]];
@@ -154,12 +148,10 @@ double map_hand_eval_func(FHand& fixed_hand, TMap& map_hand, TMap& map_remaining
 			suit_tiles[tile._suit].push_back(tile);
 		}
 	}
-
 	// Do a preliminary check
 	if (checkers[_min_faan](chow_suits, pong_suits, is_honor, is_rgw)){
 		return 0;
 	}
-
 	// Find out scores under different conditions
 	for(unsigned long i = 0; i<suits.size(); i++){
 		for(int j = 0; j<2; j++){

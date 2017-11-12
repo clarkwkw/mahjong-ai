@@ -11,7 +11,6 @@
 #include "CppMCTSwapTileNode.h"
 using namespace std;
 
-CppMCTSwapTileNode* root = (CppMCTSwapTileNode*) NULL;
 CppMCTGroupAction::CppMCTGroupAction(){
 	this->avg_score = 0;
 	this->sum_rollout_prob = 0;
@@ -101,6 +100,7 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 		}
 		
 		if(action_name == "stop"){
+
 			double score = map_hand_eval_func(this->fixed_hand, this->map_hand, this->map_remaining, _min_faan);
 			double prior = this->prior;
 			grouped_action->count_visit += 1;
@@ -137,7 +137,6 @@ string CppMCTSwapTileNode::parallel_search(int max_iter, double ucb_policy, int 
 
 pair<double, double> CppMCTSwapTileNode::traverse_rollout(double ucb_policy, int _min_faan){
 	stack <UCBResult> st;
-	root = this;
 	this->expand();
 
 	if(this->count_visit == 0)
@@ -257,7 +256,6 @@ pair<double, double> CppMCTSwapTileNode::rollout(int _min_faan){
 
 	random_shuffle(deck.begin(), deck.end());
 	while(this->round_remaining > swapped_count){
-		
 		int dispose_tile_index = rand() % tiles.size();
 		string new_tile = deck[deck.size() - 1];
 
@@ -273,7 +271,6 @@ pair<double, double> CppMCTSwapTileNode::rollout(int _min_faan){
 	for(unsigned long i = 0; i<tiles.size(); i++){
 		final_map_hand[tiles[i]] += 1;
 	}
-
 	double score = map_hand_eval_func(this->fixed_hand, final_map_hand, final_map_remaining, _min_faan);
 	string emptys = "";
 	//this->new_visit(prior, score, emptys);

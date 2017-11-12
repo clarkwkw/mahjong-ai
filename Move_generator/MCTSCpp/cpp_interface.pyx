@@ -59,5 +59,6 @@ cdef class MCTSwapTileNode:
 
 	def __dealloc__(self):
 		if self.is_root:
+			#print("Detroying root node in python")
 			self.cpp_node.destroy()
 			del self.cpp_node
