@@ -81,7 +81,7 @@ def modify_player_model(model_index, model_str, **kwargs):
 
 		_player_model_strs[2 * i + model_index] = model_str
 		if "parallel" in player_meta[1]:
-			_player_model_strs[2 * i + model_index] += "-P" if player_meta[1] else "-NP"
+			_player_model_strs[2 * i + model_index] += "-P" if "parallel" in  player_meta[1] and player_meta[1]["parallel"] else "-NP"
 		if "mcts_max_iter" in player_meta[1]:
 			_player_model_strs[2 * i + model_index] += "-"+str(player_meta[1]["mcts_max_iter"])
 		_player_parameters[2 * i + model_index] = player_meta
