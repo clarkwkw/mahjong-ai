@@ -66,7 +66,7 @@ def parse_args(args_list):
 	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
 	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
 	args = parser.parse_args(args_list)
-	
+	print("parallel value", args.parallel)
 	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 

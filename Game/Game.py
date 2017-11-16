@@ -7,6 +7,11 @@ class Game:
 		self.__deck = None
 		self.__started = False
 		self.__game_wind = "north"
+		self.__disposed_tiles = []
+
+	@property 
+	def disposed_tiles:
+		return list(self.__disposed_tiles)
 
 	@property
 	def deck_size(self):
@@ -84,7 +89,6 @@ class Game:
 				neighbors = self.__get_neighbor_players(check_player_id)
 				is_able_kong, is_wants_kong, location = check_player.check_new_tile_kong(dispose_tile, search_hand = "hand", neighbors = neighbors, game = self)
 				if is_able_kong and is_wants_kong:
-
 					check_player.kong(dispose_tile, location = location, source = "steal")
 					tile_used = True
 					cur_player_id = check_player_id
@@ -118,6 +122,7 @@ class Game:
 			# No one wants to Pong/Kong/Chow, mark the tile as unstolen
 			if not tile_used:
 				cur_player.mark_last_discard_unstolen()
+				self.__disposed_tiles.append(dispose_tile)
 
 			cur_player_id = (cur_player_id+1)%4
 

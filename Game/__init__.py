@@ -1,1 +1,2 @@
-from .class_def import Game
+from .Game import Game
+from .TGGame import TGGame
