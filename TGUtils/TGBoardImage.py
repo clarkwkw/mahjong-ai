@@ -1,3 +1,8 @@
+'''
+The credit of the background and tiles images goes to the project: masylum/whatajong
+https://github.com/masylum/whatajong
+'''
+
 from PIL import Image, ImageFont, ImageDraw
 import Tile
 from .TGBoardSettings import *
