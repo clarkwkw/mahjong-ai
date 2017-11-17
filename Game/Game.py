@@ -10,7 +10,7 @@ class Game:
 		self.__disposed_tiles = []
 
 	@property 
-	def disposed_tiles:
+	def disposed_tiles(self):
 		return list(self.__disposed_tiles)
 
 	@property

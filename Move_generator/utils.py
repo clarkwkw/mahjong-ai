@@ -176,12 +176,11 @@ def print_game_board(player_name, fixed_hand, hand, neighbors, game, new_tile = 
 def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 	line_format_left = u"|{msg:<25s}|\n"
 	line_format_right = u"|{msg:>25s}|\n"
-
-	horizontal_line = line_merged_format_left.format(msg = '-'*20)
+	horizontal_line = line_format_left.format(msg = '-'*25)
 	
-	result += line_format_left.format(msg = "Game of %s wind [%d]"%(game.game_wind, game.deck_size))
+	result = line_format_left.format(msg = "Game of %s wind [%d]"%(game.game_wind, game.deck_size))
 	
-	for i in len(neighbors):
+	for i in range(len(neighbors)):
 		neighbor = neighbors[i]
 		identifier = "%s"%neighbor.name
 		if i == 0:
@@ -198,12 +197,21 @@ def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = 
 				meld_str += "".join([tile.symbol for tile in tiles])
 			fixed_hand_strs.append(meld_str)
 		
-		result += line_format_left.format(identifier)
-		result += line_format_left.format(" ".join(fixed_hand_strs))
+		result += line_format_left.format(msg = identifier)
+		result += line_format_left.format(msg = " ".join(fixed_hand_strs))
 		result += line_format_right.format(msg = "%s [%d]"%(Tile.tile_back_symbol*neighbor.hand_size, neighbor.hand_size))
 		result += horizontal_line
 
-	
+	result += line_format_left.format(msg = "Tiles disposed")
+	disposed_tiles = game.disposed_tiles
+	while True:
+		result += line_format_left.format(msg = "".join([tile.symbol for tile in disposed_tiles[0:25]]))
+		disposed_tiles = disposed_tiles[25:]
+		if len(disposed_tiles) == 0:
+			break
+
+	result += horizontal_line
+
 	fixed_hand_strs, hand_str = [], ""
 	for meld_type, is_secret, tiles in fixed_hand:
 		meld_str = ""
@@ -216,12 +224,11 @@ def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = 
 	for tile in hand:
 		hand_str += tile.symbol
 	if new_tile is not None:
-		hand_str += "-"+new_tile.symbol
+		hand_str += " - "+new_tile.symbol+" "
 
-	result += line_format_left("Your tiles")
-	result += line_format_left.format(" ".join(fixed_hand_strs))
-	result += line_format_right.format(hand_str)
+	result += line_format_left.format(msg = "Your tiles")
+	result += line_format_left.format(msg = " ".join(fixed_hand_strs))
+	result += line_format_right.format(msg = hand_str)
+
 	print(result)
 	return result
-
-	

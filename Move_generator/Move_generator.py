@@ -3,11 +3,17 @@ import six, abc
 import Tile
 from timeit import default_timer as timer
 from . import utils
+try:
+	import TGUtils
+	TGUTILS_SUCCESS = True
+except ImportError:
+	TGUTILS_SUCCESS = False
 
 @six.add_metaclass(abc.ABCMeta)
 class Move_generator:
-	def __init__(self, player_name):
+	def __init__(self, player_name, display_tgboard = False):
 		self.__player_name = player_name
+		self.__display_tgboard = display_tgboard
 		self.__start_time = None
 		self.__avg_drop_tile_time = 0
 		self.__avg_decision_time = 0
@@ -69,3 +75,6 @@ class Move_generator:
 
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		utils.print_game_board(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
+		if TGUTILS_SUCCESS and self.__display_tgboard:
+			tgboard = TGUtils.generate_TG_boad(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
+			tgboard.show()
