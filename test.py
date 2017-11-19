@@ -31,7 +31,9 @@ if __name__ == "__main__":
 	try:
 		#debug.__debug_mode = True
 		m.test(extra_args)
-	except:
+	except SystemExit:
+		print(">> Make sure you have typed the right command line arguments.")
+	else:
 		traceback.print_exc()
 	#end = timer()
 	#total_runtime = end - start
