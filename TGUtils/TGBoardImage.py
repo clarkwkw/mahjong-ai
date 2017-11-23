@@ -5,11 +5,22 @@ https://github.com/masylum/whatajong
 
 from PIL import Image, ImageFont, ImageDraw
 import Tile
+import subprocess
 from .TGBoardSettings import *
+import atexit
 
 TILES_IMG = {}
 BG_IMG = Image.open(BG_IMG_PATH)
 FONT = ImageFont.truetype(FONT_FILE, FONT_SIZE)
+DIRECTION_INT = {"left": 1, "right": -1}
+
+board_viewer = None
+
+def kill_board_viewer():
+	if board_viewer is not None:
+		board_viewer.wait()
+
+atexit.register(kill_board_viewer)
 
 def init_tile_images():
 	im = Image.open(TILES_IMG_PATH)
@@ -51,70 +62,115 @@ class TGBoard:
 		self.__image = BG_IMG.copy()
 		self.__draw = ImageDraw.Draw(self.__image)
 		self.__line_count = 0
+		self.__viewer = None
 
-	def add_left_aligned_line(self, *args):
-		x_coordinate = BG_LEFT_BORDER
-		y_coordinate = BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT
-		terminated = False
-
+	def __new_line(self, y_coordinate, direction):
+		y_coordinate += BG_LINE_HEIGHT
 		if y_coordinate + BG_LINE_HEIGHT + BG_BOTTOM_BORDER >= self.__image.size[1]:
+			self.show()
 			raise Exception("running out of vertical space")
+		self.__line_count += 1
+		x_coordinate = BG_LEFT_BORDER if direction == 1 else self.__image.size[0] - BG_RIGHT_BORDER
+		return x_coordinate, y_coordinate
 
-		for arg in args:
-			if terminated:
-				raise Exception("cannot have anything after a string on a line") 
-			
+	def __is_out_of_bound(self, x_coordinate, width, direction):
+		modified_x = x_coordinate + direction * width
+		return modified_x + BG_RIGHT_BORDER > self.__image.size[0] or modified_x - BG_LEFT_BORDER < 0 
+
+	def __add_text_left(self, x_coordinate, y_coordinate, text, width):
+		self.__draw.text((x_coordinate, y_coordinate), text, font = FONT)
+		x_coordinate += width
+		return x_coordinate
+
+	def __add_text_right(self, x_coordinate, y_coordinate, text, width):
+		x_coordinate -= width
+		self.__draw.text((x_coordinate, y_coordinate), text, font = FONT)
+		return x_coordinate
+
+	def __add_img_left(self, x_coordinate, y_coordinate, img, width, transparent_bg = False):
+		alpha_mask = img if transparent_bg else None
+		self.__image.paste(img, (x_coordinate, y_coordinate), alpha_mask)
+		x_coordinate += width
+		return x_coordinate
+
+	def __add_img_right(self, x_coordinate, y_coordinate, img, width, transparent_bg = False):
+		alpha_mask = img if transparent_bg else None
+		x_coordinate -= width
+		self.__image.paste(img, (x_coordinate, y_coordinate), alpha_mask)
+		return x_coordinate			
+
+	def add_aligned_line(self, *args, alignment = "left"):
+		direction = DIRECTION_INT[alignment]
+
+		x_coordinate = BG_LEFT_BORDER if direction == 1 else self.__image.size[0] - BG_RIGHT_BORDER
+		y_coordinate = BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT
+
+		add_text = self.__add_text_left if direction == 1 else self.__add_text_right
+		add_img = self.__add_img_left if direction == 1 else self.__add_img_right
+
+		iterator = args if direction == 1 else reversed(args)
+
+		for arg in iterator:
 			if type(arg) is str:
-				self.__draw.text((x_coordinate, y_coordinate), arg, font = FONT)
-				terminated = True
-			
+				width, height = self.__draw.textsize(arg, font = FONT)
+				if self.__is_out_of_bound(x_coordinate, width, direction):
+					x_coordinate, y_coordinate = self.__new_line(y_coordinate, direction)
+				
+				x_coordinate = add_text(x_coordinate, y_coordinate, arg, width)
+
 			elif type(arg) is tuple and len(arg) == 2:
 				if arg[0] == "space":
-					if x_coordinate + TILE_WIDTH * arg[1] + BG_RIGHT_BORDER >= self.__image.size[0]:
-						raise Exception("running out of horizontal space")
-					x_coordinate += TILE_WIDTH * arg[1]
+					space_width = int(BG_LINE_HEIGHT/TILE_HEIGHT * TILE_WIDTH * arg[1])
+					if self.__is_out_of_bound(x_coordinate, space_width, direction):
+						x_coordinate, y_coordinate = self.__new_line(y_coordinate, direction)
+					else:
+						x_coordinate += direction * space_width
+
 				else:
 					special_tile_img = get_tile_image(arg[0])
 					for i in range(arg[1]):
-						if x_coordinate + special_tile_img.size[0] + BG_RIGHT_BORDER >= self.__image.size[0]:
-							raise Exception("running out of horizontal space")
-						self.__image.paste(special_tile_img, (x_coordinate, y_coordinate), special_tile_img)
-						x_coordinate += special_tile_img.size[0]
+						if self.__is_out_of_bound(x_coordinate, special_tile_img.size[0], direction):
+							x_coordinate, y_coordinate = self.__new_line(y_coordinate, direction)
+
+						x_coordinate = add_img(x_coordinate, y_coordinate, special_tile_img, special_tile_img.size[0], transparent_bg = True)
 			
 			elif isinstance(arg, Tile.Tile):
 				tile_img = get_tile_image(arg.suit, arg.value)
-				if x_coordinate + tile_img.size[0] + BG_RIGHT_BORDER >= self.__image.size[0]:
-					raise Exception("running out of horizontal space")
-
-				self.__image.paste(tile_img, (x_coordinate, y_coordinate))
-				x_coordinate += tile_img.size[0]
-
+				if self.__is_out_of_bound(x_coordinate, tile_img.size[0], direction):
+					x_coordinate, y_coordinate = self.__new_line(y_coordinate, direction)
+				
+				x_coordinate = add_img(x_coordinate, y_coordinate, tile_img, tile_img.size[0])
+				
 			elif isinstance(arg, Image.Image):
 				scale_factor = arg.size[1]/BG_LINE_HEIGHT
 				
 				if scale_factor != 1:
 					arg = arg.resize((arg.size[0] * scale_factor, arg.size[1] * scale_factor), Image.BILINEAR)
 				
-				if x_coordinate + arg.size[0] + BG_RIGHT_BORDER >= self.__image.size[0]:
-					raise Exception("running out of horizontal space")
+				if self.__is_out_of_bound(x_coordinate, arg.size[0], 1):
+					x_coordinate, y_coordinate = self.__new_line(y_coordinate, 1)
 
-				self.__image.paste(arg, (x_coordinate, y_coordinate))
-				x_coordinate += arg.size[0]
+				x_coordinate = add_img(x_coordinate, y_coordinate, arg, arg.size[0])
+			
 			else:
 				raise Exception("unknown object (type = %s) to draw"%(type(arg)))
-
 		self.__line_count += 1
 
 	def save_image(self, file_name):
 		self.__image.crop((0, 0, self.__image.size[0], min(self.__image.size[1],  BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT + BG_BOTTOM_BORDER))).save(file_name, optimize = True, quality = BG_SAVE_QUALITY)
 
 	def show(self):
-		self.__image.crop((0, 0, self.__image.size[0], min(self.__image.size[1],  BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT + BG_BOTTOM_BORDER))).show()
+		global board_viewer
+		if board_viewer is not None:
+			board_viewer.wait()
+		self.save_image("tmp_board.png")
+		board_viewer = subprocess.Popen(['open', "-a", "Preview", "tmp_board.png"])
+	
+		#self.__image.crop((0, 0, self.__image.size[0], min(self.__image.size[1],  BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT + BG_BOTTOM_BORDER))).show()
 		
 def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 	board = TGBoard()
-
-	board.add_left_aligned_line("Game of %s wind [%d]"%(game.game_wind, game.deck_size))
+	board.add_aligned_line("Game of %s wind [%d]"%(game.game_wind, game.deck_size))
 	
 	for i in range(len(neighbors)):
 		neighbor = neighbors[i]
@@ -134,21 +190,19 @@ def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = 
 
 			fixed_hand_list.extend(meld_list)
 
-		board.add_left_aligned_line(identifier)
-		board.add_left_aligned_line(*fixed_hand_list)
-		board.add_left_aligned_line(("back", neighbor.hand_size))
-		board.add_left_aligned_line()
+		board.add_aligned_line(identifier)
+		if len(fixed_hand_list) > 0:
+			board.add_aligned_line(*fixed_hand_list)
+		board.add_aligned_line(("back", neighbor.hand_size), alignment = "right")
+		board.add_aligned_line()
 
-	board.add_left_aligned_line("Tiles disposed")
+	board.add_aligned_line("Tiles disposed")
 	
 	disposed_tiles = game.disposed_tiles
-	while True:
-		board.add_left_aligned_line(*disposed_tiles[0:20])
-		disposed_tiles = disposed_tiles[20:]
-		if len(disposed_tiles) == 0:
-			break
-
-	board.add_left_aligned_line()
+	while len(disposed_tiles) > 0:
+		board.add_aligned_line(*disposed_tiles[0:15])
+		disposed_tiles = disposed_tiles[15:]
+	board.add_aligned_line()
 
 	fixed_hand_list, hand_list = [], list(hand)
 	for meld_type, is_secret, tiles in fixed_hand:
@@ -162,9 +216,10 @@ def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = 
 	if new_tile is not None:
 		hand_list.extend([("space", 1), new_tile])
 
-	board.add_left_aligned_line("Your tiles")
-	board.add_left_aligned_line(*fixed_hand_list)
-	board.add_left_aligned_line()
-	board.add_left_aligned_line(*hand_list)
+	board.add_aligned_line("Your tiles")
+	if len(fixed_hand_list) > 0:
+		board.add_aligned_line(*fixed_hand_list)
+		board.add_aligned_line()
+	board.add_aligned_line(*hand_list, alignment = "right")
 
 	return board
