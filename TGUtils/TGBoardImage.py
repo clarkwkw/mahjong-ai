@@ -99,7 +99,8 @@ class TGBoard:
 		self.__image.paste(img, (x_coordinate, y_coordinate), alpha_mask)
 		return x_coordinate			
 
-	def add_aligned_line(self, *args, alignment = "left"):
+	def add_aligned_line(self, *args, **kwargs):
+		alignment = kwargs.get("alignment", "left")
 		direction = DIRECTION_INT[alignment]
 
 		x_coordinate = BG_LEFT_BORDER if direction == 1 else self.__image.size[0] - BG_RIGHT_BORDER
