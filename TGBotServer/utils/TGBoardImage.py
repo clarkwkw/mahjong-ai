@@ -7,7 +7,7 @@ from PIL import Image, ImageFont, ImageDraw
 import Tile
 import subprocess
 from .TGBoardSettings import *
-import atexit
+import io
 
 TILES_IMG = {}
 BG_IMG = Image.open(BG_IMG_PATH)
@@ -15,12 +15,6 @@ FONT = ImageFont.truetype(FONT_FILE, FONT_SIZE)
 DIRECTION_INT = {"left": 1, "right": -1}
 
 board_viewer = None
-
-def kill_board_viewer():
-	if board_viewer is not None:
-		board_viewer.wait()
-
-atexit.register(kill_board_viewer)
 
 def init_tile_images():
 	im = Image.open(TILES_IMG_PATH)
@@ -168,8 +162,16 @@ class TGBoard:
 		board_viewer = subprocess.Popen(['open', "-a", "Preview", "tmp_board.png"])
 	
 		#self.__image.crop((0, 0, self.__image.size[0], min(self.__image.size[1],  BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT + BG_BOTTOM_BORDER))).show()
+
+	@property
+	def bufferedReader(self):
+		buff = io.BytesIO()
+		self.__image.crop((0, 0, self.__image.size[0], min(self.__image.size[1],  BG_TOP_BORDER + self.__line_count * BG_LINE_HEIGHT + BG_BOTTOM_BORDER))).save(buff, optimize = True, quality = BG_SAVE_QUALITY,  format = "JPEG")
+		buff.seek(0)
+		buffered_reader = io.BufferedReader(buff)
+		return buffered_reader
 		
-def generate_TG_boad(player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
+def generate_TG_board(player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 	board = TGBoard()
 	board.add_aligned_line("Game of %s wind [%d]"%(game.game_wind, game.deck_size))
 	

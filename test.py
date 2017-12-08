@@ -33,8 +33,6 @@ if __name__ == "__main__":
 		m.test(extra_args)
 	except SystemExit:
 		print(">> Make sure you have typed the right command line arguments.")
-	else:
-		traceback.print_exc()
 	#end = timer()
 	#total_runtime = end - start
 	#print(">> Execution time: {:02.0f}:{:02.0f}:{:05.2f}".format(total_runtime//3600, (total_runtime%3600)//60, total_runtime%60))

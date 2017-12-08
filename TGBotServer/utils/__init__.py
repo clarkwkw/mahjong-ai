@@ -1,2 +1,2 @@
 from .TGResponsePromise import TGResponsePromise
-from .TGBoardImage import generate_TG_boad
+from .TGBoardImage import generate_TG_board

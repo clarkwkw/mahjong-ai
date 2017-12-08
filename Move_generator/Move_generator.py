@@ -4,7 +4,7 @@ import Tile
 from timeit import default_timer as timer
 from . import utils
 try:
-	import TGUtils
+	import TGBotServer
 	TGUTILS_SUCCESS = True
 except ImportError:
 	TGUTILS_SUCCESS = False
@@ -76,5 +76,5 @@ class Move_generator:
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		utils.print_game_board(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
 		if TGUTILS_SUCCESS and self.__display_tgboard:
-			tgboard = TGUtils.generate_TG_boad(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
+			tgboard = TGBotServer.generate_TG_board(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
 			tgboard.show()

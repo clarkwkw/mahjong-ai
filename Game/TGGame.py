@@ -1,12 +1,26 @@
 import random
 import Tile
-from .Game import Game
-from TGUtils import TGResponsePromise
+from TGBotServer import TGResponsePromise
 
-class TGGame(Game):
-	def __init__(self, players, human_index):
-		super(Game, self).__init__(players)
-		self.__human_index = human_index
+class TGGame:
+	def __init__(self, players):
+		self.__players = players
+		self.__deck = None
+		self.__started = False
+		self.__game_wind = "north"
+		self.__disposed_tiles = []
+
+	@property 
+	def disposed_tiles(self):
+		return list(self.__disposed_tiles)
+
+	@property
+	def deck_size(self):
+		return len(self.__deck)
+
+	@property
+	def game_wind(self):
+		return self.__game_wind	
 
 	def tgresponse_add_info(self, response, TGGame_new_tile, TGGame_cur_player_id, **kwargs):
 		response.decision_para_set("TGGame_new_tile", TGGame_new_tile)
@@ -35,7 +49,7 @@ class TGGame(Game):
 			neighbors = self.__get_neighbor_players(cur_player_id)
 
 			# If the player formed Kong, let him/her draw again
-			while True:
+			while state in [None, "new_turn", "check_discard_neighbor_kong"]:
 				if state is None:
 					if len(self.__deck) == 0:
 						return None, None, None
@@ -46,8 +60,8 @@ class TGGame(Game):
 						new_tile = None
 				
 				if state is None or state == "new_turn":
+					result = cur_player.new_turn(new_tile, neighbors, self, response = response if state is not None else None)
 					state = None
-					result = cur_player.new_turn(new_tile, neighbors, self, response = response)
 					if isinstance(result, TGResponsePromise):
 						result.state_stack_push("new_turn")
 						self.tgresponse_add_info(result, new_tile, cur_player_id)
@@ -62,13 +76,12 @@ class TGGame(Game):
 						break
 
 				if state is None or state == "check_discard_neighbor_kong":
-					state = None
 					kong_info = kong_info if state is None else response.decision_para_retrieve("TGGame_neighbor_kong_info")
 					
 					kong_tile, kong_location, kong_src = kong_info
 					if kong_location == "fixed_hand":
 						# Check if anyone can steal this Kong tile to form a winning hand
-						winner_id, score = self.__check_neighbor_winning(cur_player_id, kong_tile, response = response)
+						winner_id, score = self.__check_neighbor_winning(cur_player_id, kong_tile, response = response if state is not None else None)
 						if isinstance(winner_id, TGResponsePromise):
 							self.tgresponse_add_info(winner_id, new_tile, cur_player_id, TGGame_neighbor_kong_info = kong_info)
 							winner_id.state_stack_push("check_discard_neighbor_kong")
@@ -77,6 +90,7 @@ class TGGame(Game):
 						elif winner_id is not None:
 							return self.__players[winner_id], [cur_player], score
 					
+					state = None
 					cur_player.kong(kong_tile, location = kong_location, source = kong_src)
 
 			is_ponged, is_chowed = False, False
@@ -86,8 +100,8 @@ class TGGame(Game):
 
 			# Check whether any of the other players can win by stealing
 			if state is None or state == "check_neighbor_winning":
+				winner_id, score = self.__check_neighbor_winning(cur_player_id, dispose_tile, response = response if state is not None else None)
 				state = None
-				winner_id, score = self.__check_neighbor_winning(cur_player_id, dispose_tile, response = response)
 				if isinstance(winner_id, TGResponsePromise):
 					winner_id.state_stack_push("check_neighbor_winning")
 					self.tgresponse_add_info(winner_id, new_tile, cur_player_id, TGGame_dispose_tile = dispose_tile)
@@ -106,8 +120,8 @@ class TGGame(Game):
 
 					neighbors = self.__get_neighbor_players(check_player_id)
 					if state is None or state == "check_neighbor_kong":
+						is_able_kong, is_wants_kong, location = check_player.check_new_tile_kong(dispose_tile, search_hand = "hand", neighbors = neighbors, game = self, response =  response if state is not None else None)
 						state = None
-						is_able_kong, is_wants_kong, location = check_player.check_new_tile_kong(dispose_tile, search_hand = "hand", neighbors = neighbors, game = self, response = response)
 						if isinstance(is_wants_kong, TGResponsePromise):
 							self.tgresponse_add_info(is_wants_kong, new_tile, cur_player_id, TGGame_check_player_id = check_player_id, TGGame_dispose_tile = dispose_tile)
 							is_wants_kong.state_stack_push("check_neighbor_kong")
@@ -119,19 +133,19 @@ class TGGame(Game):
 							cur_player_id = check_player_id
 
 					if state is None or state == "check_neighbor_pong":
-						state = None
 						if not (is_able_kong and is_wants_kong):
-							is_able_pong, is_wants_pong = check_player.check_pong(dispose_tile, neighbors, self, response)
-							if isinstance(is_able_pong, TGResponsePromise):
-								self.tgresponse_add_info(is_able_pong, new_tile, cur_player_id, TGGame_check_player_id = check_player_id, TGGame_dispose_tile = dispose_tile)
-								is_able_pong.state_stack_push("check_neighbor_pong")
-								return is_able_kong
+							is_able_pong, is_wants_pong = check_player.check_pong(dispose_tile, neighbors, self, response = response if state is not None else None)
+							if isinstance(is_wants_pong, TGResponsePromise):
+								self.tgresponse_add_info(is_wants_pong, new_tile, cur_player_id, TGGame_check_player_id = check_player_id, TGGame_dispose_tile = dispose_tile)
+								is_wants_pong.state_stack_push("check_neighbor_pong")
+								return is_wants_pong
 
 							elif is_able_pong and is_wants_pong:
 								check_player.pong(dispose_tile)
 								tile_used = True
 								cur_player_id = check_player_id
 								is_ponged = True
+						state = None
 
 					if is_able_pong or is_able_kong:
 						break
@@ -144,11 +158,11 @@ class TGGame(Game):
 
 			# If no one wants to Pong/Kong, check whether the next player wants to Chow
 			if state is None or state == "check_neighbor_chow":
-				state = None
 
 				next_player = self.__players[(cur_player_id+1)%4]
 				neighbors = self.__get_neighbor_players((cur_player_id + 1)%4)
-				is_able, is_wants_to, which = next_player.check_chow(dispose_tile, neighbors, self, response)
+				is_able, is_wants_to, which = next_player.check_chow(dispose_tile, neighbors, self, response = response if state is not None else None)
+				state = None
 				if isinstance(is_wants_to, TGResponsePromise):
 					self.tgresponse_add_info(is_wants_to, new_tile, cur_player_id, TGGame_dispose_tile = dispose_tile)
 					is_wants_to.state_stack_push("check_neighbor_chow")
@@ -170,7 +184,7 @@ class TGGame(Game):
 
 	def __check_neighbor_winning(self, player_id, dispose_tile, response = None):
 		substate = response.state_stack_pop() if response is not None else None
-		check_player_id = (player_id + 1)%4 if substate is None else reponse.decision_para_retrieve("neighbor_winning_check_player_id", 0)
+		check_player_id = (player_id + 1)%4 if substate is None else response.decision_para_retrieve("neighbor_winning_check_player_id", 0)
 
 		while check_player_id != player_id:
 			check_player = self.__players[check_player_id]
@@ -190,3 +204,22 @@ class TGGame(Game):
 			check_player_id = (check_player_id + 1)%4
 
 		return None, None
+
+	def __get_neighbor_players(self, player_id, degenerated = True):
+		tmp_player_id = (player_id + 1)%4
+		neighbors = []
+
+		while tmp_player_id != player_id:
+			player = self.__players[tmp_player_id]
+			if degenerated:
+				player = player.degenerate()
+			neighbors.append(player)
+			tmp_player_id = (tmp_player_id + 1)%4
+
+		return tuple(neighbors)
+
+	def __next_game_wind(self):
+		game_wind = ["east", "south", "west", "north"]
+		index = game_wind.index(self.__game_wind)
+		return game_wind[(index + 1)%len(game_wind)]
+		return tuple(neighbors)
