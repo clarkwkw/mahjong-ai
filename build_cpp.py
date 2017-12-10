@@ -10,12 +10,12 @@ if platform.system().lower() == "darwin":
 
 ext_modules=[
 	Extension(
-		"Move_generator.MCTSCpp.cpp_interface", 
+		"MoveGenerator.MCTSCpp.cpp_interface", 
 		sources = [
-			"./Move_generator/MCTSCpp/cpp_interface.pyx", 
+			"./MoveGenerator/MCTSCpp/cpp_interface.pyx", 
 			"./Tile/CppTile.cpp", 
-			"./Move_generator/MCTSCpp/CppMCTSwapTileNode.cpp", 
-			"Move_generator/MCTSCpp/CppMCTHandEval.cpp"
+			"./MoveGenerator/MCTSCpp/CppMCTSwapTileNode.cpp", 
+			"MoveGenerator/MCTSCpp/CppMCTHandEval.cpp"
 		], 
 		language = "c++", 
 		extra_compile_args = ["-std=c++11", "-fopenmp"],

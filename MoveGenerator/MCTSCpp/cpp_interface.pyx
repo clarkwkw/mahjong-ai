@@ -1,7 +1,7 @@
 from libcpp.string cimport string
 from libcpp.map cimport map
 from libcpp.vector cimport vector
-import Scoring_rules
+import ScoringRules
 
 ctypedef map[string, int] TMap;
 ctypedef vector[ vector[string] ] FHand;
@@ -48,9 +48,9 @@ cdef class MCTSwapTileNode:
 		cdef string result
 		
 		if parallel:
-			result = self.cpp_node.parallel_search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
+			result = self.cpp_node.parallel_search(max_iter, ucb_policy, ScoringRules.HKRules.__score_lower_limit)
 		else:
-			result = self.cpp_node.search(max_iter, ucb_policy, Scoring_rules.HK_rules.__score_lower_limit)
+			result = self.cpp_node.search(max_iter, ucb_policy, ScoringRules.HKRules.__score_lower_limit)
 
 		return result.decode("utf8")
 

@@ -1,8 +1,8 @@
 import Game
 import Player
-import Move_generator
+import MoveGenerator
 import Tile
-import Scoring_rules
+import ScoringRules
 import test_cases
 import argparse
 import traceback

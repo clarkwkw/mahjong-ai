@@ -1,7 +1,7 @@
-from .Move_generator import Move_generator
+from .MoveGenerator import MoveGenerator
 from . import utils
 
-class Human(Move_generator):
+class Human(MoveGenerator):
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		fixed_hand, hand = player.fixed_hand, player.hand

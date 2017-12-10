@@ -1,4 +1,4 @@
-class Degenerated_player:
+class DegeneratedPlayer:
 	def __init__(self, player):
 		self.__player = player
 

@@ -1,6 +1,6 @@
 import Tile
-import Scoring_rules
-from . import Degenerated_player
+import ScoringRules
+from . import DegeneratedPlayer
 
 class Player:
 	def __init__(self, move_generator_class, player_name, **kwargs):
@@ -39,7 +39,7 @@ class Player:
 		return self.__name
 
 	def degenerate(self):
-		return Degenerated_player.Degenerated_player(self)
+		return DegeneratedPlayer.DegeneratedPlayer(self)
 
 	# filter_state: "stolen" / "unstolen" / None (means all disposed tiles)
 	def get_discarded_tiles(self, filter_state = None):
@@ -182,7 +182,7 @@ class Player:
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game):
-		grouped_hand, score = Scoring_rules.HK_rules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, game)
+		grouped_hand, score = ScoringRules.HKRules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, game)
 		if grouped_hand is not None:
 			is_wants_to = self.__move_generator.decide_win(self, grouped_hand, new_tile, tile_src, score, neighbors, game)
 			return True, is_wants_to, score

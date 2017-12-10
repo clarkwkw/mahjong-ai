@@ -1,4 +1,4 @@
-from .Move_generator import Move_generator
+from .MoveGenerator import MoveGenerator
 from . import utils
 import random
 import numpy as np
@@ -7,7 +7,7 @@ import Tile
 display_name = "RNAIE"
 suits = ["dots", "characters", "bamboo"]
 
-class RuleBasedAINaive(Move_generator):
+class RuleBasedAINaive(MoveGenerator):
 	def __init__(self, player_name, s_chow = 2, s_pong = 6, s_future = 1.5, s_neighbor_suit = 0, s_explore = 0, s_mixed_suit = 0, display_step = True):
 		self.majority_suit = None
 		self.s_chow = s_chow

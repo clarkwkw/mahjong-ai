@@ -1,6 +1,6 @@
 import Game
 import Player
-import Move_generator
+import MoveGenerator
 
 def test(args):
 
@@ -9,7 +9,7 @@ def test(args):
 	players = []
 	game = None
 	for player_name in player_names:
-		players.append(Player.Player(Move_generator.Human, player_name))
+		players.append(Player.Player(MoveGenerator.Human, player_name))
 
 	game = Game.Game(players)
 	winner, losers, penalty = game.start_game()

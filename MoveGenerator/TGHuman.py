@@ -1,9 +1,9 @@
-from .Move_generator import Move_generator
+from .MoveGenerator import MoveGenerator
 from . import utils
 from TGBotServer import TGResponsePromise, generate_TG_board
 import Tile
 
-class TGHuman(Move_generator):
+class TGHuman(MoveGenerator):
 	def __init__(self, player_name, *args, **kwargs):
 		self.__reply = None
 		self.__player_name = player_name

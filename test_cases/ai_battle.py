@@ -1,6 +1,6 @@
 import Game
 import Player
-import Move_generator
+import MoveGenerator
 import numpy as np
 import random
 import traceback
@@ -10,7 +10,7 @@ _player_names = ["Amy", "Billy", "Clark", "David"]
 
 _models = {
 	"heuristics": {
-		"class": Move_generator.RuleBasedAINaive,
+		"class": MoveGenerator.RuleBasedAINaive,
 		"parameters":{
 			 "display_step": False,
 			 "s_chow": 2,
@@ -22,14 +22,14 @@ _models = {
 		}
 	},
 	"mctspy":{
-		"class": Move_generator.RuleBasedAINaiveMCTSPy,
+		"class": MoveGenerator.RuleBasedAINaiveMCTSPy,
 		"parameters":{
 			"display_step": False,
 			"mcts_max_iter": 1000
 		}
 	},
 	"mctscpp":{
-		"class": Move_generator.RuleBasedAINaiveMCTSCpp,
+		"class": MoveGenerator.RuleBasedAINaiveMCTSCpp,
 		"parameters":{
 			"display_step": False,
 			"parallel": False,

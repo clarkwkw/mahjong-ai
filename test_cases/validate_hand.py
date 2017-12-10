@@ -1,5 +1,5 @@
 import Tile
-import Scoring_rules
+import ScoringRules
 import unittest
 
 def test(args):
@@ -14,7 +14,7 @@ class Validate_hand_test(unittest.TestCase):
 		character_7 = Tile.Tile("characters", 7)
 		dots_9 = Tile.Tile("dots", 9)
 		hand = [character_1, character_1, character_1, bamboo_2, bamboo_2, bamboo_2, dots_5, dots_5, dots_5, character_7, character_7, character_7, dots_9]
-		grouped_hands = Scoring_rules.HK_rules.validate_hand([], hand, dots_9)
+		grouped_hands = ScoringRules.HKRules.validate_hand([], hand, dots_9)
 		self.assertEqual(len(grouped_hands), 1)
 
 	def test_one_nines(self):
@@ -25,7 +25,7 @@ class Validate_hand_test(unittest.TestCase):
 		character_9 = Tile.Tile("characters", 9)
 
 		hand = [bamboo_1, bamboo_1, bamboo_1, bamboo_9, bamboo_9, bamboo_9, dots_1, dots_1, dots_1, east, east, east, character_9]
-		grouped_hands = Scoring_rules.HK_rules.validate_hand([], hand, character_9)
+		grouped_hands = ScoringRules.HKRules.validate_hand([], hand, character_9)
 		self.assertEqual(len(grouped_hands), 1)
 
 	def test_mixed_suit(self):
@@ -39,7 +39,7 @@ class Validate_hand_test(unittest.TestCase):
 		dots_8 = Tile.Tile("dots", 1)
 		white = Tile.Tile("honor", "white")
 		hand = [east, east, east, dots_1, dots_2, dots_3, dots_4, dots_5, dots_6, dots_8, dots_8, dots_8, white]
-		grouped_hands = Scoring_rules.HK_rules.validate_hand([], hand, white)
+		grouped_hands = ScoringRules.HKRules.validate_hand([], hand, white)
 		self.assertEqual(len(grouped_hands), 1)
 
 	def test_normal(self):
@@ -59,7 +59,7 @@ class Validate_hand_test(unittest.TestCase):
 
 		hand = [north, north, west, west]
 
-		grouped_hands = Scoring_rules.HK_rules.validate_hand(fixed_hand, hand, north)
+		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, north)
 		self.assertEqual(len(grouped_hands), 1)
 
 

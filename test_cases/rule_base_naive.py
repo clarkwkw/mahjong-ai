@@ -1,14 +1,14 @@
 import Game
 import Player
-import Move_generator
+import MoveGenerator
 
 def test(args):
 
 	player_names = [
-	("Amy", Move_generator.Human, {"display_tgboard": True}), 
-	("Billy", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
-	("Clark", Move_generator.Human, {"display_tgboard": True}), 
-	("Doe", Move_generator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})]
+	("Amy", MoveGenerator.Human, {"display_tgboard": True}), 
+	("Billy", MoveGenerator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
+	("Clark", MoveGenerator.Human, {"display_tgboard": True}), 
+	("Doe", MoveGenerator.RuleBasedAINaive, {"display_step": True, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})]
 
 	players = []
 	game = None

@@ -10,7 +10,7 @@ except ImportError:
 	TGUTILS_SUCCESS = False
 
 @six.add_metaclass(abc.ABCMeta)
-class Move_generator:
+class MoveGenerator:
 	def __init__(self, player_name, display_tgboard = False):
 		self.__player_name = player_name
 		self.__display_tgboard = display_tgboard

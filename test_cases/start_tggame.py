@@ -1,14 +1,14 @@
 import Game
-import Move_generator
+import MoveGenerator
 import Player
 from TGBotServer import TGResponsePromise 
 
 def test(args):
 	player_names = [
-		("Amy", Move_generator.TGHuman, {}), 
-		("Billy", Move_generator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
-		("Clark", Move_generator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
-		("Doe", Move_generator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})
+		("Amy", MoveGenerator.TGHuman, {}), 
+		("Billy", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
+		("Clark", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
+		("Doe", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})
 	]
 	players = []
 	game = None

@@ -1,6 +1,5 @@
 import Tile
-import Scoring_rules
-from . import Degenerated_player
+import ScoringRules
 from TGBotServer import TGResponsePromise
 from .Player import Player
 
@@ -166,7 +165,7 @@ class TGPlayer(Player):
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game, response = None):
-		grouped_hand, score = Scoring_rules.HK_rules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
+		grouped_hand, score = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
 		if grouped_hand is not None:
 			if response is not None:
 				self._Player__move_generator.inform_reply(response.reply)
