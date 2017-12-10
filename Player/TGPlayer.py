@@ -5,7 +5,7 @@ from .Player import Player
 
 class TGPlayer(Player):
 	def __init__(self, move_generator_class, player_name, tg_userid, **kwargs):
-		super(Player, self).__init__(move_generator_class, player_name, **kwargs)
+		super(TGPlayer, self).__init__(move_generator_class, player_name, **kwargs)
 		self.__tg_userid = tg_userid
 
 	@property

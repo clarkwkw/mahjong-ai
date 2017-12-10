@@ -6,12 +6,14 @@ from urllib.parse import quote_plus
 from pymongo.errors import ConnectionFailure
 from pymongo import MongoClient
 from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+import math
 
+__initialized = False
 _mongo_client = None
 _ai_models_sum = 0
 _ai_models = None
 _scoring_scheme = None
-tg_bot_token = None
+_tg_bot_token = None
 
 def get_mongo_time_str(time):
 	return time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -36,17 +38,24 @@ def get_tg_inline_keyboard(cmd, opts):
 	rows = []
 	while len(opts) > 0:
 		n_opt = min(length_avg + (length_remain > 0), len(opts))
-		row = [InlineKeyboardButton(text = opt, callback_data = "%s/%s"%(cmd, opt)) for opt in opts[0:n_opt]]
+		row = [InlineKeyboardButton(text = opt[0], callback_data = "%s/%s"%(cmd, opt[1])) for opt in opts[0:n_opt]]
 		rows.append(row)
 		length_remain -= 1
 		opts = opts[n_opt:]
 	return InlineKeyboardMarkup(rows)
 
+def get_tg_bot_token():
+	if not __initialized:
+		load_settings()
+	return _tg_bot_token
+
 # Server setup
 def load_settings():
+	global _ai_models, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized
+	if __initialized:
+		return
 	with open("resources/server_settings.json", "r") as f:
 		server_settings = json.load(f)
-		password = getpass.getpass("Password for Mongodb: ")
 		uri = "mongodb://%s/Mahjong-ai"%(server_settings["mongo_host"])
 		try:
 			_mongo_client = MongoClient(uri, username = server_settings["mongo_username"], password = server_settings["mongo_password"])
@@ -55,8 +64,8 @@ def load_settings():
 			print("Failed to connect to server")
 			exit(-1)
 
-		ai_models = server_settings["ai_models"]
-		for model in ai_models:
+		_ai_models = server_settings["ai_models"]
+		for model in _ai_models:
 			_ai_models_sum += model["weight"]
 
 		if _ai_models_sum <= 0:
@@ -65,3 +74,4 @@ def load_settings():
 
 		_scoring_scheme = server_settings["scoring_scheme"]
 		_tg_bot_token = server_settings["tg_bot_token"]
+		__initialized = True

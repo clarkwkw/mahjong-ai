@@ -1,8 +1,9 @@
 .DS_Store
 __pycache__
 *.pyc
-Move_generator/MCTSCpp/cpp_interface.cpp
+MoveGenerator/MCTSCpp/cpp_interface.cpp
 *.so
 output
 mahjong-ai.zip
 tmp_board.png
+resources/server_settings.json

@@ -23,6 +23,9 @@ class TGResponsePromise:
 	def reply(self):
 		return self.__reply
 
+	def remove_board(self):
+		self.__board = None
+
 	def set_reply(self, reply):
 		try:
 			self.__reply = int(reply)

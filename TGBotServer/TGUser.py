@@ -2,6 +2,7 @@ import pickle
 import datetime
 from . import utils 
 
+utils.load_settings()
 mongo_collect = utils.get_mongo_collection("Users")
 
 class TGUser:
@@ -83,7 +84,8 @@ class TGUser:
 				"opponents_type": opponents_type,
 				"response_binary": None
 			}
-		
+
+		response.remove_board()
 		self.__game["binary"] = pickle.dumps(tggame)
 		self.__game["response_binary"] = pickle.dumps(response)
 
