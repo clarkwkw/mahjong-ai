@@ -85,7 +85,7 @@ def get_suit_classification_map(default_val = None):
 		result[suit] = default_val
 	return result
 
-with open("tile_config.json", "r") as f:
+with open("resources/tile_config.json", "r") as f:
 	tile_config_dict = json.load(f)
 	suit_order = tile_config_dict["suit_order"]
 	tile_symbols = tile_config_dict["symbols"]

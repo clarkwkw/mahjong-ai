@@ -5,3 +5,4 @@ Move_generator/MCTSCpp/cpp_interface.cpp
 *.so
 output
 mahjong-ai.zip
+tmp_board.png
