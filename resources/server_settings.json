@@ -1,0 +1,27 @@
+{
+	"mongo_host": "localhost:27017",
+	"mongo_username": "mahjong-ai",
+	"mongo_password": "mahjong-ai",
+	"tg_bot_token": "",
+	"ai_models":[
+		{
+			"id": "RuleBasedAINaive",
+			"weight": 1,
+			"kwargs":{},
+			"names": ["Danial", "Forest", "Jackson", "Clement", "Ali", "Herbert", "Jesse", "Houston", "Kraig", "Rocky", "Dulcie", "Francesca", "Ella", "Margarette", "Dolores", "Kam", "Petra", "Alberta", "Delcie", "Helene"]
+		},
+	],
+	"scoring_scheme":[
+		[0, 0],
+		[40, 60],
+		[80, 120],
+		[160, 240],
+		[320, 480],
+		[480, 720],
+		[640, 960],
+		[960, 1440],
+		[1280, 1920],
+		[1920, 2880],
+		[2560, 3840]
+	]
+}
