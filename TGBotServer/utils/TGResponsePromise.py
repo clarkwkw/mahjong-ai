@@ -17,7 +17,7 @@ class TGResponsePromise:
 
 	@property 
 	def choices(self):
-		return self.__choices
+		return list(self.__choices)
 
 	@property 
 	def reply(self):

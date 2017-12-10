@@ -1,6 +1,6 @@
 import pickle
 import datetime
-from . import utils
+from . import utils 
 
 mongo_collect = utils.get_mongo_collection("Users")
 
@@ -17,7 +17,8 @@ class TGUser:
 		{
 			"binary": "",
 			"start_date": "",
-			"opponents_type": []
+			"opponents_type": [],
+			"response_binary": ""
 
 		}
 		'''
@@ -65,7 +66,13 @@ class TGUser:
 
 		return pickle.loads(self.__game["binary"])
 
-	def update_game(self, tggame, opponents_type = None):
+	def restore_game_response(self):
+		if self.__game is None:
+			raise Exception("Cannot find a started game")
+
+		return pickle.loads(self.__game["response_binary"])
+
+	def update_game(self, tggame, response, opponents_type = None):
 		if self.__game is None:
 			if opponents_type is None:
 				raise Exception("Unspecified 'opponents_type' at new game")
@@ -73,10 +80,12 @@ class TGUser:
 			self.__game = {
 				"binary": None,
 				"start_date": utils.get_mongo_time_str(datetime.datetime.now()),
-				"opponents_type": opponents_type
+				"opponents_type": opponents_type,
+				"response_binary": None
 			}
 		
 		self.__game["binary"] = pickle.dumps(tggame)
+		self.__game["response_binary"] = pickle.dumps(response)
 
 	def end_game(self, score = None):
 		if self.__game is None:

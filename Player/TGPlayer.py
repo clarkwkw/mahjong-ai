@@ -4,7 +4,14 @@ from TGBotServer import TGResponsePromise
 from .Player import Player
 
 class TGPlayer(Player):
+	def __init__(self, move_generator_class, player_name, tg_userid, **kwargs):
+		super(Player, self).__init__(move_generator_class, player_name, **kwargs)
+		self.__tg_userid = tg_userid
 
+	@property
+	def tg_userid(self):
+		return self.__tg_userid
+		
 	def new_turn(self, new_tile, neighbors, game, response = None):
 		dispose_tile = None
 
