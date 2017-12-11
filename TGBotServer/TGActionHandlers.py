@@ -139,7 +139,7 @@ def continue_game(userid, username, callback_data, bot, update):
 		else:
 			winner, losers, penalty = new_response
 			winning_score = get_winning_score(penalty, len(losers) > 1)
-			losing_score = winning_score/3
+			losing_score = winning_score if len(losers) == 1 else winning_score/3
 			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score))
 			if winner.tg_userid == tg_user.tg_userid:
 				tg_user.end_game(winning_score)
