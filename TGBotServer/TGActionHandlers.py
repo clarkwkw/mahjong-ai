@@ -57,14 +57,17 @@ def new_game(bot, update):
 		tg_game = TGGame(tg_players)
 		response = tg_game.start_game()
 		if isinstance(response, TGResponsePromise):
-			keyboard = get_tg_inline_keyboard("continue_game", response.choices)
+			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
+
 			try:
 				update.message.reply_photo(response.board.bufferedReader)
 			except TimedOut:
 				print("photo sent timeout")
 				pass
+
+			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, response.choices)
 			update.message.reply_text(response.message, reply_markup = keyboard)
-			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
+			
 			tg_user.save()
 		else:
 			update.message.reply_text("The game ended so fast without your participation, try to start the game again..")
@@ -73,31 +76,39 @@ def new_game(bot, update):
 
 def inline_reply_handler(bot, update):
 	try:
+		update.callback_query.edit_message_reply_markup()
 		callback_data = update.callback_query.data
 		cmd, data = callback_data.split("/", 1)
 		if cmd == "continue_game":
-			continue_game(update.callback_query.from_user.id, update.callback_query.from_user.first_name, callback_data, bot, update)
+			continue_game(update.callback_query.from_user.id, update.callback_query.from_user.first_name, data, bot, update)
 		else:
 			update.callback_query.answer("What are you doing??")
 
-		update.callback_query.edit_message_reply_markup()
 	except:
 		print(traceback.format_exc())
 
 def continue_game(userid, username, callback_data, bot, update):
+	game_id, reply = callback_data.split("/", 1)
+
 	tg_user = _create_user_if_not_exist(userid, username)
-	if not tg_user.game_started:
+	if (not tg_user.game_started) or (game_id != tg_user.game_id):
 		update.callback_query.answer("You game has gone to blackhole, I am very sorry :(")
 		update.callback_query.answer("Maybe you can try a new game")
 
 	else:
 		response = tg_user.restore_game_response()
 		tg_game = tg_user.restore_game()
-		response.set_reply(callback_data)
-		new_response = tg_game.start_game()
+		response.set_reply(reply)
+
+		new_response = tg_game.start_game(response)
 		if isinstance(new_response, TGResponsePromise):
-			keyboard = get_tg_inline_keyboard("continue_game", new_response.choices)
-			bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)
+			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, new_response.choices)
+			try:
+				bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)
+			except TimedOut:
+				print("photo sent timeout")
+				pass
+
 			bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
 			tg_user.update_game(tg_game, new_response)
 			tg_user.save()

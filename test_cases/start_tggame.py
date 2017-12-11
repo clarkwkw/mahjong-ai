@@ -13,7 +13,7 @@ def test(args):
 	players = []
 	game = None
 	for player_name, move_generator_class, parameter in player_names:
-		players.append(Player.TGPlayer(move_generator_class, player_name, **parameter))
+		players.append(Player.TGPlayer(move_generator_class, player_name, "123", **parameter))
 
 
 	game = Game.TGGame(players)

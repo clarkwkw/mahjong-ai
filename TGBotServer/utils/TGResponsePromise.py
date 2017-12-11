@@ -23,6 +23,9 @@ class TGResponsePromise:
 	def reply(self):
 		return self.__reply
 
+	def print_state_stack(self):
+		print(self.__state_stack)
+
 	def remove_board(self):
 		self.__board = None
 

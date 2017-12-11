@@ -1,6 +1,7 @@
 import pickle
 import datetime
 from . import utils 
+import random, string
 
 utils.load_settings()
 mongo_collect = utils.get_mongo_collection("Users")
@@ -16,6 +17,7 @@ class TGUser:
 		self.__game = None
 		'''
 		{
+			"game_id": "",
 			"binary": "",
 			"start_date": "",
 			"opponents_type": [],
@@ -45,6 +47,12 @@ class TGUser:
 	@property 
 	def game_started(self):
 		return self.__game is not None
+
+	@property
+	def game_id(self):
+		if self.__game is not None:
+			return self.__game["game_id"]
+		return None
 
 	# opponent_type: "rule_base_naive"
 	def match_statistic(self):
@@ -79,15 +87,15 @@ class TGUser:
 				raise Exception("Unspecified 'opponents_type' at new game")
 
 			self.__game = {
+				"game_id": ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(5)),
 				"binary": None,
 				"start_date": utils.get_mongo_time_str(datetime.datetime.now()),
 				"opponents_type": opponents_type,
 				"response_binary": None
 			}
 
-		response.remove_board()
-		self.__game["binary"] = pickle.dumps(tggame)
-		self.__game["response_binary"] = pickle.dumps(response)
+		self.__game["binary"] = tggame
+		self.__game["response_binary"] = response
 
 	def end_game(self, score = None):
 		if self.__game is None:
@@ -121,6 +129,11 @@ class TGUser:
 		return tguser
 
 	def save(self):
+		if self.__game is not None:
+			self.__game["response_binary"].remove_board()
+			self.__game["binary"] = pickle.dumps(self.__game["binary"])
+			self.__game["response_binary"] = pickle.dumps(self.__game["response_binary"])
+
 		mongo_document = {
 			"tg_userid": self.__tg_userid,
 			"username": self.__username,
