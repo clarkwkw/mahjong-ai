@@ -5,6 +5,12 @@ import random, string
 
 mongo_collect = None
 
+def init_mongo_collect():
+	global mongo_collect	
+	if mongo_collect is None:
+		utils.load_settings()
+		mongo_collect = utils.get_mongo_collection("Users")
+
 class TGUser:
 
 	def __init__(self, tg_userid, username):
@@ -127,11 +133,7 @@ class TGUser:
 
 	@classmethod
 	def load(cls, tg_userid):
-		global mongo_collect
-		
-		if mongo_collect is None:
-			utils.load_settings()
-			mongo_collect = utils.get_mongo_collection("Users")
+		init_mongo_collect()
 
 		mongo_document = mongo_collect.find_one({"tg_userid": tg_userid})
 
@@ -147,6 +149,8 @@ class TGUser:
 		return tguser
 
 	def save(self):
+		init_mongo_collect()
+
 		if self.__game is not None:
 			self.__game["response_binary"].remove_board()
 			self.__game["binary"] = pickle.dumps(self.__game["binary"])
