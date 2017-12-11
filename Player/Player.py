@@ -2,7 +2,7 @@ import Tile
 import ScoringRules
 from . import DegeneratedPlayer
 
-class Player:
+class Player(object):
 	def __init__(self, move_generator_class, player_name, **kwargs):
 		self.__cumulate_score = 0
 		self.__move_generator = move_generator_class(player_name = player_name, **kwargs)

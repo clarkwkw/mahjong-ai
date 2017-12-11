@@ -1,11 +1,13 @@
 from .TGUser import TGUser
-from Game import TGGame
 from Player import TGPlayer
 from .utils import pick_opponent_model, TGResponsePromise, get_tg_inline_keyboard, get_winning_score
 import MoveGenerator
 import random
 import traceback
-from telegram.error import TimedOut
+try:
+	from telegram.error import TimedOut
+except:
+	print("Unresolved dependencies: telegram")
 
 def _create_user_if_not_exist(tg_userid, username = ""):
 	tg_user = TGUser.load(tg_userid)
@@ -53,6 +55,7 @@ def abort_game(bot, update):
 		print(traceback.format_exc())
 
 def new_game(bot, update):
+	from Game import TGGame
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:

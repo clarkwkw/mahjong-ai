@@ -1,11 +1,13 @@
 import datetime
 import json
-import getpass
 import random
-from urllib.parse import quote_plus
-from pymongo.errors import ConnectionFailure
-from pymongo import MongoClient
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Bot
+try:
+	from pymongo.errors import ConnectionFailure
+	from pymongo import MongoClient
+	from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Bot
+except ImportError:
+	print("Unresolved dependencies: Telegram/MongoDB")
+
 import math
 
 __initialized = False

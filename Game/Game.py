@@ -1,7 +1,7 @@
 import random
 import Tile
 
-class Game:
+class Game(object):
 	def __init__(self, players):
 		self.__players = players
 		self.__deck = None
