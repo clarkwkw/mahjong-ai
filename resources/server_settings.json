@@ -7,10 +7,11 @@
 		{
 			"id": "RuleBasedAINaive",
 			"weight": 1,
-			"kwargs":{},
+			"kwargs":{"display_step": false},
 			"names": ["Danial", "Forest", "Jackson", "Clement", "Ali", "Herbert", "Jesse", "Houston", "Kraig", "Rocky", "Dulcie", "Francesca", "Ella", "Margarette", "Dolores", "Kam", "Petra", "Alberta", "Delcie", "Helene"]
-		},
+		}
 	],
+	
 	"scoring_scheme":[
 		[0, 0],
 		[40, 60],
