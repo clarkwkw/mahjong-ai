@@ -37,7 +37,7 @@ class TGPlayer(Player):
 			
 				if is_able:
 					if isinstance(is_wants_to, TGResponsePromise):
-						is_wants_to.push_state_stack_push("new_turn_check_new_tile_kong")
+						is_wants_to.state_stack_push("new_turn_check_new_tile_kong")
 						return is_wants_to
 
 					elif is_wants_to:
@@ -57,7 +57,7 @@ class TGPlayer(Player):
 
 						is_wants_to = self._Player__move_generator.decide_kong(self, new_tile, tile, "hand", "existing", neighbors, game)
 						if isinstance(is_wants_to, TGResponsePromise):
-							is_wants_to.push_state_stack_push("new_turn_check_new_tile_kong")
+							is_wants_to.state_stack_push("new_turn_check_new_tile_kong")
 							is_wants_to.decision_para_set("new_turn_check_existing_kong_skipping", i)
 							return is_wants_to
 
@@ -157,7 +157,7 @@ class TGPlayer(Player):
 			is_wants_to = self._Player__move_generator.decide_kong(self, new_tile, new_tile, location, src, neighbors, game)
 			if isinstance(is_wants_to, TGResponsePromise):
 				is_wants_to.decision_para_set("kong_location", location)
-				is_wants_to.push_state_stack_push("check_new_tile_kong")
+				is_wants_to.state_stack_push("check_new_tile_kong")
 
 		return is_able, is_wants_to, location
 
