@@ -95,7 +95,6 @@ class TGHuman(MoveGenerator):
 			suit, value = self.__reply.split("-")
 			tile = Tile.Tile(suit, value)
 			self.__reply = None
-			print("Tile:", tile)
 			return tile
 
 		tg_choices = []

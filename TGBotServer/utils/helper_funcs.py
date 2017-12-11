@@ -5,7 +5,7 @@ import random
 from urllib.parse import quote_plus
 from pymongo.errors import ConnectionFailure
 from pymongo import MongoClient
-from telegram import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Bot
 import math
 
 __initialized = False
@@ -14,6 +14,7 @@ _ai_models_sum = 0
 _ai_models = None
 _scoring_scheme = None
 _tg_bot_token = None
+_tg_bot = None
 
 def get_mongo_time_str(time):
 	return time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -49,9 +50,12 @@ def get_tg_bot_token():
 		load_settings()
 	return _tg_bot_token
 
+def send_tg_message(tg_user_id, message):
+	_tg_bot.send_message(tg_user_id, message)
+
 # Server setup
 def load_settings():
-	global _ai_models, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized
+	global _ai_models, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized, _tg_bot
 	if __initialized:
 		return
 	with open("resources/server_settings.json", "r") as f:
@@ -75,3 +79,4 @@ def load_settings():
 		_scoring_scheme = server_settings["scoring_scheme"]
 		_tg_bot_token = server_settings["tg_bot_token"]
 		__initialized = True
+		_tg_bot = Bot(_tg_bot_token)

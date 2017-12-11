@@ -9,6 +9,9 @@ class Game:
 		self.__game_wind = "north"
 		self.__disposed_tiles = []
 
+	def add_notification(self, msg):
+		pass
+
 	@property 
 	def disposed_tiles(self):
 		return list(self.__disposed_tiles)

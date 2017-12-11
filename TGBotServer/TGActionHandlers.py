@@ -38,6 +38,20 @@ def start(bot, update):
 	except:
 		print(traceback.format_exc())
 
+def abort_game(bot, update):
+	try:
+		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
+		if not tg_user.game_started:
+			update.message.reply_text("But you have not started a game")
+			return
+		if tg_user.last_game_message_id is not None:
+			bot.edit_message_reply_markup(chat_id = update.effective_chat.id, message_id = tg_user.last_game_message_id)
+		tg_user.end_game()
+		tg_user.save()
+		update.message.reply_text("OK, aborted")
+	except:
+		print(traceback.format_exc())
+
 def new_game(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
@@ -55,7 +69,11 @@ def new_game(bot, update):
 		random.shuffle(tg_players)
 
 		tg_game = TGGame(tg_players)
+		tg_game.register_tg_userids(tg_user.tg_userid)
+		tg_game.add_notification("-- Game starts --")
 		response = tg_game.start_game()
+		tg_game.push_notification()
+
 		if isinstance(response, TGResponsePromise):
 			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
 
@@ -66,8 +84,8 @@ def new_game(bot, update):
 				pass
 
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, response.choices)
-			update.message.reply_text(response.message, reply_markup = keyboard)
-			
+			sent_message = update.message.reply_text(response.message, reply_markup = keyboard)
+			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.save()
 		else:
 			update.message.reply_text("The game ended so fast without your participation, try to start the game again..")
@@ -101,6 +119,7 @@ def continue_game(userid, username, callback_data, bot, update):
 		response.set_reply(reply)
 
 		new_response = tg_game.start_game(response)
+		tg_game.push_notification()
 		if isinstance(new_response, TGResponsePromise):
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, new_response.choices)
 			try:
@@ -109,18 +128,19 @@ def continue_game(userid, username, callback_data, bot, update):
 				print("photo sent timeout")
 				pass
 
-			bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
+			sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
+			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.update_game(tg_game, new_response)
 			tg_user.save()
 
 		else:
-			winner, losers, penalty = response
+			winner, losers, penalty = new_response
 			winning_score = get_winning_score(penalty, len(losers) > 1)
 			losing_score = winning_score/3
 			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score))
-			if winner.tg_userid == tg_userid:
+			if winner.tg_userid == tg_user.tg_userid:
 				tg_user.end_game(winning_score)
-			elif tg_userid in [loser.tg_userid for loser in losers]:
+			elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
 				tg_user.end_game(-1*losing_score)
 			else:
 				tg_user.end_game(0)

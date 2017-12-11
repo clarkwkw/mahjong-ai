@@ -3,8 +3,7 @@ import datetime
 from . import utils 
 import random, string
 
-utils.load_settings()
-mongo_collect = utils.get_mongo_collection("Users")
+mongo_collect = None
 
 class TGUser:
 
@@ -21,7 +20,8 @@ class TGUser:
 			"binary": "",
 			"start_date": "",
 			"opponents_type": [],
-			"response_binary": ""
+			"response_binary": "",
+			"last_message_id": ""
 
 		}
 		'''
@@ -52,6 +52,12 @@ class TGUser:
 	def game_id(self):
 		if self.__game is not None:
 			return self.__game["game_id"]
+		return None
+
+	@property
+	def last_game_message_id(self):
+		if self.__game is not None:
+			return self.__game["last_message_id"]
 		return None
 
 	# opponent_type: "rule_base_naive"
@@ -91,11 +97,17 @@ class TGUser:
 				"binary": None,
 				"start_date": utils.get_mongo_time_str(datetime.datetime.now()),
 				"opponents_type": opponents_type,
-				"response_binary": None
+				"response_binary": None,
 			}
 
 		self.__game["binary"] = tggame
 		self.__game["response_binary"] = response
+
+	def register_last_game_message_id(self, last_message_id):
+		if self.__game is not None:
+			self.__game["last_message_id"] = last_message_id
+		else:
+			raise Exception("Cannot find a started game")
 
 	def end_game(self, score = None):
 		if self.__game is None:
@@ -115,6 +127,12 @@ class TGUser:
 
 	@classmethod
 	def load(cls, tg_userid):
+		global mongo_collect
+		
+		if mongo_collect is None:
+			utils.load_settings()
+			mongo_collect = utils.get_mongo_collection("Users")
+
 		mongo_document = mongo_collect.find_one({"tg_userid": tg_userid})
 
 		if mongo_document is None:

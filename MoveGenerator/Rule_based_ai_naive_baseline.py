@@ -33,15 +33,18 @@ class RuleBasedAINaive(MoveGenerator):
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
 		chow_tiles_str = ""
+		chow_tiles_tgstr = new_tile.suit+"-"+",".join([str(new_tile.value + x) for x in range(choices[0] - 1, choices[0] + 2)])
 		for i in range(choices[0] - 1, choices[0] + 2):
 			chow_tiles_str += new_tile.generate_neighbor_tile(i).symbol
 
+
 		self.end_decision()
 		if new_tile.suit != self.majority_suit:
-			self.print_msg("%s [%s] chooses not to Chow %s."%(self.player_name, display_name, chow_tiles_str))
+			self.print_msg("%s chooses not to Chow %s."%(self.player_name, chow_tiles_str))
 			return False, None
 		else:
-			self.print_msg("%s [%s] chooses to Chow %s."%(self.player_name, display_name, chow_tiles_str))
+			self.print_msg("%s chooses to Chow %s."%(self.player_name, chow_tiles_str))
+			game.add_notification("%s chooses to Chow %s."%(self.player_name, chow_tiles_tgstr))
 			return True, choices[0]
 
 	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
@@ -67,6 +70,8 @@ class RuleBasedAINaive(MoveGenerator):
 		self.end_decision()
 		if criteria:
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
+			game.add_notification("%s chooses to Kong %s."%(self.player_name, kong_tile))
+
 			return True
 		else:
 			self.print_msg("%s [%s] chooses not to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
@@ -87,6 +92,7 @@ class RuleBasedAINaive(MoveGenerator):
 		self.end_decision()
 		if criteria:
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
+			game.add_notification("%s chooses to Pong %s."%(self.player_name, new_tile))
 			return True
 		else:
 			self.print_msg("%s [%s] chooses not to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
@@ -104,6 +110,7 @@ class RuleBasedAINaive(MoveGenerator):
 				self.print_game_board(fixed_hand, hand, neighbors, game, new_tile = new_tile)
 			
 			self.print_msg("%s [%s] chooses to declare victory."%(self.player_name, display_name))
+			game.add_notification("%s chooses to declare victory."%(self.player_name))
 
 			self.print_msg("You can form a victory hand of: ")
 			utils.print_hand(fixed_hand, end = " ")
@@ -143,7 +150,7 @@ class RuleBasedAINaive(MoveGenerator):
 		drop_tile_score, drop_tile =  score_tile_rank[0]
 		self.print_msg("%s [%s] chooses to drop %s (%.2f) [majority = %s]."%(self.player_name, display_name, drop_tile.symbol, drop_tile_score, self.majority_suit))
 		self.end_decision(True)
-		
+		game.add_notification("%s chooses to discard a %s."%(self.player_name, drop_tile))
 		return drop_tile
 
 	'''

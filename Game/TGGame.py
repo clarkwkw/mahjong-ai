@@ -1,8 +1,41 @@
 import Tile
-from TGBotServer import TGResponsePromise
+from TGBotServer import TGResponsePromise, send_tg_message
 from .Game import Game
 
 class TGGame(Game):
+	def __init__(self, players):
+		super(TGGame, self).__init__(players)
+		self.__tg_userids = []
+		self.__tg_notification_queues = []
+
+	def register_tg_userids(self, userids):
+		if type(userids) is list:
+			self.__tg_userids.extend(userids)
+		else:
+			self.__tg_userids.append(userids)
+
+	def add_notification(self, msg):
+		self.__tg_notification_queues.append(msg)
+
+	def push_notification(self):
+		tmp_msg = ""
+		for msg in self.__tg_notification_queues:
+			if len(tmp_msg) + len(msg) > 4096:
+				for tg_userid in self.__tg_userids:
+					send_tg_message(tg_userid, tmp_msg)
+				tmp_msg = ""
+				
+			if len(tmp_msg) == 0:
+				tmp_msg = msg
+			else:
+				tmp_msg += "\n"+msg
+
+		if len(tmp_msg) > 0:
+			for tg_userid in self.__tg_userids:
+				send_tg_message(tg_userid, tmp_msg)
+
+		self.__tg_notification_queues = []
+
 	def tgresponse_add_info(self, response, TGGame_new_tile, TGGame_cur_player_id, **kwargs):
 		response.decision_para_set("TGGame_new_tile", TGGame_new_tile)
 		response.decision_para_set("TGGame_cur_player_id", TGGame_cur_player_id)
