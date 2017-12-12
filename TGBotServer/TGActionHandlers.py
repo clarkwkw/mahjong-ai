@@ -47,7 +47,10 @@ def abort_game(bot, update):
 			update.message.reply_text("But you have not started a game")
 			return
 		if tg_user.last_game_message_id is not None:
-			bot.edit_message_reply_markup(chat_id = update.effective_chat.id, message_id = tg_user.last_game_message_id)
+			try:
+				bot.edit_message_reply_markup(chat_id = update.effective_chat.id, message_id = tg_user.last_game_message_id)
+			except:
+				pass
 		tg_user.end_game()
 		tg_user.save()
 		update.message.reply_text("OK, aborted")
@@ -79,15 +82,17 @@ def new_game(bot, update):
 
 		if isinstance(response, TGResponsePromise):
 			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
+			retry_count = 0
 			while True:
 				try:
 					update.message.reply_photo(response.board.bufferedReader)
 					break
 				except TimedOut:
-					print("photo sent timeout")
+					print("Photo sent timeout")
 					break
 				except TelegramError:
-					pass
+					retry_count += 1
+					print("Invalid server response, retrying.. %d"%retry_count)
 
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, response.choices)
 			sent_message = update.message.reply_text(response.message, reply_markup = keyboard)
@@ -100,7 +105,11 @@ def new_game(bot, update):
 
 def inline_reply_handler(bot, update):
 	try:
-		update.callback_query.edit_message_reply_markup()
+		try:
+			update.callback_query.edit_message_reply_markup()
+		except:
+			pass
+			
 		callback_data = update.callback_query.data
 		cmd, data = callback_data.split("/", 1)
 		if cmd == "continue_game":
@@ -128,15 +137,17 @@ def continue_game(userid, username, callback_data, bot, update):
 		tg_game.push_notification()
 		if isinstance(new_response, TGResponsePromise):
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, new_response.choices)
+			retry_count += 1
 			while True:
 				try:
 					bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)
 					break
 				except TimedOut:
-					print("photo sent timeout")
+					print("Photo sent timeout")
 					break
 				except TelegramError:
-					pass
+					retry_count += 1
+					print("Invalid server response, retrying.. %d"%retry_count)
 					
 			sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
 			tg_user.register_last_game_message_id(sent_message.message_id)
@@ -144,14 +155,18 @@ def continue_game(userid, username, callback_data, bot, update):
 			tg_user.save()
 
 		else:
+
 			winner, losers, penalty = new_response
-			winning_score = get_winning_score(penalty, len(losers) > 1)
-			losing_score = winning_score if len(losers) == 1 else winning_score/3
-			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score))
-			if winner.tg_userid == tg_user.tg_userid:
-				tg_user.end_game(winning_score)
-			elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
-				tg_user.end_game(-1*losing_score)
+			if winner is not None:
+				winning_score = get_winning_score(penalty, len(losers) > 1)
+				losing_score = winning_score if len(losers) == 1 else winning_score/3
+				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score))
+				if winner.tg_userid == tg_user.tg_userid:
+					tg_user.end_game(winning_score)
+				elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
+					tg_user.end_game(-1*losing_score)
+				else:
+					tg_user.end_game(0)
 			else:
 				tg_user.end_game(0)
 			tg_user.save()
