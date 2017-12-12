@@ -5,7 +5,7 @@ import MoveGenerator
 import random
 import traceback
 try:
-	from telegram.error import TimedOut
+	from telegram.error import TimedOut, TelegramError
 except:
 	print("Unresolved dependencies: telegram")
 
@@ -79,12 +79,15 @@ def new_game(bot, update):
 
 		if isinstance(response, TGResponsePromise):
 			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
-
-			try:
-				update.message.reply_photo(response.board.bufferedReader)
-			except TimedOut:
-				print("photo sent timeout")
-				pass
+			while True:
+				try:
+					update.message.reply_photo(response.board.bufferedReader)
+					break
+				except TimedOut:
+					print("photo sent timeout")
+					break
+				except TelegramError:
+					pass
 
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, response.choices)
 			sent_message = update.message.reply_text(response.message, reply_markup = keyboard)
@@ -125,12 +128,16 @@ def continue_game(userid, username, callback_data, bot, update):
 		tg_game.push_notification()
 		if isinstance(new_response, TGResponsePromise):
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, new_response.choices)
-			try:
-				bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)
-			except TimedOut:
-				print("photo sent timeout")
-				pass
-
+			while True:
+				try:
+					bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)
+					break
+				except TimedOut:
+					print("photo sent timeout")
+					break
+				except TelegramError:
+					pass
+					
 			sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
 			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.update_game(tg_game, new_response)
