@@ -103,13 +103,26 @@ def new_game(bot, update):
 	except:
 		print(traceback.format_exc())
 
+def my_statistics(bot, update):
+	try:
+		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
+		statistics = tg_user.statistics
+		msg = "*-- Battle Statistics --*\n"
+		msg += "Total score: %d\n"%(statistics["total_score"])
+		msg += "Win: %d\n"%(statistics["win"])
+		msg += "Lose: %d\n"%(statistics["lose"])
+		msg += "Participated: %d\n"%(statistics["game_completed"])
+		update.message.reply_text(msg, parse_mode = "Markdown")
+	except:
+		print(traceback.format_exc())
+
 def inline_reply_handler(bot, update):
 	try:
 		try:
 			update.callback_query.edit_message_reply_markup()
 		except:
 			pass
-			
+
 		callback_data = update.callback_query.data
 		cmd, data = callback_data.split("/", 1)
 		if cmd == "continue_game":
@@ -125,9 +138,7 @@ def continue_game(userid, username, callback_data, bot, update):
 
 	tg_user = _create_user_if_not_exist(userid, username)
 	if (not tg_user.game_started) or (game_id != tg_user.game_id):
-		update.callback_query.answer("You game has gone to blackhole, I am very sorry :(")
-		update.callback_query.answer("Maybe you can try a new game")
-
+		bot.send_message(tg_user.tg_userid, "You game has gone to blackhole, sorry :(\nMaybe you can try a new game")
 	else:
 		response = tg_user.restore_game_response()
 		tg_game = tg_user.restore_game()
@@ -137,7 +148,7 @@ def continue_game(userid, username, callback_data, bot, update):
 		tg_game.push_notification()
 		if isinstance(new_response, TGResponsePromise):
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, new_response.choices)
-			retry_count += 1
+			retry_count = 0
 			while True:
 				try:
 					bot.send_photo(tg_user.tg_userid, new_response.board.bufferedReader)

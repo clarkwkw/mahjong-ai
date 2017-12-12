@@ -18,7 +18,6 @@ class TGUser:
 		self.__tg_userid = tg_userid
 		self.__username = username
 
-		self.__game_aborted = 0
 		self.__game = None
 		'''
 		{
@@ -39,6 +38,23 @@ class TGUser:
 			"end_date": "",
 			"opponents_type": [],
 			"score": 		
+		}
+		'''
+
+		self.__statistics = {
+			"game_aborted": 0,
+			"game_completed": 0,
+			"win": 0,
+			"lose": 0,
+			"total_score": 0
+		}
+
+		'''
+		{
+			"game_completed":
+			"win":
+			"lose":
+			"total_score":
 		}
 		'''
 
@@ -66,20 +82,9 @@ class TGUser:
 			return self.__game["last_message_id"]
 		return None
 
-	# opponent_type: "rule_base_naive"
-	def match_statistic(self):
-		win, lose, draw = 0, 0, 0
-		culmulative_score = 0
-		for match_record in self.__match_history:
-			culmulative_score += match_record["score"]
-			if match_record["score"] > 0:
-				win += 1
-			elif match_record["score"] == 0:
-				draw += 1
-			else:
-				lose += 1
-
-		return win, lose, draw, culmulative_score
+	@property
+	def statistics(self):
+		return dict(self.__statistics)
 
 	def restore_game(self):
 		if self.__game is None:
@@ -120,7 +125,7 @@ class TGUser:
 			raise Exception("Cannot find a started game")
 
 		if score is None:
-			self.__game_aborted += 1
+			self.__statistics["game_aborted"] += 1
 		else:
 			match_record = {
 				"start_date": self.__game["start_date"],
@@ -129,6 +134,15 @@ class TGUser:
 				"score": score
 			}
 			self.__match_history.append(match_record)
+			self.__statistics["game_completed"] += 1
+			self.__statistics["total_score"] += score
+
+			if score > 0:
+				self.__statistics["win"] += 1
+
+			elif score < 0:
+				self.__statistics["lose"] += 1
+
 		self.__game = None
 
 	@classmethod
@@ -142,9 +156,9 @@ class TGUser:
 
 		tguser = TGUser(tg_userid, mongo_document["username"])
 		tguser.__mongoid = mongo_document["_id"]
-		tguser.__game_aborted = mongo_document["game_aborted"]
 		tguser.__game = mongo_document["game"]
 		tguser.__match_history = mongo_document["match_history"]
+		tguser.__statistics = mongo_document["statistics"]
 
 		return tguser
 
@@ -152,16 +166,19 @@ class TGUser:
 		init_mongo_collect()
 
 		if self.__game is not None:
-			self.__game["response_binary"].remove_board()
-			self.__game["binary"] = pickle.dumps(self.__game["binary"])
-			self.__game["response_binary"] = pickle.dumps(self.__game["response_binary"])
+			if type(self.__game["binary"]) is not bytes:
+				self.__game["binary"] = pickle.dumps(self.__game["binary"])
+
+			if type(self.__game["response_binary"]) is not bytes:
+				self.__game["response_binary"].remove_board()		
+				self.__game["response_binary"] = pickle.dumps(self.__game["response_binary"])
 
 		mongo_document = {
 			"tg_userid": self.__tg_userid,
 			"username": self.__username,
 			"game": self.__game,
-			"game_aborted": self.__game_aborted,
-			"match_history": self.__match_history
+			"match_history": self.__match_history,
+			"statistics": self.__statistics
 		}
 
 		if self.__mongoid is not None:
