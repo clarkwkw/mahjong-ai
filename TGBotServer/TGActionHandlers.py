@@ -9,6 +9,8 @@ try:
 except:
 	print("Unresolved dependencies: telegram")
 
+TGMSG_TIMEOUT = 10
+
 def _create_user_if_not_exist(tg_userid, username = ""):
 	tg_user = TGUser.load(tg_userid)
 	if tg_user is None:
@@ -36,7 +38,7 @@ def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, los
 def start(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
-		update.message.reply_text("Hello, %s"%(update.effective_user.first_name))
+		update.message.reply_text("Hello, %s"%(update.effective_user.first_name), timeout = TGMSG_TIMEOUT)
 	except:
 		print(traceback.format_exc())
 
@@ -44,16 +46,16 @@ def abort_game(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if not tg_user.game_started:
-			update.message.reply_text("But you have not started a game")
+			update.message.reply_text("But you have not started a game", timeout = TGMSG_TIMEOUT)
 			return
 		if tg_user.last_game_message_id is not None:
 			try:
-				bot.edit_message_reply_markup(chat_id = update.effective_chat.id, message_id = tg_user.last_game_message_id)
+				bot.edit_message_reply_markup(chat_id = update.effective_chat.id, message_id = tg_user.last_game_message_id, timeout = TGMSG_TIMEOUT)
 			except:
 				pass
 		tg_user.end_game()
 		tg_user.save()
-		update.message.reply_text("OK, aborted")
+		update.message.reply_text("OK, aborted", timeout = TGMSG_TIMEOUT)
 	except:
 		print(traceback.format_exc())
 
@@ -62,7 +64,7 @@ def new_game(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:
-			update.message.reply_text("Hey %s, you have already started a game, focus"%(update.effective_user.first_name))
+			update.message.reply_text("Hey %s, you have already started a game, focus"%(update.effective_user.first_name), timeout = TGMSG_TIMEOUT)
 			return
 
 		ai_model = pick_opponent_model()
@@ -95,7 +97,7 @@ def new_game(bot, update):
 					print("Invalid server response, retrying.. %d"%retry_count)
 
 			keyboard = get_tg_inline_keyboard("continue_game/%s"%tg_user.game_id, response.choices)
-			sent_message = update.message.reply_text(response.message, reply_markup = keyboard)
+			sent_message = update.message.reply_text(response.message, reply_markup = keyboard, timeout = TGMSG_TIMEOUT)
 			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.save()
 		else:
@@ -112,14 +114,14 @@ def my_statistics(bot, update):
 		msg += "Win: %d\n"%(statistics["win"])
 		msg += "Lose: %d\n"%(statistics["lose"])
 		msg += "Participated: %d\n"%(statistics["game_completed"])
-		update.message.reply_text(msg, parse_mode = "Markdown")
+		update.message.reply_text(msg, parse_mode = "Markdown", timeout = TGMSG_TIMEOUT)
 	except:
 		print(traceback.format_exc())
 
 def inline_reply_handler(bot, update):
 	try:
 		try:
-			update.callback_query.edit_message_reply_markup()
+			update.callback_query.edit_message_reply_markup(timeout = TGMSG_TIMEOUT)
 		except:
 			pass
 
@@ -128,7 +130,7 @@ def inline_reply_handler(bot, update):
 		if cmd == "continue_game":
 			continue_game(update.callback_query.from_user.id, update.callback_query.from_user.first_name, data, bot, update)
 		else:
-			update.callback_query.answer("What are you doing??")
+			update.callback_query.answer("What are you doing??", timeout = TGMSG_TIMEOUT)
 
 	except:
 		print(traceback.format_exc())
@@ -138,7 +140,7 @@ def continue_game(userid, username, callback_data, bot, update):
 
 	tg_user = _create_user_if_not_exist(userid, username)
 	if (not tg_user.game_started) or (game_id != tg_user.game_id):
-		bot.send_message(tg_user.tg_userid, "You game has gone to blackhole, sorry :(\nMaybe you can try a new game")
+		bot.send_message(tg_user.tg_userid, "You game has gone to blackhole, sorry :(\nMaybe you can try a new game", timeout = TGMSG_TIMEOUT)
 	else:
 		response = tg_user.restore_game_response()
 		tg_game = tg_user.restore_game()
@@ -171,7 +173,7 @@ def continue_game(userid, username, callback_data, bot, update):
 			if winner is not None:
 				winning_score = get_winning_score(penalty, len(losers) > 1)
 				losing_score = winning_score if len(losers) == 1 else winning_score/3
-				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score))
+				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score), timeout = TGMSG_TIMEOUT)
 				if winner.tg_userid == tg_user.tg_userid:
 					tg_user.end_game(winning_score)
 				elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
