@@ -7,6 +7,7 @@ from PIL import Image, ImageFont, ImageDraw
 import Tile
 import subprocess
 from .TGBoardSettings import *
+from TGLanguage import get_text, get_tile_name
 import io
 
 TILES_IMG = {}
@@ -171,17 +172,17 @@ class TGBoard:
 		buffered_reader = io.BufferedReader(buff)
 		return buffered_reader
 		
-def generate_TG_board(player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
+def generate_TG_board(lang_code, player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 	board = TGBoard()
-	board.add_aligned_line("Game of %s wind [%d]"%(game.game_wind, game.deck_size))
+	board.add_aligned_line(get_text(lang_code, "TITLE_GAME")%(get_tile_name(lang_code, "honor", game.game_wind), game.deck_size))
 	
 	for i in range(len(neighbors)):
 		neighbor = neighbors[i]
 		identifier = "%s"%neighbor.name
 		if i == 0:
-			identifier += " (next)"
+			identifier += " (%s)"%get_text(lang_code, "PLAYER_NEXT")
 		elif i == 2:
-			identifier += " (prev)"
+			identifier += " (%s)"%get_text(lang_code, "PLAYER_PREV")
 
 		fixed_hand_list = []
 		for meld_type, is_secret, tiles in neighbor.fixed_hand:
@@ -199,7 +200,7 @@ def generate_TG_board(player_name, fixed_hand, hand, neighbors, game, new_tile =
 		board.add_aligned_line(("back", neighbor.hand_size), alignment = "right")
 		board.add_aligned_line()
 
-	board.add_aligned_line("Tiles disposed")
+	board.add_aligned_line(get_text(lang_code, "TITLE_TILE_DISPOSED"))
 	
 	disposed_tiles = game.disposed_tiles
 	while len(disposed_tiles) > 0:
@@ -219,7 +220,7 @@ def generate_TG_board(player_name, fixed_hand, hand, neighbors, game, new_tile =
 	if new_tile is not None:
 		hand_list.extend([("space", 1), new_tile])
 
-	board.add_aligned_line("Your tiles")
+	board.add_aligned_line(get_text(lang_code, "TITLE_YOUR_TILES"))
 	if len(fixed_hand_list) > 0:
 		board.add_aligned_line(*fixed_hand_list)
 		board.add_aligned_line()

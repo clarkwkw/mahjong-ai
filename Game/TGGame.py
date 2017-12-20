@@ -7,12 +7,26 @@ class TGGame(Game):
 		super(TGGame, self).__init__(players)
 		self.__tg_userids = []
 		self.__tg_notification_queues = []
-
+		self.__lang_code = None
+		for player in players:
+			if player.lang_code is not None:
+				self.__lang_code = player.lang_code
+				break
+	@property
+	def lang_code(self):
+		return self.__lang_code
+		
 	def register_tg_userids(self, userids):
 		if type(userids) is list:
 			self.__tg_userids.extend(userids)
 		else:
 			self.__tg_userids.append(userids)
+
+	def change_lang_code(self, new_lang):
+		self.__lang_code = new_lang
+		for player in self._Game__players:
+			if player.lang_code is not None and player.lang_code != new_lang:
+				player.change_lang_code(new_lang)
 
 	def add_notification(self, msg):
 		self.__tg_notification_queues.append(msg)

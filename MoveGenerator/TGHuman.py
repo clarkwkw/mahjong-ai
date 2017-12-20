@@ -1,15 +1,20 @@
 from .MoveGenerator import MoveGenerator
 from . import utils
 from TGBotServer import TGResponsePromise, generate_TG_board
+from TGLanguage import get_tile_name, get_text
 import Tile
 
 class TGHuman(MoveGenerator):
-	def __init__(self, player_name, *args, **kwargs):
+	def __init__(self, player_name, lang_code):
 		self.__reply = None
 		self.__player_name = player_name
+		self.__lang_code = lang_code
 
 	def inform_reply(self, reply):
 		self.__reply = reply
+
+	def change_lang_code(self, new_lang):
+		self.__lang_code = new_lang
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		if self.__reply is not None:
@@ -27,9 +32,11 @@ class TGHuman(MoveGenerator):
 			chow_tiles = [str(new_tile.value + t) for t in list(range(choice - 1, choice + 2))]
 			tg_choices.append((",".join(chow_tiles), choice))
 
+		msg = get_text(self.__lang_code, "GAME_ASK_DISCARDED")%(new_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
+		msg += get_text(self.__lang_code, "GAME_ASK_CHOW")
 		response = TGResponsePromise(
-						message = "Someone just discarded a %s, do you want to make a Chow of the following:"%new_tile,
-						board = generate_TG_board(self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
+						message = msg,
+						board = generate_TG_board(self.__lang_code, self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
 						choices = tg_choices
 					)
 		return response, None
@@ -50,23 +57,18 @@ class TGHuman(MoveGenerator):
 		fixed_hand, hand = player.fixed_hand, player.hand
 
 		if src == "steal":
-			msg += "Someone just discarded a %s.\n"%kong_tile
+			msg += get_text(self.__lang_code, "GAME_ASK_DISCARDED")%(kong_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
 		elif src == "draw":
-			msg += "You just drew a %s.\n"%kong_tile
+			msg +=  get_text(self.__lang_code, "GAME_ASK_DRAW")%(kong_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
 		elif src == "existing":
-			msg += "You have 4 %s in hand.\n"%kong_tile
+			msg += get_text(self.__lang_code, "GAME_ASK_KONG_EXISTING")%(kong_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
 
-		if location == "fixed_hand":
-			location = "fixed hand"
-		else:
-			location = "hand"
-
-		msg += "Do you want to make a Kong of %s from %s?"%(kong_tile, location)
+		msg += get_text(self.__lang_code, "GAME_ASK_KONG")%kong_tile
 
 		response = TGResponsePromise(
 						message = msg,
-						board = generate_TG_board(self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
-						choices = [("Yes", 1), ("No", 0)]
+						board = generate_TG_board(self.__lang_code, self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
+						choices = [(get_text(self.__lang_code, "ASK_YES"), 1), (get_text(self.__lang_code, "ASK_NO"), 0)]
 					)
 		
 		return response
@@ -82,10 +84,12 @@ class TGHuman(MoveGenerator):
 			else:
 				raise Exception("Unknown choice '%s'"%str(choice_chosen))
 
+		msg = get_text(self.__lang_code, "GAME_ASK_DISCARDED")%(new_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
+		msg += get_text(self.__lang_code, "GAME_ASK_PONG")
 		response = TGResponsePromise(
-						message = "Someone just discarded a %s.\nDo you want to make a Pong?"%new_tile,
-						board = generate_TG_board(self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
-						choices = [("Yes", 1), ("No", 0)]
+						message = msg,
+						board = generate_TG_board(self.__lang_code, self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
+						choices = [(get_text(self.__lang_code, "ASK_YES"), 1), (get_text(self.__lang_code, "ASK_NO"), 0)]
 					)
 
 		return response
@@ -106,12 +110,12 @@ class TGHuman(MoveGenerator):
 
 		for tile in tiles_available:
 			if tile not in unique_tiles:
-				tg_choices.append((str(tile), str(tile)))
+				tg_choices.append((tile.get_display_name(self.__lang_code, is_short = True), str(tile)))
 				unique_tiles[tile] = True
 
 		response = TGResponsePromise(
-						message = "Which tile to discard?",
-						board = generate_TG_board(self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
+						message =  get_text(self.__lang_code, "GAME_ASK_DISCARD"),
+						board = generate_TG_board(self.__lang_code,self.__lang_code, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
 						choices = tg_choices
 					)
 
@@ -131,15 +135,14 @@ class TGHuman(MoveGenerator):
 		msg = ""
 
 		if src == "steal":
-			msg += "Someone just discarded a %s.\n"%new_tile
+			msg += get_text(self.__lang_code, "GAME_ASK_DISCARDED")%(new_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
 		
-		msg += "You can form a victory hand of %d faan.\n"%score
-		msg += "Do you want to end the game now?"
+		msg += get_text(self.__lang_code, "GAME_ASK_VICT")%score
 
 		response = TGResponsePromise(
 						message = msg,
-						board = generate_TG_board(self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
-						choices = [("Yes", 1), ("No", 0)]
+						board = generate_TG_board(self.__lang_code, self.__player_name, player.fixed_hand, player.hand, neighbors, game, new_tile, False),
+						choices = [(get_text(self.__lang_code, "ASK_YES"), 1), (get_text(self.__lang_code, "ASK_NO"), 0)]
 					)
 		
 		return response

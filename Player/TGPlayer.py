@@ -4,14 +4,28 @@ from TGBotServer import TGResponsePromise
 from .Player import Player
 
 class TGPlayer(Player):
-	def __init__(self, move_generator_class, player_name, tg_userid, **kwargs):
-		super(TGPlayer, self).__init__(move_generator_class, player_name, **kwargs)
-		self.__tg_userid = tg_userid
+	def __init__(self, move_generator_class, tg_user, **kwargs):
+		if type(tg_user) is str:
+			super(TGPlayer, self).__init__(move_generator_class, tg_user, **kwargs)
+			self.__tg_userid = None
+			self.__lang_code = None
+		else:
+			super(TGPlayer, self).__init__(move_generator_class, tg_user.username, lang_code = tg_user.lang, **kwargs)
+			self.__tg_userid = tg_user.tg_userid
+			self.__lang_code = tg_user.lang
 
 	@property
 	def tg_userid(self):
 		return self.__tg_userid
-		
+
+	@property
+	def lang_code(self):
+		return self.__lang_code
+
+	def change_lang_code(self, new_lang):
+		self.__lang_code = new_lang
+		self._Player__move_generator.change_lang_code(new_lang)
+
 	def new_turn(self, new_tile, neighbors, game, response = None):
 		dispose_tile = None
 

@@ -22,7 +22,11 @@ class Game(object):
 
 	@property
 	def game_wind(self):
-		return self.__game_wind	
+		return self.__game_wind
+
+	@property
+	def lang_code(self):
+		return None	
 
 	def start_game(self):
 		if self.__started:

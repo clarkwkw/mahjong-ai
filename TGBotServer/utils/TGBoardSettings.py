@@ -21,5 +21,6 @@ BG_SAVE_QUALITY = 80
 BG_TOP_BORDER = 50
 BG_BOTTOM_BORDER = 50
 
-FONT_FILE = "./resources/Baskerville.ttc"
+#FONT_FILE = "./resources/Baskerville.ttc"
+FONT_FILE = "./resources/Black_Pro.ttf"
 FONT_SIZE = 20

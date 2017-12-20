@@ -13,10 +13,11 @@ def init_mongo_collect():
 
 class TGUser:
 
-	def __init__(self, tg_userid, username):
+	def __init__(self, tg_userid, username, lang = "CH"):
 		self.__mongoid = None
 		self.__tg_userid = tg_userid
 		self.__username = username
+		self.__lang = lang
 
 		self.__game = None
 		'''
@@ -77,6 +78,10 @@ class TGUser:
 		return None
 
 	@property
+	def lang(self):
+		return self.__lang
+
+	@property
 	def last_game_message_id(self):
 		if self.__game is not None:
 			return self.__game["last_message_id"]
@@ -85,6 +90,9 @@ class TGUser:
 	@property
 	def statistics(self):
 		return dict(self.__statistics)
+
+	def change_lang(self, new_lang):
+		self.__lang = new_lang
 
 	def restore_game(self):
 		if self.__game is None:
@@ -154,7 +162,7 @@ class TGUser:
 		if mongo_document is None:
 			return None
 
-		tguser = TGUser(tg_userid, mongo_document["username"])
+		tguser = TGUser(tg_userid, mongo_document["username"], mongo_document["lang"])
 		tguser.__mongoid = mongo_document["_id"]
 		tguser.__game = mongo_document["game"]
 		tguser.__match_history = mongo_document["match_history"]
@@ -166,19 +174,21 @@ class TGUser:
 		init_mongo_collect()
 
 		if self.__game is not None:
-			if type(self.__game["binary"]) is not bytes:
-				self.__game["binary"] = pickle.dumps(self.__game["binary"])
-
+			
 			if type(self.__game["response_binary"]) is not bytes:
 				self.__game["response_binary"].remove_board()		
 				self.__game["response_binary"] = pickle.dumps(self.__game["response_binary"])
+
+			if type(self.__game["binary"]) is not bytes:
+				self.__game["binary"] = pickle.dumps(self.__game["binary"])
 
 		mongo_document = {
 			"tg_userid": self.__tg_userid,
 			"username": self.__username,
 			"game": self.__game,
 			"match_history": self.__match_history,
-			"statistics": self.__statistics
+			"statistics": self.__statistics,
+			"lang": self.__lang
 		}
 
 		if self.__mongoid is not None:
