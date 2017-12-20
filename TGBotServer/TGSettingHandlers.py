@@ -3,8 +3,6 @@ from .utils import get_tg_inline_keyboard, get_tgmsg_timeout
 from TGLanguage import get_lang_codes, get_text
 import traceback
 
-TGMSG_TIMEOUT = get_tgmsg_timeout()
-
 def show_settings(bot, update):
 	try:
 		settings_opts = []
@@ -12,7 +10,7 @@ def show_settings(bot, update):
 			settings_opts.append((setting_content["display_text"], setting_code))
 
 		keyboard = get_tg_inline_keyboard("settings", settings_opts)
-		sent_message = update.message.reply_text("Edit settings.", reply_markup = keyboard, timeout = TGMSG_TIMEOUT)	
+		sent_message = update.message.reply_text("Edit settings.", reply_markup = keyboard, timeout = get_tgmsg_timeout())	
 	except:
 		print(traceback.format_exc())
 
@@ -33,14 +31,14 @@ def inline_language(userid, username, callback_data, bot, update):
 		for lang_code in get_lang_codes():
 			lang_opts.append((get_text(lang_code, "LANG_NAME"), lang_code))
 		keyboard = get_tg_inline_keyboard(path, lang_opts)
-		update.callback_query.edit_message_reply_markup(reply_markup = keyboard, timeout = TGMSG_TIMEOUT)
+		update.callback_query.edit_message_reply_markup(reply_markup = keyboard, timeout = get_tgmsg_timeout())
 		
 	else:
 		tg_user = TGUser.load(userid)
 		tg_user.change_lang(callback_data)
 		tg_user.save()
-		bot.send_message(tg_user.tg_userid, "Updated language settings: "+get_text(callback_data, "LANG_NAME"), timeout = TGMSG_TIMEOUT)
-		update.callback_query.edit_message_reply_markup(timeout = TGMSG_TIMEOUT)
+		bot.send_message(tg_user.tg_userid, "Updated language settings: "+get_text(callback_data, "LANG_NAME"), timeout = get_tgmsg_timeout())
+		update.callback_query.edit_message_reply_markup(timeout = get_tgmsg_timeout())
 
 SETTINGS_DIRECTORY = {
 	"lang": {
