@@ -63,7 +63,7 @@ class TGHuman(MoveGenerator):
 		elif src == "existing":
 			msg += get_text(self.__lang_code, "GAME_ASK_KONG_EXISTING")%(kong_tile.get_display_name(self.__lang_code, is_short = False)) + "\n"
 
-		msg += get_text(self.__lang_code, "GAME_ASK_KONG")%kong_tile
+		msg += get_text(self.__lang_code, "GAME_ASK_KONG")%kong_tile.get_display_name(self.__lang_code, is_short = False)
 
 		response = TGResponsePromise(
 						message = msg,
