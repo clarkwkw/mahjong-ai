@@ -162,7 +162,7 @@ def continue_game(userid, username, callback_data, bot, update):
 					retry_count += 1
 					print("Invalid server response, retrying.. %d"%retry_count)
 					
-			sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard)
+			sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard, timeout = get_tgmsg_timeout())
 			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.update_game(tg_game, new_response)
 			tg_user.save()
