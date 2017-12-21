@@ -1,5 +1,5 @@
 import Tile
-from TGBotServer import TGResponsePromise, send_tg_message
+from TGBotServer import TGResponsePromise, send_tg_message, generate_TG_end_board
 from .Game import Game
 
 class TGGame(Game):
@@ -8,6 +8,7 @@ class TGGame(Game):
 		self.__tg_userids = []
 		self.__tg_notification_queues = []
 		self.__lang_code = None
+		self.__extra_tile = None
 		for player in players:
 			if player.lang_code is not None:
 				self.__lang_code = player.lang_code
@@ -15,7 +16,16 @@ class TGGame(Game):
 	@property
 	def lang_code(self):
 		return self.__lang_code
-		
+
+	def get_game_end_image(self, lang_code, tg_userid):
+		center_player = None
+		for player in self._Game__players:
+			if player.tg_userid == tg_userid:
+				center_player = player
+				break
+
+		return generate_TG_end_board(lang_code, self._Game__players, self, center_player, self.__extra_tile)
+
 	def register_tg_userids(self, userids):
 		if type(userids) is list:
 			self.__tg_userids.extend(userids)
@@ -98,6 +108,7 @@ class TGGame(Game):
 					dispose_tile, score, kong_info = result
 				
 					if score is not None:
+						self.__extra_tile = (cur_player, new_tile)
 						return cur_player, self._Game__get_neighbor_players(cur_player_id, degenerated = False), score
 
 					if dispose_tile is not None:
@@ -116,6 +127,7 @@ class TGGame(Game):
 							return winner_id
 
 						elif winner_id is not None:
+							self.__extra_tile = (self._Game__players[winner_id], kong_tile)
 							return self._Game__players[winner_id], [cur_player], score
 					
 					state = None
@@ -135,6 +147,7 @@ class TGGame(Game):
 					self.tgresponse_add_info(winner_id, new_tile, cur_player_id, TGGame_dispose_tile = dispose_tile)
 					return winner_id
 				elif winner_id is not None:
+					self.__extra_tile = (self._Game__players[winner_id], dispose_tile)
 					return self._Game__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong

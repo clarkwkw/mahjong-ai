@@ -57,8 +57,8 @@ def abort_game(bot, update):
 		print(traceback.format_exc())
 
 def new_game(bot, update):
-	from Game import TGGame
 	try:
+		from Game import TGGame
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_STARTED"), timeout = get_tgmsg_timeout())
@@ -76,6 +76,7 @@ def new_game(bot, update):
 		tg_game = TGGame(tg_players)
 		tg_game.register_tg_userids(tg_user.tg_userid)
 		tg_game.add_notification("-- %s --"%TGLanguage.get_text(tg_user.lang, "GAME_START"))
+		
 		response = tg_game.start_game()
 		tg_game.push_notification()
 
@@ -170,6 +171,18 @@ def continue_game(userid, username, callback_data, bot, update):
 
 			winner, losers, penalty = new_response
 			if winner is not None:
+				retry_count = 0
+				while True:
+					try:
+						bot.send_photo(tg_user.tg_userid, tg_game.get_game_end_image(tg_user.lang, tg_user.tg_userid).bufferedReader)
+						break
+					except TimedOut:
+						print("Photo sent timeout")
+						break
+					except TelegramError:
+						retry_count += 1
+						print("Invalid server response, retrying.. %d"%retry_count)
+
 				winning_score = get_winning_score(penalty, len(losers) > 1)
 				losing_score = winning_score if len(losers) == 1 else winning_score/3
 				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score), timeout = get_tgmsg_timeout())

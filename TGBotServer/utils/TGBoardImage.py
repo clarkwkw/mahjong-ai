@@ -227,3 +227,40 @@ def generate_TG_board(lang_code, player_name, fixed_hand, hand, neighbors, game,
 	board.add_aligned_line(*hand_list, alignment = "right")
 
 	return board
+
+# extra_tile: (player, tile)
+def generate_TG_end_board(lang_code, players, game, center_player, extra_tile = None):
+	board = TGBoard()
+	board.add_aligned_line(get_text(lang_code, "TITLE_GAME")%(get_tile_name(lang_code, "honor", game.game_wind), game.deck_size))
+	center_player_index = players.index(center_player)
+	for i in range(4):
+		player_index = (center_player_index + i + 1) % 4
+		player = players[player_index]
+		identifier = "%s"%player.name
+		if i == 0:
+			identifier += " (%s)"%get_text(lang_code, "PLAYER_NEXT")
+		elif i == 2:
+			identifier += " (%s)"%get_text(lang_code, "PLAYER_PREV")
+
+
+		fixed_hand_list, hand_list = [], list(player.hand)
+		for meld_type, is_secret, tiles in player.fixed_hand:
+			meld_list = []
+			if is_secret:
+				meld_list = [("back", 1), tiles[0], tiles[0], ("back", 1)]
+			else:
+				meld_list = tiles
+			fixed_hand_list.extend(meld_list)
+
+		if extra_tile is not None and extra_tile[0] == player:
+			hand_list.extend([("space", 1), extra_tile[1]])			
+
+		board.add_aligned_line(identifier)
+		if len(fixed_hand_list) > 0:
+			board.add_aligned_line(*fixed_hand_list)
+			board.add_aligned_line()
+
+		board.add_aligned_line(*hand_list, alignment = "right")
+		board.add_aligned_line()
+
+	return board
