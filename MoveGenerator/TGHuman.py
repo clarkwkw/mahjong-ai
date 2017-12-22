@@ -96,7 +96,11 @@ class TGHuman(MoveGenerator):
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
 		if self.__reply is not None:
-			suit, value = self.__reply.split("-")
+			try:
+				suit, value = self.__reply.split("-")
+			except AttributeError:
+				print("Reply:", self.__reply)
+				raise
 			tile = Tile.Tile(suit, value)
 			self.__reply = None
 			return tile
