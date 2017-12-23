@@ -1,6 +1,7 @@
 from .TGUser import TGUser
 from Player import TGPlayer
-from .utils import pick_opponent_model, TGResponsePromise, get_tg_inline_keyboard, get_winning_score, get_tgmsg_timeout
+from .utils import pick_opponent_model, get_tg_inline_keyboard, get_winning_score, get_tgmsg_timeout
+from .TGResponsePromise import TGResponsePromise
 from .TGSettingHandlers import settings_router
 import MoveGenerator
 import random

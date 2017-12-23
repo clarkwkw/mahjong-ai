@@ -36,7 +36,7 @@ class TGPlayer(Player):
 				substate = None
 
 				is_able, is_wants_to, score = self.check_win(new_tile, "draw", neighbors, game, response = response)
-			
+				
 				if isinstance(is_wants_to, TGResponsePromise):
 					is_wants_to.state_stack_push("new_turn_check_winning")
 					return is_wants_to
