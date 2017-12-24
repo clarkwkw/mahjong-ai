@@ -57,7 +57,6 @@ class TGBoard:
 		self.__image = BG_IMG.copy()
 		self.__draw = ImageDraw.Draw(self.__image)
 		self.__line_count = 0
-		self.__viewer = None
 
 	def __new_line(self, y_coordinate, direction):
 		y_coordinate += BG_LINE_HEIGHT

@@ -52,6 +52,7 @@ class TGUser:
 
 		'''
 		{
+			"game_aborted":
 			"game_completed":
 			"win":
 			"lose":
