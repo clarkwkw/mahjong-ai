@@ -86,7 +86,7 @@ class FCNetwork(AbstractDNN):
 
 		tf.reset_default_graph()
 
-	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500):
+	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, show_step = False):
 		train_X, train_y = X, y_truth
 		prev_err = float("inf")
 
@@ -96,16 +96,18 @@ class FCNetwork(AbstractDNN):
 		with self.__graph.as_default() as g:
 			for i in range(max_iter):
 				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: train_X, self.__y_truth: train_y})
+				
 				if (i + 1)%step == 0:
 					if is_adaptive:
 						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y})
-						#print("Valid error %d: %.4f"%(i+1, valid_err))
 						if valid_err > prev_err:
 							break
 						prev_err = valid_err
 					else:
-						#print("Training error %d: %.4f"%(i+1, training_err))
-						pass
+						prev_err = training_err
+
+					if show_step:
+						print("#%5d: %.4f"%(i+1, prev_err))
 
 		tf.reset_default_graph()
 
