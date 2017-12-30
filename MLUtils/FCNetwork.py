@@ -7,7 +7,7 @@ parallel_parameters = {
     "intra_op_parallelism_threads": 8,
     "inter_op_parallelism_threads": 8
 }
-save_file_name = "HandPredictorV1.ckpt"
+save_file_name = "savefile.ckpt"
 
 def split_data(X, y, train_portion):
 	n_samples = y.shape[0]
@@ -99,12 +99,13 @@ class FCNetwork(AbstractDNN):
 				if (i + 1)%step == 0:
 					if is_adaptive:
 						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y})
-						print("Valid error %d: %.4f"%(i+1, valid_err))
+						#print("Valid error %d: %.4f"%(i+1, valid_err))
 						if valid_err > prev_err:
 							break
 						prev_err = valid_err
 					else:
-						print("Training error %d: %.4f"%(i+1, training_err))
+						#print("Training error %d: %.4f"%(i+1, training_err))
+						pass
 
 		tf.reset_default_graph()
 
@@ -115,7 +116,7 @@ class FCNetwork(AbstractDNN):
 		tf.reset_default_graph()
 		if pred.shape[1] > 1:
 			pred = softmax(pred)
-			
+
 		return pred
 
 	def save(self, save_dir):

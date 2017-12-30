@@ -44,21 +44,26 @@ def generate_classification_points(n_cases):
 	return points_x, points_y
 
 def test(args):
-	model = FCNetwork(n_factors = 3, n_outcomes = 1, hidden_layers = [], learning_rate = 1e-2)
+	reg_model = FCNetwork(n_factors = 3, n_outcomes = 1, hidden_layers = [], learning_rate = 1e-2)
 
 	train_X, train_y = generate_regression_points(train_size)
 	test_X, test_y = generate_regression_points(test_size)
 
-	model.train(train_X, train_y, True, 20, 10000)
+	reg_model.train(train_X, train_y, True, 20, 10000)
 
-	pred = model.predict(test_X)
-	print("Regression MSE:", np.mean(np.square(pred - test_y)))
+	pred = reg_model.predict(test_X)
+	print("Regression MSE (trained model): %.4f"%np.mean(np.square(pred - test_y)))
+	reg_model.save("output/")
 
-	model2 = FCNetwork(n_factors = 3, n_outcomes = 3, hidden_layers = [7, 3], learning_rate = 1e-3)
+	reg_model_loaded = FCNetwork.load("output/")
+	pred = reg_model_loaded.predict(test_X)
+	print("Regression MSE (loaded model): %.4f"%np.mean(np.square(pred - test_y)))
+
+	class_model = FCNetwork(n_factors = 3, n_outcomes = 3, hidden_layers = [7, 3], learning_rate = 1e-3)
 
 	train_X, train_y = generate_classification_points(train_size)
 	test_X, test_y = generate_classification_points(test_size)
 
-	model2.train(train_X, train_y, True, 20, 10000)
-	pred = model2.predict(test_X)
-	print("Classification accuracy:", np.mean(np.argmax(pred, axis = 1) == np.argmax(test_y, axis = 1)))
+	class_model.train(train_X, train_y, True, 20, 10000)
+	pred = class_model.predict(test_X)
+	print("Classification accuracy: %.4f"%np.mean(np.argmax(pred, axis = 1) == np.argmax(test_y, axis = 1)))
