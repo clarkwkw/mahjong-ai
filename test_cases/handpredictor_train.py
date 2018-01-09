@@ -55,7 +55,7 @@ def load_datasets():
 def train(predictor):
 	if raw_data is None:
 		load_datasets()
-	predictor.train(processed_X, processed_y, is_adaptive = True, step = 20, max_iter = 3000, show_step = True)
+	predictor.train(processed_X, processed_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
 
 def cost(predictor):
 	pred, cost = predictor.predict(processed_X, processed_y)

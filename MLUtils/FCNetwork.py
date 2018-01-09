@@ -71,7 +71,8 @@ class FCNetwork(AbstractDNN):
 			train_X, train_y, valid_X, valid_y = utils.split_data(X, y_truth, 0.8)
 
 		with self.__graph.as_default() as g:
-			for i in range(max_iter):
+			i = 0
+			while i < max_iter:
 				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: train_X, self.__y_truth: train_y})
 				
 				if (i + 1)%step == 0:
@@ -85,6 +86,7 @@ class FCNetwork(AbstractDNN):
 
 					if show_step:
 						print("#%5d: %.4f"%(i+1, prev_err))
+				i += 1
 
 		tf.reset_default_graph()
 
