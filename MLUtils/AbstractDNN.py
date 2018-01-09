@@ -19,5 +19,5 @@ class AbstractDNN:
 		pass
 
 	@abc.abstractmethod
-	def load(path):
+	def load(cls, path):
 		pass

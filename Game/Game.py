@@ -191,7 +191,7 @@ class Game(object):
 				for tile in tiles:
 					self.__record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
 			for tile in player.hand:
-				self.__record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
+				self.__record["hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
 			i += 1
 		self.__freezed = True
 

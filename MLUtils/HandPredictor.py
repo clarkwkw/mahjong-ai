@@ -49,8 +49,8 @@ class HandPredictor(AbstractDNN):
 				
 				self.__sess.run(tf.global_variables_initializer())
 			else:
-				saver = tf.train.import_meta_graph(from_save + save_file_name + ".meta")
-				saver.restore(self.__sess, from_save + save_file_name)
+				saver = tf.train.import_meta_graph(from_save.rstrip("/") + "/" + save_file_name + ".meta")
+				saver.restore(self.__sess, from_save.rstrip("/") + "/" + save_file_name)
 
 				self.__X = g.get_tensor_by_name("X:0")
 				self.__y_truth = g.get_tensor_by_name("y_truth:0")
@@ -85,23 +85,31 @@ class HandPredictor(AbstractDNN):
 
 		tf.reset_default_graph()
 
-	def predict(self, X):
+	def predict(self, X, y_truth = None):
 		pred = None
 		with self.__graph.as_default() as g:
-			pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X})
-		tf.reset_default_graph()
+			pred, cost = None, None
+			if y_truth is None:
+				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X})
+			else:
+				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth})
 		
-		pred = utils.softmax(pred)
+		tf.reset_default_graph()
+		if pred.shape[1] > 1:
+			pred = utils.softmax(pred)
 
-		return pred
+		if y_truth is None:
+			return pred
+		else:
+			return pred, cost
 
 	def save(self, save_dir):
 		with self.__graph.as_default() as g:
 			saver = tf.train.Saver()
-			save_path = saver.save(self.__sess, save_path = save_dir+save_file_name)
+			save_path = saver.save(self.__sess, save_path = save_dir.rstrip("/")+"/"+save_file_name)
 		tf.reset_default_graph()
 
-	@staticmethod
-	def load(path):
-		model = FCNetwork(from_save = path)
+	@classmethod
+	def load(cls, path):
+		model = cls(from_save = path)
 		return model
