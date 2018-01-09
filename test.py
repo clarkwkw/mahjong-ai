@@ -7,7 +7,6 @@ import test_cases
 import argparse
 import traceback
 import importlib
-import debug
 import MLUtils
 from timeit import default_timer as timer
 
@@ -30,7 +29,6 @@ if __name__ == "__main__":
 	print(">> Testcase: %s"%args.testcase)
 	#start = timer()
 	try:
-		#debug.__debug_mode = True
 		m.test(extra_args)
 	except SystemExit:
 		print(">> Make sure you have typed the right command line arguments.")

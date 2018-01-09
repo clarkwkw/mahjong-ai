@@ -66,7 +66,8 @@ _freezed_states = {
 	"hand_matrix": [],
 	"fixed_hand_matrix": [],
 	"deck": [],
-	"winner": []
+	"winner": [],
+	"winner_score": []
 }
 
 def parse_args(args_list):
@@ -123,24 +124,29 @@ def test(args):
 			game = Game.Game(players, rand_record = _data_dir is not None)
 			for j in range(_n_round):
 				winner, losers, penalty = game.start_game()
-
+				winner_score = 0
 				if winner is not None:
 					index_winner = _player_master_list.index(winner)
-					scoring_matrix[i, j, index_winner] = _scoring_scheme[penalty][len(losers) > 1]
+					winner_score = _scoring_scheme[penalty][len(losers) > 1]
+
+					scoring_matrix[i, j, index_winner] = winner_score
 
 					for loser in losers:
 						index_loser = _player_master_list.index(loser)
-						scoring_matrix[i, j, index_loser] = -1*_scoring_scheme[penalty][len(losers) > 1]/len(losers)
+						scoring_matrix[i, j, index_loser] = -1.0*winner_score/len(losers)
 
 				score_strs = []
 				for k in range(4):
 					score_strs.append("{:4.0f}".format(scoring_matrix[i, j, k]))
 				print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
+				
 				if _data_dir is not None:
 					state = game.freezed_state
 					if state is not None:
+						_freezed_states["winner_score"].append(winner_score)
 						for key in _freezed_states:
-							_freezed_states[key].append(state[key])
+							if key != "winner_score":
+								_freezed_states[key].append(state[key])
 						_freezed_count += 1
 
 	except:
@@ -157,4 +163,4 @@ def test(args):
 		for key in _freezed_states:
 			_freezed_states[key] = np.stack(_freezed_states[key][0:_freezed_count])
 			np.save(_data_dir+key+".npy", _freezed_states[key], allow_pickle = False)
-		print("Saved data to %s"%(_data_dir+"*.npy"))
+		print("Saved data (%d games) to %s"%(_freezed_count, _data_dir+"*.npy"))

@@ -83,7 +83,9 @@ class Game(object):
 				if score is not None:
 					self.__started = False
 					if self.__rand_record:
+						losers = [i for i in range(4) if i != cur_player_id]
 						self.__record["winner"][cur_player_id] = 1
+						self.__record["loser"][losers] = 1.0/3
 					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
 
 				if dispose_tile is not None:
@@ -97,6 +99,7 @@ class Game(object):
 						self.__started = False
 						if self.__rand_record:
 							self.__record["winner"][winner_id] = 1
+							self.__record["loser"][cur_player_id] = 1
 						return self.__players[winner_id], [cur_player], score
 				
 				cur_player.kong(kong_tile, location = kong_location, source = kong_src)
@@ -109,6 +112,7 @@ class Game(object):
 				self.__started = False
 				if self.__rand_record:
 					self.__record["winner"][winner_id] = 1
+					self.__record["loser"][cur_player_id] = 1
 				return self.__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
@@ -170,13 +174,14 @@ class Game(object):
 			"hand_matrix": np.zeros((4, 34)),
 			"fixed_hand_matrix": np.zeros((4, 34)),
 			"deck": np.zeros((34)),
-			"winner": np.zeros((4))
+			"winner": np.zeros((4)),
+			"loser": np.zeros((4))
 		}
 
 	def __freeze_state(self):
 		if self.__freezed:
 			return
-			
+
 		self.__record["remaining"] = len(self.__deck)
 		i = 0
 		for player in self.__players:

@@ -1,5 +1,4 @@
 import Tile
-import debug
 
 def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src, game):
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
