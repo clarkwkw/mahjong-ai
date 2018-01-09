@@ -1,1 +1,1 @@
-test_cases = ["ai_battle", "fcnetwork", "calculate_score", "rule_base_naive", "rule_base_mcts", "start_game", "start_tggame", "validate_hand"]
+test_cases = ["ai_battle", "fcnetwork", "calculate_score", "handpredictor", "rule_base_naive", "rule_base_mcts", "start_game", "start_tggame", "validate_hand"]

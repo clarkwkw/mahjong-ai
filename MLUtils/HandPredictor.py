@@ -6,8 +6,8 @@ import numpy as np
 
 save_file_name = "savefile.ckpt"
 
-class FCNetwork(AbstractDNN):
-	def __init__(self, n_factors = 3, n_outcomes = 1, hidden_layers = [], from_save = None, learning_rate = 1e-2):
+class HandPredictor(AbstractDNN):
+	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
 		self.__sess = tf.Session(graph = self.__graph, config = tf.ConfigProto(**utils.parallel_parameters))
@@ -16,35 +16,32 @@ class FCNetwork(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
-				self.__X = tf.placeholder(tf.float32, [None, n_factors], name = "X")
-				self.__y_truth = tf.placeholder(tf.float32, [None, n_outcomes], name = "y_truth")
+				self.__X = tf.placeholder(tf.float32, [None, 2, 34, 1], name = "X")
+				self.__y_truth = tf.placeholder(tf.float32, [None, 34], name = "y_truth")
 
-				n_last_layer = n_factors
-				n_next_layer = 0
-				tmp_result = self.__X
+				filter_chow = tf.get_variable("filter_chow", initializer = tf.random_normal([2, 3, 1, 1]))
+				bias_chow = tf.get_variable("bias_chow", initializer = tf.random_normal([1]))
+				filter_pong = tf.get_variable("filter_pong", initializer = tf.random_normal([2, 1, 1, 1]))
+				bias_pong = tf.get_variable("bias_pong", initializer = tf.random_normal([1]))
 
-				for i in range(0, len(hidden_layers) + 1):
-					if i >= len(hidden_layers):
-						n_next_layer = n_outcomes 
-					else:
-						n_next_layer = hidden_layers[i]
+				conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X, filter_chow, strides = [1, 1, 1, 1], padding = 'VALID') + bias_chow)
+				conv_chow = tf.pad(conv_chow, [[0, 0], [0, 0], [0, 2], [0, 0]])
+				
+				conv_pong = tf.nn.relu(tf.nn.conv2d(self.__X, filter_pong, strides = [1, 1, 1, 1], padding = 'VALID') + bias_pong)
 
-					weight = tf.get_variable("w_"+str(i), initializer = tf.random_normal([n_last_layer, n_next_layer]))
-					bias = tf.get_variable("b_"+str(i), initializer = tf.random_normal([n_next_layer]))
-					tmp_result = tf.add(tf.matmul(tmp_result, weight), bias)
+				combined = tf.concat([conv_chow, conv_pong], axis = 1)				
 
-					if i < len(hidden_layers):
-						n_last_layer = hidden_layers[i]
-						tmp_result = tf.nn.sigmoid(tmp_result)
+				pooling = tf.nn.max_pool(combined, ksize=[1, 2, 1, 1], strides=[1, 1, 1, 1], padding = 'VALID')
+				pooling = tf.squeeze(pooling)
 
-				self.__pred = tmp_result
+				weight_full = tf.get_variable("weight_full", initializer = tf.random_normal([34, 34]))
+				bias_full =  tf.get_variable("bias_full", initializer = tf.random_normal([34]))
+				
+				self.__pred = tf.matmul(pooling, weight_full) + bias_full
+
 				tf.add_to_collection("pred", self.__pred)
 
-
-				if n_outcomes == 1:
-					self.__err = tf.losses.mean_squared_error(labels = self.__y_truth, predictions = self.__pred)
-				else:
-					self.__err = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
+				self.__err = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
 				tf.add_to_collection("err", self.__err)
 
 				self.__optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.__err)
@@ -93,8 +90,8 @@ class FCNetwork(AbstractDNN):
 		with self.__graph.as_default() as g:
 			pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X})
 		tf.reset_default_graph()
-		if pred.shape[1] > 1:
-			pred = utils.softmax(pred)
+		
+		pred = utils.softmax(pred)
 
 		return pred
 
