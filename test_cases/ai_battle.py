@@ -83,7 +83,7 @@ def parse_args(args_list):
 
 	print("parallel value:", args.parallel)
 	global _data_dir
-	_data_dir = None if len(args.datadir) == 0 else args.data_dir
+	_data_dir = None if len(args.data_dir) == 0 else args.data_dir
 	print("data_dir:", _data_dir)
 	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
