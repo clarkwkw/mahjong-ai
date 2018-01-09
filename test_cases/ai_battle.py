@@ -5,6 +5,7 @@ import numpy as np
 import random
 import traceback
 import argparse
+from . import utils
 
 _player_names = ["Amy", "Billy", "Clark", "David"]
 
@@ -76,14 +77,14 @@ def parse_args(args_list):
 	parser.add_argument("--m2", type = str, choices = _models.keys(), default = "heuristics", help = "Model 2")
 	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
 	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
-	parser.add_argument('--datadir', type = str, default = "", help = "Output directory of generated data")
+	parser.add_argument('--data_dir', type = str, default = "", help = "Output directory of generated data")
 
 	args = parser.parse_args(args_list)
 
 	print("parallel value:", args.parallel)
 	global _data_dir
-	_data_dir = None if len(args.datadir) == 0 else args.datadir
-	print("datadir:", _data_dir)
+	_data_dir = None if len(args.datadir) == 0 else args.data_dir
+	print("data_dir:", _data_dir)
 	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 
@@ -160,6 +161,7 @@ def test(args):
 
 	if _data_dir is not None:
 		_data_dir = _data_dir.rstrip("/")+"/"
+		utils.makesure_dir_exists(_data_dir)
 		for key in _freezed_states:
 			_freezed_states[key] = np.stack(_freezed_states[key][0:_freezed_count])
 			np.save(_data_dir+key+".npy", _freezed_states[key], allow_pickle = False)
