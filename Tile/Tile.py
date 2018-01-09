@@ -89,13 +89,26 @@ def get_suit_classification_map(default_val = None):
 		result[suit] = default_val
 	return result
 
+def convert_tile_index(val):
+	if isinstance(val, Tile):
+		return tile_index[val]
+
+	return index_tile[val]  
+
 with open("resources/tile_config.json", "r") as f:
 	tile_config_dict = json.load(f)
 	suit_order = tile_config_dict["suit_order"]
 	tile_symbols = tile_config_dict["symbols"]
 	tile_back_symbol = tile_config_dict["tile_back"]
 	tile_map = {}
+	tile_index = {}
+	index_tile = []
+	i = 0
 	for suit in tile_symbols:
 		tile_map[suit] = {}
 		for value in tile_symbols[suit]:
-			tile_map[suit][value] = Tile(suit, value)
+			tile = Tile(suit, value)
+			tile_map[suit][value] = tile
+			tile_index[tile] = i
+			index_tile.append(tile)
+			i += 1

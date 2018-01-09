@@ -1,13 +1,15 @@
 import random
 import Tile
+import numpy as np
 
 class Game(object):
-	def __init__(self, players):
+	def __init__(self, players, rand_record = False):
 		self.__players = players
 		self.__deck = None
 		self.__started = False
 		self.__game_wind = "north"
 		self.__disposed_tiles = []
+		self.__rand_record = rand_record
 
 	def add_notification(self, msg):
 		pass
@@ -28,12 +30,24 @@ class Game(object):
 	def lang_code(self):
 		return None	
 
+	@property
+	def freezed_state(self):
+		if not self.__rand_record:
+			raise Exception("did not turn on 'rand_record' flag") 
+
+		if not self.__freezed:
+			return None
+
+		return self.__record
+
 	def start_game(self):
 		if self.__started:
 			raise Exception("game already started")
 
 		self.__deck = Tile.get_tiles(shuffle = True)
 		self.__game_wind = self.__next_game_wind()
+		save_round = random.randint(1, 83)
+
 		for player in self.__players:
 			hand = self.__deck[0:13]
 			self.__deck = self.__deck[13:len(self.__deck)]
@@ -43,7 +57,13 @@ class Game(object):
 		cur_player_id = 0
 		new_tile = None
 		is_ponged, is_chowed, is_vict = False, False, False
+		if self.__rand_record:
+			self.__freeze_state_init()
+		
 		while len(self.__deck) > 0:
+			if self.__rand_record and len(self.__deck) == save_round:
+				self.__freeze_state()
+
 			cur_player = self.__players[cur_player_id]
 			neighbors = self.__get_neighbor_players(cur_player_id)
 
@@ -62,6 +82,8 @@ class Game(object):
 				
 				if score is not None:
 					self.__started = False
+					if self.__rand_record:
+						self.__record["winner"][cur_player_id] = 1
 					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
 
 				if dispose_tile is not None:
@@ -73,6 +95,8 @@ class Game(object):
 					winner_id, score = self.__check_neighbor_winning(cur_player_id, kong_tile)
 					if winner_id is not None:
 						self.__started = False
+						if self.__rand_record:
+							self.__record["winner"][winner_id] = 1
 						return self.__players[winner_id], [cur_player], score
 				
 				cur_player.kong(kong_tile, location = kong_location, source = kong_src)
@@ -83,6 +107,8 @@ class Game(object):
 			winner_id, score = self.__check_neighbor_winning(cur_player_id, dispose_tile)
 			if winner_id is not None:
 				self.__started = False
+				if self.__rand_record:
+					self.__record["winner"][winner_id] = 1
 				return self.__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
@@ -135,6 +161,34 @@ class Game(object):
 
 		self.__started = False
 		return None, None, None
+
+	def __freeze_state_init(self):
+		self.__freezed = False
+		self.__record = {
+			"remaining": -1,
+			"disposed_tiles_matrix": np.zeros((4, 34)),
+			"hand_matrix": np.zeros((4, 34)),
+			"fixed_hand_matrix": np.zeros((4, 34)),
+			"deck": np.zeros((34)),
+			"winner": np.zeros((4))
+		}
+
+	def __freeze_state(self):
+		if self.__freezed:
+			return
+			
+		self.__record["remaining"] = len(self.__deck)
+		i = 0
+		for player in self.__players:
+			for tile in player.get_discarded_tiles():
+				self.__record["disposed_tiles_matrix"][i, Tile.convert_tile_index(tile)] += 1
+			for _, _, tiles in player.fixed_hand:
+				for tile in tiles:
+					self.__record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
+			for tile in player.hand:
+				self.__record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
+			i += 1
+		self.__freezed = True
 
 	def __get_neighbor_players(self, player_id, degenerated = True):
 		tmp_player_id = (player_id + 1)%4

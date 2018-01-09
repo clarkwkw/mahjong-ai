@@ -1,5 +1,5 @@
 {
-	"suit_order": ["honor", "dots", "bamboo", "characters"],
+	"suit_order": ["dots", "bamboo", "characters", "honor"],
 	"symbols":{
 		"honor": {
 			"east": "🀀",

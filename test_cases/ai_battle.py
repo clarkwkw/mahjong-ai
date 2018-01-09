@@ -58,6 +58,16 @@ _n_round = 8
 _player_parameters = [0, 0, 0, 0]
 _player_master_list = []
 _player_model_strs = [0, 0, 0, 0]
+_data_dir = None
+_freezed_count = 0
+_freezed_states = {
+	"remaining": [],
+	"disposed_tiles_matrix": [],
+	"hand_matrix": [],
+	"fixed_hand_matrix": [],
+	"deck": [],
+	"winner": []
+}
 
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
@@ -65,11 +75,16 @@ def parse_args(args_list):
 	parser.add_argument("--m2", type = str, choices = _models.keys(), default = "heuristics", help = "Model 2")
 	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
 	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
+	parser.add_argument('--datadir', type = str, default = "", help = "Output directory of generated data")
+
 	args = parser.parse_args(args_list)
-	print("parallel value", args.parallel)
+
+	print("parallel value:", args.parallel)
+	global _data_dir
+	_data_dir = None if len(args.datadir) == 0 else args.datadir
+	print("datadir:", _data_dir)
 	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
-
 
 def modify_player_model(model_index, model_str, **kwargs):
 	for i in range(2):
@@ -87,6 +102,7 @@ def modify_player_model(model_index, model_str, **kwargs):
 		_player_parameters[2 * i + model_index] = player_meta
 
 def test(args):
+	global _freezed_count, _data_dir
 	ex = None
 	players = []
 	game = None
@@ -104,7 +120,7 @@ def test(args):
 	try:
 		for i in range(_n_game):
 			players = random.sample(_player_master_list, k = len(_player_master_list))
-			game = Game.Game(players)
+			game = Game.Game(players, rand_record = _data_dir is not None)
 			for j in range(_n_round):
 				winner, losers, penalty = game.start_game()
 
@@ -120,6 +136,12 @@ def test(args):
 				for k in range(4):
 					score_strs.append("{:4.0f}".format(scoring_matrix[i, j, k]))
 				print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
+				if _data_dir is not None:
+					state = game.freezed_state
+					if state is not None:
+						for key in _freezed_states:
+							_freezed_states[key].append(state[key])
+						_freezed_count += 1
 
 	except:
 		traceback.print_exc()
@@ -130,5 +152,9 @@ def test(args):
 	for player in _player_master_list:
 		print("%s: %.5f"%(player.name, player.avg_drop_tile_time))
 
-	if ex is not None:
-		raise ex
+	if _data_dir is not None:
+		_data_dir = _data_dir.rstrip("/")+"/"
+		for key in _freezed_states:
+			_freezed_states[key] = np.stack(_freezed_states[key][0:_freezed_count])
+			np.save(_data_dir+key+".npy", _freezed_states[key], allow_pickle = False)
+		print("Saved data to %s"%(_data_dir+"*.npy"))

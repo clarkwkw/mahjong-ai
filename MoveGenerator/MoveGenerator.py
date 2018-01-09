@@ -76,5 +76,5 @@ class MoveGenerator:
 	def print_game_board(self, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
 		utils.print_game_board(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
 		if TGUTILS_SUCCESS and self.__display_tgboard:
-			tgboard = TGBotServer.generate_TG_board(self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
+			tgboard = TGBotServer.generate_TG_board("EN", self.__player_name, fixed_hand, hand, neighbors, game, new_tile, print_stolen_tiles)
 			tgboard.show()
