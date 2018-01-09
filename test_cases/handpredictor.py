@@ -36,6 +36,7 @@ def test(args):
 		predictor = HandPredictor(learning_rate = learning_rate)
 	
 	if action == "train":
+		utils.makesure_dir_exists(model_dir)
 		train(predictor)
 		predictor.save(model_dir)
 		print("Saved to %s"%model_dir)
