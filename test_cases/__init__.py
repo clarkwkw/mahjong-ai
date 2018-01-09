@@ -3,7 +3,7 @@ test_cases = [
 	"fcnetwork", 
 	"calculate_score", 
 	"handpredictor", 
-	"handpredictor_train", 
+	"handpredictor_test", 
 	"rule_base_naive", 
 	"rule_base_mcts", 
 	"start_game", 
