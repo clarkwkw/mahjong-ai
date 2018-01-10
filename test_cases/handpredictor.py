@@ -77,6 +77,6 @@ def train(predictor):
 def cost(predictor):
 	if raw_data is None:
 		load_datasets()
-	pred, cost = predictor.predict(processed_X, processed_y)
-	print("Cost (entropy):", cost)
+	pred, cost, benchmark = predictor.predict(processed_X, processed_y)
+	print("Cost (entropy): %.3f (%.3f)"%(cost, benchmark))
 
