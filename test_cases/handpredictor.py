@@ -8,7 +8,7 @@ from . import utils
 
 model_dir = None
 datasets = [
-	"./resources/datasets/heuristics_vs_heuristics"
+	"./resources/datasets/heuristics_vs_heuristics_2"
 ]
 required_matrices = ["disposed_tiles_matrix", "hand_matrix"]
 learning_rate = 1e-3
@@ -78,5 +78,8 @@ def cost(predictor):
 	if raw_data is None:
 		load_datasets()
 	pred, cost, benchmark = predictor.predict(processed_X, processed_y)
+	np.set_printoptions(precision = 3, suppress = True)
+	print(pred[3, :])
+	print(processed_y[3, :])
 	print("Cost (entropy): %.3f (%.3f)"%(cost, benchmark))
 
