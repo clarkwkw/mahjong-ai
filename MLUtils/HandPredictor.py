@@ -95,7 +95,7 @@ class HandPredictor(AbstractDNN):
 				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X})
 			else:
 				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth})
-				benchmark = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_truth, logits = y_truth)).eval()
+				benchmark = self.__sess.run(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_truth, logits = y_truth)))
 		tf.reset_default_graph()
 		if pred.shape[1] > 1:
 			pred = utils.softmax(pred)
