@@ -8,11 +8,21 @@ from . import utils
 
 model_dir = None
 train_datasets = [
-	"./resources/datasets/heuristics_vs_heuristics"
+	"./resources/datasets/heuristics_vs_heuristics_1",
+	"./resources/datasets/heuristics_vs_heuristics_2",
+	"./resources/datasets/heuristics_vs_heuristics_3",
+	"./resources/datasets/heuristics_vs_heuristics_4",
+	"./resources/datasets/heuristics_vs_heuristics_5",
+	"./resources/datasets/heuristics_vs_heuristics_6",
+	"./resources/datasets/heuristics_vs_heuristics_7",
+	"./resources/datasets/heuristics_vs_heuristics_8",
+	"./resources/datasets/heuristics_vs_heuristics_9",
+	"./resources/datasets/heuristics_vs_heuristics_10"
 ]
 
 test_datasets = [
-	"./resources/datasets/heuristics_vs_heuristics_2"
+	"./resources/datasets/heuristics_vs_heuristics_11",
+	"./resources/datasets/heuristics_vs_heuristics_12"
 ]
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
@@ -96,7 +106,16 @@ def cost(predictor):
 		load_datasets()
 	pred, cost, benchmark = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
-	#print(pred[3, :])
-	#print(processed_y[3, :])
-	print("Cost (entropy): %.3f (%.3f)"%(cost, benchmark))
+
+	print("Overall cost (entropy): %.3f (%.3f)"%(cost, benchmark))
+	
+	chosen_case = random.randint(0, processed_test_y.shape[0]-1)
+	print("Example")
+
+	print("Prediction:")
+	print(pred[chosen_case, :])
+	
+	print("Label:")
+	print(processed_test_y[chosen_case, :])
+	
 
