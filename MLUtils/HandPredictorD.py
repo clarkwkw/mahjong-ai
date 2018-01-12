@@ -6,7 +6,7 @@ import numpy as np
 
 save_file_name = "savefile.ckpt"
 
-class HandPredictor(AbstractDNN):
+class HandPredictorD(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
@@ -16,19 +16,19 @@ class HandPredictor(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
-				self.__X = tf.placeholder(tf.float32, [None, 2, 34, 1], name = "X")
+				self.__X = tf.placeholder(tf.float32, [None, 4, 34, 1], name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, [None, 34], name = "y_truth")
 
-				filter_chow_1 = tf.get_variable("filter_chow_1", initializer = tf.random_normal([2, 3, 1, 1]))
+				filter_chow_1 = tf.get_variable("filter_chow_1", initializer = tf.random_normal([4, 3, 1, 1]))
 				bias_chow_1 = tf.get_variable("bias_chow_1", initializer = tf.random_normal([1]))
-				filter_chow_2 = tf.get_variable("filter_chow_2", initializer = tf.random_normal([1, 3, 1, 1]))
+				filter_chow_2 = tf.get_variable("filter_chow_2", initializer = tf.random_normal([4, 3, 1, 1]))
 				bias_chow_2 = tf.get_variable("bias_chow_2", initializer = tf.random_normal([1]))
 				
-				filter_pong = tf.get_variable("filter_pong", initializer = tf.random_normal([2, 1, 1, 1]))
+				filter_pong = tf.get_variable("filter_pong", initializer = tf.random_normal([4, 1, 1, 1]))
 				bias_pong = tf.get_variable("bias_pong", initializer = tf.random_normal([1]))
 
-				conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X[:, :, 0:27, :], filter_chow_1, strides = [1, 1, 1, 1], padding = 'VALID') + bias_chow_1)
-				conv_chow = tf.pad(conv_chow, [[0, 0], [0, 0], [0,9], [0, 0]])
+				conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X, filter_chow_1, strides = [1, 1, 1, 1], padding = 'VALID') + bias_chow_1)
+				conv_chow = tf.pad(conv_chow, [[0, 0], [0, 0], [0,2], [0, 0]])
 				conv_chow = tf.nn.relu(tf.nn.conv2d(conv_chow, filter_chow_2, strides = [1, 1, 1, 1], padding = 'SAME') + bias_chow_2)
 
 				conv_pong = tf.nn.relu(tf.nn.conv2d(self.__X, filter_pong, strides = [1, 1, 1, 1], padding = 'VALID') + bias_pong)
@@ -37,6 +37,7 @@ class HandPredictor(AbstractDNN):
 
 				pooling = tf.nn.max_pool(combined, ksize=[1, 2, 1, 1], strides=[1, 1, 1, 1], padding = 'VALID')
 				pooling = tf.squeeze(pooling)
+				pooling = tf.nn.dropout(pooling, keep_prob = 0.9)
 
 				weight_full = tf.get_variable("weight_full", initializer = tf.random_normal([34, 34]))
 				bias_full =  tf.get_variable("bias_full", initializer = tf.random_normal([34]))

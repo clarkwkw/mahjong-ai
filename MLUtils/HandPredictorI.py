@@ -6,7 +6,7 @@ import numpy as np
 
 save_file_name = "savefile.ckpt"
 
-class HandPredictor(AbstractDNN):
+class HandPredictorI(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
@@ -22,20 +22,20 @@ class HandPredictor(AbstractDNN):
 				# LAYER 1
 				l1_filter = tf.get_variable("l1_filter", initializer = tf.random_normal([4, 3, 1, 5]))
 				l1_bias = tf.get_variable("l1_bias", initializer = tf.random_normal([5]))
-				l1_conv = tf.nn.relu(tf.nn.conv2d(self.__X, l1_filter, strides = [1, 1, 1, 1], padding = 'SAME') + l1_bias)
+				l1_conv = tf.sigmoid(tf.nn.conv2d(self.__X, l1_filter, strides = [1, 1, 1, 1], padding = 'SAME') + l1_bias)
 				l1_pool = tf.nn.max_pool(l1_conv, ksize = [1, 3, 3, 1], strides = [1, 1, 1, 1], padding = 'SAME')
 
 				# LAYER 2
 				l2_filter = tf.get_variable("l2_filter", initializer = tf.random_normal([4, 3, 5, 5]))
 				l2_bias = tf.get_variable("l2_bias", initializer = tf.random_normal([5]))
-				l2_conv = tf.nn.relu(tf.nn.conv2d(l1_pool, l2_filter, strides = [1, 1, 1, 1], padding = 'SAME') + l2_bias)
+				l2_conv = tf.sigmoid(tf.nn.conv2d(l1_pool, l2_filter, strides = [1, 1, 1, 1], padding = 'SAME') + l2_bias)
 				l2_pool = tf.nn.max_pool(l2_conv, ksize = [1, 3, 3, 1], strides = [1, 1, 1, 1], padding = 'SAME')
 				l2_flat = tf.reshape(l2_pool, [-1, 4*34*5])
 
 				# LAYER 3
 				l3_fc_weight = tf.get_variable("l3_fc_weight", initializer = tf.random_normal([4*34*5, 102]))
 				l3_fc_bias = tf.get_variable("l3_fc_bias", initializer = tf.random_normal([102]))
-				l3_fc = tf.nn.relu(tf.matmul(l2_flat, l3_fc_weight) + l3_fc_bias)
+				l3_fc = tf.sigmoid(tf.matmul(l2_flat, l3_fc_weight) + l3_fc_bias)
 				l3_fc = tf.nn.dropout(l3_fc, 0.9)
 
 				# LAYER 4

@@ -1,4 +1,4 @@
-from MLUtils import HandPredictor
+from MLUtils import HandPredictorI, HandPredictorD
 import argparse
 import numpy as np
 import random
@@ -31,24 +31,31 @@ processed_train_X, processed_train_y, processed_test_X, processed_test_y = None,
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("action", type = str, choices = ["train", "cost"], help = "What to do with the model")
+	parser.add_argument("model_type", type = str, choices = ["i", "d"], help = "Which type of model to use? (i - treated as images, d - treated with domain knowledge)")
 	parser.add_argument("model_dir", type = str, help = "Where is the model")
 
 	args = parser.parse_args(args_list)
 
 	global model_dir
 	model_dir = args.model_dir
-	return args.action
+	return args.action, args.model_type
 
 def test(args):
 	predictor = None
-	action = parse_args(args)
+	action, model_type = parse_args(args)
 	try:
-		predictor = HandPredictor.load(model_dir)
+		if model_type == "i":
+			predictor = HandPredictorI.load(model_dir)
+		else:
+			predictor = HandPredictorD.load(model_dir)
 	except:
 		print("Cannot load model from '%s'"%model_dir)
 		print("Starting a new one")
-		predictor = HandPredictor(learning_rate = learning_rate)
-	
+		if model_type == "i":
+			predictor = HandPredictorI(learning_rate = learning_rate)
+		else:
+			predictor = HandPredictorD(learning_rate = learning_rate)
+
 	if action == "train":
 		utils.makesure_dir_exists(model_dir)
 		train(predictor)
