@@ -7,12 +7,17 @@ from sklearn.preprocessing import normalize
 from . import utils
 
 model_dir = None
-datasets = [
+train_datasets = [
+	"./resources/datasets/heuristics_vs_heuristics"
+]
+
+test_datasets = [
 	"./resources/datasets/heuristics_vs_heuristics_2"
 ]
-required_matrices = ["disposed_tiles_matrix", "hand_matrix"]
+required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
-raw_data, processed_X, processed_y = None, None, None
+raw_data_loaded = False
+processed_train_X, processed_train_y, processed_test_X, processed_test_y = None, None, None, None
 
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
@@ -44,42 +49,54 @@ def test(args):
 		cost(predictor)
 
 def load_datasets():
-	global raw_data, processed_X, processed_y
-	raw_data = {key: [] for key in required_matrices}
 
-	for path in datasets:
-		path = path.rstrip("/") + "/"
+	def load_helper(dataset_paths):
+		raw_data = {key: [] for key in required_matrices}
+		for path in dataset_paths:
+			path = path.rstrip("/") + "/"
+			for key in required_matrices:
+				raw_data[key].append(np.load(path + key + ".npy"))
+
 		for key in required_matrices:
-			raw_data[key].append(np.load(path + key + ".npy"))
+			raw_data[key] = np.concatenate(raw_data[key])
+		n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
+		processed_X = np.zeros((n_data, len(list(raw_data.keys())), 34, 1))
+		processed_y = np.zeros((n_data, 34))
+		common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
 
-	for key in required_matrices:
-		raw_data[key] = np.concatenate(raw_data[key])
+		#print()
 
-	n_data = raw_data["disposed_tiles_matrix"].shape[0]*4
-	processed_X = np.zeros((n_data, 2, 34, 1))
-	processed_y = np.zeros((n_data, 34))
+		for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
+			common = common_disposed[i, :].reshape((34, 1))
+			for j in range(4):
+				processed_X[i*4+j, 0, :, :] = common
+				processed_X[i*4+j, 1, :, :] = raw_data["disposed_tiles_matrix"][i, j, :].reshape((34, 1))
+				processed_X[i*4+j, 2, :, :] = raw_data["fixed_hand_matrix"][i, j, :].reshape((34, 1))
+				
+				processed_y[i*4 + j, :] = normalize([raw_data["hand_matrix"][i, j, :]], axis = 1, norm = "l1")[0]
+		return processed_X, processed_y
 
-	common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
-	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
-		common = common_disposed[i, :].reshape((34, 1))
-		processed_X[i*4:(i+1)*4, 1, :, :] = common
-		processed_X[i*4:(i+1)*4, 0, :, :] = raw_data["disposed_tiles_matrix"][i, :, :].reshape((4, 34, 1))
-		
-		processed_y[i*4:(i+1)*4, :] = normalize(raw_data["hand_matrix"][i, :, :], axis = 1, norm = "l1")
+	global raw_data_loaded, processed_train_X, processed_train_y, processed_test_X, processed_test_y
+	
+	processed_train_X, processed_train_y = load_helper(train_datasets)
+	print("Loaded %d  training data, inflated into %d"%(processed_train_X.shape[0]/4, processed_train_X.shape[0]))
 
-	print("Loaded %d data, inflated into %d"%(raw_data["disposed_tiles_matrix"].shape[0], raw_data["disposed_tiles_matrix"].shape[0]*4))
+	processed_test_X, processed_test_y = load_helper(test_datasets)
+	print("Loaded %d  testing data, inflated into %d"%(processed_test_X.shape[0]/4, processed_test_X.shape[0]))
+
+	raw_data_loaded = True
 
 def train(predictor):
-	if raw_data is None:
+	if not raw_data_loaded:
 		load_datasets()
-	predictor.train(processed_X, processed_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
+	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
 
 def cost(predictor):
-	if raw_data is None:
+	if not raw_data_loaded:
 		load_datasets()
-	pred, cost, benchmark = predictor.predict(processed_X, processed_y)
+	pred, cost, benchmark = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
-	print(pred[3, :])
-	print(processed_y[3, :])
+	#print(pred[3, :])
+	#print(processed_y[3, :])
 	print("Cost (entropy): %.3f (%.3f)"%(cost, benchmark))
 

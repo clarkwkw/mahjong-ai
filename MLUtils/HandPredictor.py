@@ -16,32 +16,43 @@ class HandPredictor(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
-				self.__X = tf.placeholder(tf.float32, [None, 2, 34, 1], name = "X")
+				self.__X = tf.placeholder(tf.float32, [None, 3, 34, 1], name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, [None, 34], name = "y_truth")
 
-				filter_chow_1 = tf.get_variable("filter_chow_1", initializer = tf.random_normal([2, 3, 1, 1]))
-				bias_chow_1 = tf.get_variable("bias_chow_1", initializer = tf.random_normal([1]))
-				filter_chow_2 = tf.get_variable("filter_chow_2", initializer = tf.random_normal([1, 3, 1, 1]))
-				bias_chow_2 = tf.get_variable("bias_chow_2", initializer = tf.random_normal([1]))
+
+				# LAYER 1
+				l1_filter_chow = tf.get_variable("l1_filter_chow", initializer = tf.random_normal([3, 3, 1, 1]))
+				l1_bias_chow = tf.get_variable("l1_bias_chow", initializer = tf.random_normal([1]))
 				
-				filter_pong = tf.get_variable("filter_pong", initializer = tf.random_normal([2, 1, 1, 1]))
-				bias_pong = tf.get_variable("bias_pong", initializer = tf.random_normal([1]))
+				l1_filter_pong = tf.get_variable("l1_filter_pong", initializer = tf.random_normal([3, 1, 1, 1]))
+				l1_bias_pong = tf.get_variable("l1_bias_pong", initializer = tf.random_normal([1]))
 
-				conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X[:, :, 0:27, :], filter_chow_1, strides = [1, 1, 1, 1], padding = 'VALID') + bias_chow_1)
-				conv_chow = tf.pad(conv_chow, [[0, 0], [0, 0], [0,9], [0, 0]])
-				conv_chow = tf.nn.relu(tf.nn.conv2d(conv_chow, filter_chow_2, strides = [1, 1, 1, 1], padding = 'SAME') + bias_chow_2)
+				l1_conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X, l1_filter_chow, strides = [1, 1, 1, 1], padding = 'VALID') + l1_bias_chow)
+				l1_conv_chow = tf.squeeze(l1_conv_chow)
 
-				conv_pong = tf.nn.relu(tf.nn.conv2d(self.__X, filter_pong, strides = [1, 1, 1, 1], padding = 'VALID') + bias_pong)
+				l1_conv_pong = tf.nn.relu(tf.nn.conv2d(self.__X, l1_filter_pong, strides = [1, 1, 1, 1], padding = 'VALID') + l1_bias_pong)
+				l1_conv_pong = tf.squeeze(l1_conv_pong)
 
-				combined = tf.concat([conv_chow, conv_pong], axis = 1)				
+				# LAYER 2
+				l2_weight_chow_full = tf.get_variable("l2_weight_chow_full", initializer = tf.random_normal([32, 34]))
+				l2_bias_chow_full = tf.get_variable("l2_bias_chow_full", initializer = tf.random_normal([34]))
+				l2_weight_pong_full = tf.get_variable("l2_weight_pong_full", initializer = tf.random_normal([34, 34]))
+				l2_bias_pong_full = tf.get_variable("l2_bias_pong_full", initializer = tf.random_normal([34]))
 
-				pooling = tf.nn.max_pool(combined, ksize=[1, 2, 1, 1], strides=[1, 1, 1, 1], padding = 'VALID')
-				pooling = tf.squeeze(pooling)
+				l2_full_chow = tf.nn.relu(tf.matmul(l1_conv_chow, l2_weight_chow_full) + l2_bias_chow_full)
+				l2_full_pong = tf.nn.relu(tf.matmul(l1_conv_pong, l2_weight_pong_full) + l2_bias_pong_full)
 
-				weight_full = tf.get_variable("weight_full", initializer = tf.random_normal([34, 34]))
-				bias_full =  tf.get_variable("bias_full", initializer = tf.random_normal([34]))
+				l2_combined = tf.reshape(tf.stack([l2_full_chow, l2_full_pong], axis = 1), [tf.shape(self.__X)[0], 2, 34, 1])			
+
+				# LAYER 3
+				l3_pooling = tf.layers.max_pooling2d(l2_combined, pool_size = [2, 3], strides = 1, padding = 'VALID')
+				l3_pooling = tf.reshape(l3_pooling, [-1, 32])
 				
-				self.__pred = tf.matmul(pooling, weight_full) + bias_full
+				# LAYER 4
+				l4_weight_full = tf.get_variable("l4_weight_full", initializer = tf.random_normal([32, 34]))
+				l4_bias_full =  tf.get_variable("l4_bias_full", initializer = tf.random_normal([34]))
+				
+				self.__pred = tf.matmul(l3_pooling, l4_weight_full) + l4_bias_full
 
 				tf.add_to_collection("pred", self.__pred)
 
