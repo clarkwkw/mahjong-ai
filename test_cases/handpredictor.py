@@ -26,7 +26,6 @@ test_datasets = [
 ]
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
-raw_data_loaded = False
 processed_train_X, processed_train_y, processed_test_X, processed_test_y = None, None, None, None
 
 def parse_args(args_list):
@@ -58,52 +57,47 @@ def test(args):
 	else:
 		cost(predictor)
 
-def load_datasets():
-
-	def load_helper(dataset_paths):
-		raw_data = {key: [] for key in required_matrices}
-		for path in dataset_paths:
-			path = path.rstrip("/") + "/"
-			for key in required_matrices:
-				raw_data[key].append(np.load(path + key + ".npy"))
-
+def load_dataset(dataset_paths):
+	print("Loading dataset")
+	raw_data = {key: [] for key in required_matrices}
+	for path in dataset_paths:
+		path = path.rstrip("/") + "/"
 		for key in required_matrices:
-			raw_data[key] = np.concatenate(raw_data[key])
-		n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
-		processed_X = np.zeros((n_data, len(list(raw_data.keys())), 34, 1))
-		processed_y = np.zeros((n_data, 34))
-		common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
+			raw_data[key].append(np.load(path + key + ".npy"))
 
-		#print()
+	for key in required_matrices:
+		raw_data[key] = np.concatenate(raw_data[key])
+	n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
+	processed_X = np.zeros((n_data, len(list(raw_data.keys())), 34, 1))
+	processed_y = np.zeros((n_data, 34))
+	common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
 
-		for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
-			common = common_disposed[i, :].reshape((34, 1))
-			for j in range(4):
-				processed_X[i*4+j, 0, :, :] = common
-				processed_X[i*4+j, 1, :, :] = raw_data["disposed_tiles_matrix"][i, j, :].reshape((34, 1))
-				processed_X[i*4+j, 2, :, :] = raw_data["fixed_hand_matrix"][i, j, :].reshape((34, 1))
-				
-				processed_y[i*4 + j, :] = normalize([raw_data["hand_matrix"][i, j, :]], axis = 1, norm = "l1")[0]
-		return processed_X, processed_y
+	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
+		common = common_disposed[i, :].reshape((34, 1))
+		for j in range(4):
+			processed_X[i*4+j, 0, :, :] = common
+			processed_X[i*4+j, 1, :, :] = raw_data["disposed_tiles_matrix"][i, j, :].reshape((34, 1))
+			processed_X[i*4+j, 2, :, :] = raw_data["fixed_hand_matrix"][i, j, :].reshape((34, 1))
+			
+			processed_y[i*4 + j, :] = normalize([raw_data["hand_matrix"][i, j, :]], axis = 1, norm = "l1")[0]
+	print("Loaded %d data, inflated into %d"%(processed_X.shape[0]/4, processed_X.shape[0]))
 
-	global raw_data_loaded, processed_train_X, processed_train_y, processed_test_X, processed_test_y
+	return processed_X, processed_y
 	
-	processed_train_X, processed_train_y = load_helper(train_datasets)
-	print("Loaded %d  training data, inflated into %d"%(processed_train_X.shape[0]/4, processed_train_X.shape[0]))
-
-	processed_test_X, processed_test_y = load_helper(test_datasets)
-	print("Loaded %d  testing data, inflated into %d"%(processed_test_X.shape[0]/4, processed_test_X.shape[0]))
-
-	raw_data_loaded = True
-
 def train(predictor):
-	if not raw_data_loaded:
-		load_datasets()
+	global processed_train_X, processed_train_y
+
+	if processed_train_X is None:
+		processed_train_X, processed_train_y = load_dataset(train_datasets)
+
 	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
 
 def cost(predictor):
-	if not raw_data_loaded:
-		load_datasets()
+	global processed_test_X, processed_test_y
+
+	if processed_test_X is None:
+		processed_test_X, processed_test_y = load_dataset(test_datasets)
+
 	pred, cost, benchmark = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
 
