@@ -111,5 +111,3 @@ def cost(predictor):
 	
 	print("Label:")
 	print(processed_test_y[chosen_case, :])
-	
-
