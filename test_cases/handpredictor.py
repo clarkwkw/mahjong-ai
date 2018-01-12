@@ -68,9 +68,10 @@ def load_dataset(dataset_paths):
 	for key in required_matrices:
 		raw_data[key] = np.concatenate(raw_data[key])
 	n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
-	processed_X = np.zeros((n_data, len(list(raw_data.keys())), 34, 1))
+	processed_X = np.zeros((n_data, 4, 34, 1))
 	processed_y = np.zeros((n_data, 34))
 	common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
+	common_fixed_hand = raw_data["fixed_hand_matrix"].sum(axis = 1)
 
 	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
 		common = common_disposed[i, :].reshape((34, 1))
@@ -78,6 +79,7 @@ def load_dataset(dataset_paths):
 			processed_X[i*4+j, 0, :, :] = common
 			processed_X[i*4+j, 1, :, :] = raw_data["disposed_tiles_matrix"][i, j, :].reshape((34, 1))
 			processed_X[i*4+j, 2, :, :] = raw_data["fixed_hand_matrix"][i, j, :].reshape((34, 1))
+			processed_X[i*4+j, 3, :, :] = (common_fixed_hand[i, :] -  raw_data["fixed_hand_matrix"][i, j, :]).reshape((34, 1))
 			
 			processed_y[i*4 + j, :] = normalize([raw_data["hand_matrix"][i, j, :]], axis = 1, norm = "l1")[0]
 	print("Loaded %d data, inflated into %d"%(processed_X.shape[0]/4, processed_X.shape[0]))
