@@ -7,9 +7,9 @@ from sklearn.preprocessing import normalize
 from . import utils
 
 model_dir = None
-train_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 1, 10)]
+train_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 1, 30)]
 
-test_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 11, 11)]
+test_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 31, 32)]
 
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
@@ -76,18 +76,20 @@ def load_dataset(dataset_paths):
 	n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
 	processed_X = np.zeros((n_data, 4, 34, 1))
 	processed_y = np.zeros((n_data, 34))
-	common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
-	common_fixed_hand = raw_data["fixed_hand_matrix"].sum(axis = 1)
+	common_disposed =  normalize(raw_data["disposed_tiles_matrix"].sum(axis = 1), axis = 1, norm = "l1")
+	common_fixed_hand =  normalize(raw_data["fixed_hand_matrix"].sum(axis = 1), axis = 1, norm = "l1")
+
+	raw_data["disposed_tiles_matrix"] = normalize(raw_data["disposed_tiles_matrix"].reshape([-1, 34]), axis = 1, norm = "l1").reshape([-1, 4, 34])
+	raw_data["fixed_hand_matrix"] = normalize(raw_data["fixed_hand_matrix"].reshape([-1, 34]), axis = 1, norm = "l1").reshape([-1, 4, 34])
+	raw_data["hand_matrix"] = normalize(raw_data["hand_matrix"].reshape([-1, 34]), axis = 1, norm = "l1").reshape([-1, 4, 34])
 
 	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
-		common = common_disposed[i, :].reshape((34, 1))
-		for j in range(4):
-			processed_X[i*4+j, 0, :, :] = common
-			processed_X[i*4+j, 1, :, :] = raw_data["disposed_tiles_matrix"][i, j, :].reshape((34, 1))
-			processed_X[i*4+j, 2, :, :] = raw_data["fixed_hand_matrix"][i, j, :].reshape((34, 1))
-			processed_X[i*4+j, 3, :, :] = (common_fixed_hand[i, :] -  raw_data["fixed_hand_matrix"][i, j, :]).reshape((34, 1))
-			
-			processed_y[i*4 + j, :] = normalize([raw_data["hand_matrix"][i, j, :]], axis = 1, norm = "l1")[0]
+		processed_X[i*4:(i+1)*4, 0, :, :] = common_disposed[i, :].reshape((34, 1))
+		processed_X[i*4:(i+1)*4, 1, :, :] = raw_data["disposed_tiles_matrix"][i, :, :].reshape((4, 34, 1))
+		processed_X[i*4:(i+1)*4, 2, :, :] = raw_data["fixed_hand_matrix"][i, :, :].reshape((4, 34, 1))
+		processed_X[i*4:(i+1)*4, 3, :, :] = common_fixed_hand[i, :].reshape((34, 1))
+		processed_y[i*4:(i+1)*4, :] = raw_data["hand_matrix"][i, :, :]
+	
 	print("Loaded %d data, inflated into %d"%(processed_X.shape[0]/4, processed_X.shape[0]))
 
 	return processed_X, processed_y
