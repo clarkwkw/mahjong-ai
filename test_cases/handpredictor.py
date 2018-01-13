@@ -98,7 +98,7 @@ def train(predictor):
 	if processed_train_X is None:
 		processed_train_X, processed_train_y = load_dataset(train_datasets)
 
-	predictor.train(processed_train_X, processed_train_y, step = 20, show_step = True)
+	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
 
 def cost(predictor):
 	global processed_test_X, processed_test_y
