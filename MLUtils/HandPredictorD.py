@@ -16,9 +16,18 @@ class HandPredictorD(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
-				self.__X = tf.placeholder(tf.float32, [None, 4, 34, 1], name = "X")
-				self.__y_truth = tf.placeholder(tf.float32, [None, 34], name = "y_truth")
+				x_shape = [None, 4, 34, 1]
+				y_shape = [None, 34]
+				self.__X = tf.placeholder(tf.float32, x_shape, name = "X")
+				self.__y_truth = tf.placeholder(tf.float32, y_shape, name = "y_truth")
 				self.__keep_prob = tf.placeholder(tf.float32, [], name = "keep_prob")
+
+				self.__dataset_X = tf.placeholder(tf.float32, x_shape, name = "dataset_X")
+				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
+				dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
+				dataset = dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
+				self.__iterator = dataset.make_initializable_iterator()
+				self.__next_element = self.__iterator.get_next()
 
 				filter_chow_1 = tf.get_variable("filter_chow_1", initializer = tf.random_normal([4, 3, 1, 1]))
 				bias_chow_1 = tf.get_variable("bias_chow_1", initializer = tf.random_normal([1]))
@@ -61,10 +70,15 @@ class HandPredictorD(AbstractDNN):
 				self.__X = g.get_tensor_by_name("X:0")
 				self.__y_truth = g.get_tensor_by_name("y_truth:0")
 				self.__keep_prob =  g.get_tensor_by_name("keep_prob:0")
+				self.__dataset_X = g.get_tensor_by_name("dataset_X:0")
+				self.__dataset_y = g.get_tensor_by_name("dataset_y:0")
+				self.__iterator = g.get_operation_by_name("Iterator")
+				self.__next_element = g.get_operation_by_name("IteratorGetNext")
 				self.__pred = tf.get_collection("pred")[0]
 				self.__err = tf.get_collection("err")[0]
 				self.__optimizer = tf.get_collection("optimizer")[0]
 
+				
 		tf.reset_default_graph()
 
 	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, show_step = False):
@@ -75,9 +89,11 @@ class HandPredictorD(AbstractDNN):
 			train_X, train_y, valid_X, valid_y = utils.split_data(X, y_truth, 0.8)
 
 		with self.__graph.as_default() as g:
+			self.__sess.run(self.__iterator.initializer, feed_dict = {self.__dataset_X: train_X, self.__dataset_y: train_y})
 			i = 0
 			while i < max_iter:
-				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: train_X, self.__y_truth: train_y, self.__keep_prob: 0.9})
+				batch_X, batch_y = self.__sess.run(self.__next_element)
+				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__keep_prob: 0.9})
 				
 				if (i + 1)%step == 0:
 					if is_adaptive:

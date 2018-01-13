@@ -7,9 +7,9 @@ from sklearn.preprocessing import normalize
 from . import utils
 
 model_dir = None
-train_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 1, 30)]
+train_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 1, 10)]
 
-test_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 31, 32)]
+test_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 11, 11)]
 
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
