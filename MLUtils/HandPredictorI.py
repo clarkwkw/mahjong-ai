@@ -18,6 +18,7 @@ class HandPredictorI(AbstractDNN):
 			if from_save is None:
 				self.__X = tf.placeholder(tf.float32, [None, 4, 34, 1], name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, [None, 34], name = "y_truth")
+				self.__keep_prob = tf.placeholder(tf.float32, [], name = "keep_prob")
 
 				# LAYER 1
 				l1_filter = tf.get_variable("l1_filter", initializer = tf.random_normal([4, 3, 1, 5]))
@@ -36,7 +37,7 @@ class HandPredictorI(AbstractDNN):
 				l3_fc_weight = tf.get_variable("l3_fc_weight", initializer = tf.random_normal([4*34*5, 102]))
 				l3_fc_bias = tf.get_variable("l3_fc_bias", initializer = tf.random_normal([102]))
 				l3_fc = tf.sigmoid(tf.matmul(l2_flat, l3_fc_weight) + l3_fc_bias)
-				l3_fc = tf.nn.dropout(l3_fc, 0.9)
+				l3_fc = tf.nn.dropout(l3_fc, self.__keep_prob)
 
 				# LAYER 4
 				l4_fc_weight = tf.get_variable("l4_fc_weight", initializer = tf.random_normal([102, 34]))
@@ -74,11 +75,11 @@ class HandPredictorI(AbstractDNN):
 		with self.__graph.as_default() as g:
 			i = 0
 			while i < max_iter:
-				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: train_X, self.__y_truth: train_y})
+				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: train_X, self.__y_truth: train_y, self.__keep_prob: 0.9})
 				
 				if (i + 1)%step == 0:
 					if is_adaptive:
-						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y})
+						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y, self.__keep_prob: 1})
 						if valid_err > prev_err:
 							break
 						prev_err = valid_err
@@ -96,9 +97,9 @@ class HandPredictorI(AbstractDNN):
 		with self.__graph.as_default() as g:
 			pred, cost = None, None
 			if y_truth is None:
-				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X})
+				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X, self.__keep_prob: 1})
 			else:
-				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth})
+				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__keep_prob: 1})
 				benchmark = self.__sess.run(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_truth, logits = y_truth)))
 		tf.reset_default_graph()
 		if pred.shape[1] > 1:
