@@ -7,23 +7,10 @@ from sklearn.preprocessing import normalize
 from . import utils
 
 model_dir = None
-train_datasets = [
-	"./resources/datasets/heuristics_vs_heuristics_1",
-	"./resources/datasets/heuristics_vs_heuristics_2",
-	"./resources/datasets/heuristics_vs_heuristics_3",
-	"./resources/datasets/heuristics_vs_heuristics_4",
-	"./resources/datasets/heuristics_vs_heuristics_5",
-	"./resources/datasets/heuristics_vs_heuristics_6",
-	"./resources/datasets/heuristics_vs_heuristics_7",
-	"./resources/datasets/heuristics_vs_heuristics_8",
-	"./resources/datasets/heuristics_vs_heuristics_9",
-	"./resources/datasets/heuristics_vs_heuristics_10"
-]
+train_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 1, 30)]
 
-test_datasets = [
-	"./resources/datasets/heuristics_vs_heuristics_11",
-	"./resources/datasets/heuristics_vs_heuristics_12"
-]
+test_datasets = [("./resources/datasets/heuristics_vs_heuristics_", 31, 32)]
+
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
 learning_rate = 1e-3
 processed_train_X, processed_train_y, processed_test_X, processed_test_y = None, None, None, None
@@ -41,6 +28,18 @@ def parse_args(args_list):
 	return args.action, args.model_type
 
 def test(args):
+	global train_datasets, test_datasets
+	parsed_train_datasets, parsed_test_datasets = [], []
+	for path, start_i, end_i in train_datasets:
+		for i in range(start_i, end_i + 1):
+			parsed_train_datasets.append(path+str(i))
+
+	for path, start_i, end_i in test_datasets:
+		for i in range(start_i, end_i + 1):
+			parsed_test_datasets.append(path+str(i))
+
+	train_datasets, test_datasets = parsed_train_datasets, parsed_test_datasets
+
 	predictor = None
 	action, model_type = parse_args(args)
 	try:
@@ -99,7 +98,7 @@ def train(predictor):
 	if processed_train_X is None:
 		processed_train_X, processed_train_y = load_dataset(train_datasets)
 
-	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 20, max_iter = float("inf"), show_step = True)
+	predictor.train(processed_train_X, processed_train_y, step = 20, show_step = True)
 
 def cost(predictor):
 	global processed_test_X, processed_test_y
