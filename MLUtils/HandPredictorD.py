@@ -20,7 +20,7 @@ class HandPredictorD(AbstractDNN):
 				y_shape = [None, 34]
 				self.__X = tf.placeholder(tf.float32, x_shape, name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, y_shape, name = "y_truth")
-				self.__keep_prob = tf.placeholder(tf.float32, [], name = "keep_prob")
+				self.__dropout_rate = tf.placeholder(tf.float32, [], name = "dropout_rate")
 
 				self.__dataset_X = tf.placeholder(tf.float32, x_shape, name = "dataset_X")
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
@@ -29,30 +29,22 @@ class HandPredictorD(AbstractDNN):
 				self.__iterator = dataset.make_initializable_iterator()
 				self.__next_element = self.__iterator.get_next()
 
-				filter_chow_1 = tf.get_variable("filter_chow_1", initializer = tf.random_normal([4, 3, 1, 1]))
-				bias_chow_1 = tf.get_variable("bias_chow_1", initializer = tf.random_normal([1]))
-				filter_chow_2 = tf.get_variable("filter_chow_2", initializer = tf.random_normal([4, 3, 1, 1]))
-				bias_chow_2 = tf.get_variable("bias_chow_2", initializer = tf.random_normal([1]))
-				
-				filter_pong = tf.get_variable("filter_pong", initializer = tf.random_normal([4, 1, 1, 1]))
-				bias_pong = tf.get_variable("bias_pong", initializer = tf.random_normal([1]))
-
-				conv_chow = tf.nn.relu(tf.nn.conv2d(self.__X, filter_chow_1, strides = [1, 1, 1, 1], padding = 'VALID') + bias_chow_1)
+				# LAYER 1
+				conv_chow = tf.layers.conv2d(inputs = self.__X, filters = 1, kernel_size = [4, 3], padding = "VALID", activation = tf.nn.relu)
 				conv_chow = tf.pad(conv_chow, [[0, 0], [0, 0], [0,2], [0, 0]])
-				conv_chow = tf.nn.relu(tf.nn.conv2d(conv_chow, filter_chow_2, strides = [1, 1, 1, 1], padding = 'SAME') + bias_chow_2)
-
-				conv_pong = tf.nn.relu(tf.nn.conv2d(self.__X, filter_pong, strides = [1, 1, 1, 1], padding = 'VALID') + bias_pong)
+				conv_chow = tf.layers.conv2d(inputs = conv_chow, filters = 1, kernel_size = [4, 3], padding = "same", activation = tf.nn.relu)
+				
+				conv_pong = tf.layers.conv2d(inputs = self.__X, filters = 1, kernel_size = [4, 1], padding = "VALID", activation = tf.nn.relu)
 
 				combined = tf.concat([conv_chow, conv_pong], axis = 1)				
 
-				pooling = tf.nn.max_pool(combined, ksize=[1, 2, 1, 1], strides=[1, 1, 1, 1], padding = 'VALID')
-				pooling = tf.squeeze(pooling)
-				pooling = tf.nn.dropout(pooling, keep_prob = 0.9)
+				# LAYER 2
+				pooling = tf.layers.max_pooling2d(inputs = combined, pool_size = [2, 1], strides = [1, 1])
+				pooling = tf.reshape(pooling, [-1, 34])
+				pooling_dropout = tf.layers.dropout(inputs = pooling, rate = self.__dropout_rate, training = tf.logical_not(tf.equal(self.__dropout_rate, tf.constant(0.0))))
 
-				weight_full = tf.get_variable("weight_full", initializer = tf.random_normal([34, 34]))
-				bias_full =  tf.get_variable("bias_full", initializer = tf.random_normal([34]))
-				
-				self.__pred = tf.matmul(pooling, weight_full) + bias_full
+				# LAYER 3
+				self.__pred = tf.layers.dense(inputs = pooling_dropout, units = 34)
 
 				tf.add_to_collection("pred", self.__pred)
 
@@ -69,7 +61,7 @@ class HandPredictorD(AbstractDNN):
 
 				self.__X = g.get_tensor_by_name("X:0")
 				self.__y_truth = g.get_tensor_by_name("y_truth:0")
-				self.__keep_prob =  g.get_tensor_by_name("keep_prob:0")
+				self.__dropout_rate =  g.get_tensor_by_name("dropout_rate:0")
 				self.__dataset_X = g.get_tensor_by_name("dataset_X:0")
 				self.__dataset_y = g.get_tensor_by_name("dataset_y:0")
 				self.__iterator = g.get_operation_by_name("Iterator")
@@ -93,11 +85,11 @@ class HandPredictorD(AbstractDNN):
 			i = 0
 			while i < max_iter:
 				batch_X, batch_y = self.__sess.run(self.__next_element)
-				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__keep_prob: 0.9})
+				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__dropout_rate: 0.2})
 				
 				if (i + 1)%step == 0:
 					if is_adaptive:
-						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y, self.__keep_prob: 1})
+						valid_err = self.__sess.run(self.__err, feed_dict = {self.__X: valid_X, self.__y_truth: valid_y, self.__dropout_rate: 0})
 						if valid_err > prev_err:
 							break
 						prev_err = valid_err
@@ -115,9 +107,9 @@ class HandPredictorD(AbstractDNN):
 		with self.__graph.as_default() as g:
 			pred, cost = None, None
 			if y_truth is None:
-				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X, self.__keep_prob: 1})
+				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X, self.__dropout_rate: 0})
 			else:
-				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__keep_prob: 1})
+				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__dropout_rate: 0})
 				benchmark = self.__sess.run(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_truth, logits = y_truth)))
 		tf.reset_default_graph()
 		if pred.shape[1] > 1:

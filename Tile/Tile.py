@@ -109,6 +109,11 @@ with open("resources/tile_config.json", "r") as f:
 		for value in tile_symbols[suit]:
 			tile = Tile(suit, value)
 			tile_map[suit][value] = tile
+
+	for suit in suit_order:
+		for value in tile_symbols[suit]:
+			tile = tile_map[suit][value]
 			tile_index[tile] = i
 			index_tile.append(tile)
 			i += 1
+
