@@ -6,7 +6,7 @@ import numpy as np
 
 save_file_name = "savefile.ckpt"
 
-class HandPredictorI(AbstractDNN):
+class HandPredictor(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
@@ -16,7 +16,7 @@ class HandPredictorI(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
-				x_shape = [None, 4, 34, 1]
+				x_shape = [None, 4, 9, 4]
 				y_shape = [None, 34]
 				self.__X = tf.placeholder(tf.float32, x_shape, name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, y_shape, name = "y_truth")
@@ -30,15 +30,14 @@ class HandPredictorI(AbstractDNN):
 				self.__next_element = self.__iterator.get_next()
 
 				# LAYER 1
-				conv_1 = tf.layers.conv2d(inputs = self.__X, filters = 4, kernel_size = [4, 3], padding = "same", activation = tf.nn.sigmoid)
-				pool_1 = tf.layers.max_pooling2d(inputs = conv_1, pool_size = [2, 3], strides = [2, 1])
+				conv_1 = tf.layers.conv2d(inputs = self.__X, filters = 4, kernel_size = [3, 3], padding = "same", activation = tf.nn.sigmoid)
 
 				# LAYER 2
-				conv_2 = tf.layers.conv2d(inputs = pool_1, filters = 8, kernel_size = [4, 3], padding = "same", activation = tf.nn.sigmoid)
-				pool_2 = tf.layers.max_pooling2d(inputs = conv_2, pool_size = [2, 3], strides = [2, 1])
+				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 8, kernel_size = [3, 3], padding = "same", activation = tf.nn.sigmoid)
+				pool_2 = tf.layers.max_pooling2d(inputs = conv_2, pool_size = [2, 2], strides = 2)
 
 				# LAYER 3
-				flat_3 = tf.reshape(pool_2, [-1, 30 * 8])
+				flat_3 = tf.reshape(pool_2, [-1, 2*4*8])
 				dense_3 = tf.layers.dense(inputs = flat_3, units = 128, activation = tf.nn.sigmoid)
 				dense_3_dropout = tf.layers.dropout(inputs = dense_3, rate = self.__dropout_rate, training = tf.logical_not(tf.equal(self.__dropout_rate, tf.constant(0.0))))
 
