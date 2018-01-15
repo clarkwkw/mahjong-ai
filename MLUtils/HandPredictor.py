@@ -5,14 +5,17 @@ import random
 import numpy as np
 
 save_file_name = "savefile.ckpt"
+gpu_usage_w_limit = True
 
 class HandPredictor(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
-		self.__sess = tf.Session(graph = self.__graph, config = tf.ConfigProto(**utils.parallel_parameters))
+		config = tf.ConfigProto(**utils.parallel_parameters)
+		config.gpu_options.allow_growth = True
+		config.gpu_options.per_process_gpu_memory_fraction = 0.5
+		self.__sess = tf.Session(graph = self.__graph, config = config)
 		
-
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
