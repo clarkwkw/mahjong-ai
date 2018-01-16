@@ -1,4 +1,4 @@
-from MLUtils import HandPredictor
+from MLUtils import HandPredictorD
 import argparse
 import numpy as np
 import random
@@ -42,11 +42,11 @@ def test(args):
 	predictor = None
 	action = parse_args(args)
 	try:
-		predictor = HandPredictor.load(model_dir)
+		predictor = HandPredictorD.load(model_dir)
 	except:
 		print("Cannot load model from '%s'"%model_dir)
 		print("Starting a new one")
-		predictor = HandPredictor(learning_rate = learning_rate)
+		predictor = HandPredictorD(learning_rate = learning_rate)
 	
 	if action == "train":
 		utils.makesure_dir_exists(model_dir)
@@ -66,41 +66,19 @@ def load_dataset(dataset_paths):
 
 	for key in required_matrices:
 		raw_data[key] = np.concatenate(raw_data[key])
-	#n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
-	n_data = raw_data[list(raw_data.keys())[0]].shape[0]
-	processed_X = np.zeros((n_data, 4, 9, 4))
+	n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
+	processed_X = np.zeros((n_data, 4, 34, 1))
 	processed_y = np.zeros((n_data, 34))
-
-	common_disposed =  normalize(raw_data["disposed_tiles_matrix"].sum(axis = 1), axis = 1, norm = "l1")
-	common_disposed = np.lib.pad(common_disposed, ((0, 0), (0, 2)), mode = "constant", constant_values = 0).reshape((-1, 4, 9))
-	common_fixed_hand =  normalize(raw_data["fixed_hand_matrix"].sum(axis = 1), axis = 1, norm = "l1")
-	common_fixed_hand = np.lib.pad(common_fixed_hand, ((0, 0), (0, 2)), mode = "constant", constant_values = 0).reshape((-1, 4, 9))
-
-	raw_data["disposed_tiles_matrix"] = normalize(raw_data["disposed_tiles_matrix"].reshape([-1, 34]), axis = 1, norm = "l1")
-	raw_data["disposed_tiles_matrix"] = np.lib.pad(raw_data["disposed_tiles_matrix"], ((0, 0), (0, 2)), mode = "constant", constant_values = 0).reshape([-1, 4, 4, 9])
-	
-	raw_data["fixed_hand_matrix"] = normalize(raw_data["fixed_hand_matrix"].reshape([-1, 34]), axis = 1, norm = "l1")
-	raw_data["fixed_hand_matrix"] = np.lib.pad(raw_data["fixed_hand_matrix"], ((0, 0), (0, 2)), mode = "constant", constant_values = 0).reshape([-1, 4, 4, 9])
-
-	raw_data["hand_matrix"] = normalize(raw_data["hand_matrix"].reshape([-1, 34]), axis = 1, norm = "l1").reshape([-1, 4, 34])
+	common_disposed = raw_data["disposed_tiles_matrix"].sum(axis = 1)
+	common_fixed_hand = raw_data["fixed_hand_matrix"].sum(axis = 1)
 
 	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
-		'''
-		processed_X[i*4:(i+1)*4, :, :, 0] = common_disposed[i, :, :]
-		processed_X[i*4:(i+1)*4, :, :, 1] = raw_data["disposed_tiles_matrix"][i, :, :, :]
-		processed_X[i*4:(i+1)*4, :, :, 2] = raw_data["fixed_hand_matrix"][i, :, :, :]
-		processed_X[i*4:(i+1)*4, :, :, 3] = common_fixed_hand[i, :, :]
-		processed_y[i*4:(i+1)*4, :] = raw_data["hand_matrix"][i, :, :]
-		'''
-		j = random.choice(range(4))
-		processed_X[i, :, :, 0] = common_disposed[i, :, :]
-		processed_X[i, :, :, 1] = raw_data["disposed_tiles_matrix"][i, j, :, :]
-		processed_X[i, :, :, 2] = raw_data["fixed_hand_matrix"][i, j, :, :]
-		processed_X[i, :, :, 3] = common_fixed_hand[i, :, :]
-		processed_y[i, :] = raw_data["hand_matrix"][i, j, :]
-
+		processed_X[i*4:(i+1)*4, 0, :, :] = common_disposed[i, :].reshape((34, 1))
+		processed_X[i*4:(i+1)*4, 1, :, :] = raw_data["disposed_tiles_matrix"][i, :, :].reshape((4, 34, 1))
+		processed_X[i*4:(i+1)*4, 2, :, :] = raw_data["fixed_hand_matrix"][i, :, :].reshape((4, 34, 1))
+		processed_X[i*4:(i+1)*4, 3, :, :] = common_fixed_hand[i, :].reshape((34, 1))
+		processed_y[i*4:(i+1)*4, :] = normalize(raw_data["hand_matrix"][i, :, :], axis = 1, norm = "l1")
 	print("Loaded %d data, inflated into %d"%(processed_X.shape[0]/4, processed_X.shape[0]))
-
 	return processed_X, processed_y
 	
 def train(predictor):

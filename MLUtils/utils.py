@@ -13,9 +13,9 @@ def softmax(y):
 	result = y_exp / y_sum
 	return result
 
-def split_data(X, y, train_portion):
+def split_data(X, y, train_portion, max_valid_cases = 30000):
 	n_samples = y.shape[0]
-	valid_count = int(n_samples*train_portion)
+	valid_count = min(int(n_samples*(1 - train_portion)), max_valid_cases)
 	if valid_count <= 0:
 		raise Exception("Too few samples to split")
 
