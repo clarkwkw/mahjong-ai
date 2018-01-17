@@ -74,10 +74,6 @@ class HandPredictor(AbstractDNN):
 
 		tf.reset_default_graph()
 
-	def restart_tf_session(self):
-		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
-		gc.collect()
-
 	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, show_step = False):
 		train_X, train_y = X, y_truth
 		prev_err = float("inf")
@@ -121,6 +117,9 @@ class HandPredictor(AbstractDNN):
 			pred = utils.softmax(pred)
 
 		return pred, cost
+
+	def close_session(self):
+		self.__sess.close()
 
 	def save(self, save_dir):
 		with self.__graph.as_default() as g:
