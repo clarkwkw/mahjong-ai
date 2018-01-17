@@ -46,7 +46,7 @@ class Game(object):
 
 		self.__deck = Tile.get_tiles(shuffle = True)
 		self.__game_wind = self.__next_game_wind()
-		save_round = random.randint(1, 83)
+		save_round = random.randint(1, 50)
 
 		for player in self.__players:
 			hand = self.__deck[0:13]
