@@ -95,10 +95,10 @@ def cost(predictor):
 	if processed_test_X is None:
 		processed_test_X, processed_test_y = load_dataset(test_datasets)
 
-	pred, cost, benchmark = predictor.predict(processed_test_X, processed_test_y)
+	pred, cost = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
 
-	print("Overall cost (entropy): %.3f (%.3f)"%(cost, benchmark))
+	print("Overall cost (entropy): %.3f"%cost)
 	
 	chosen_case = random.randint(0, processed_test_y.shape[0]-1)
 	print("Example")

@@ -32,19 +32,19 @@ class HandPredictor(AbstractDNN):
 				self.__iterator = dataset.make_initializable_iterator()
 				self.__next_element = self.__iterator.get_next()
 
-				# LAYER 1
-				conv_1 = tf.layers.conv2d(inputs = self.__X, filters = 4, kernel_size = [3, 3], padding = "same", activation = tf.nn.sigmoid)
-
-				# LAYER 2
-				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 8, kernel_size = [3, 3], padding = "same", activation = tf.nn.sigmoid)
-				pool_2 = tf.layers.max_pooling2d(inputs = conv_2, pool_size = [2, 2], strides = 2)
-
-				# LAYER 3
-				flat_3 = tf.reshape(pool_2, [-1, 2*4*8])
-				dense_3 = tf.layers.dense(inputs = flat_3, units = 128, activation = tf.nn.sigmoid)
+				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 4, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
+				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 9], padding = "valid", activation = tf.nn.relu)
+				
+				conv_h = tf.layers.conv2d(inputs = self.__X[:, 3:, :, :], filters = 2, kernel_size = [1, 1], padding = "same", activation = tf.nn.relu)
+				
+				#print(conv_2.get_shape())
+				#print(conv_h.get_shape())
+				flat_n = tf.reshape(conv_2, [-1, 3*12])
+				flat_h = tf.reshape(conv_h, [-1, 2*9])
+				flat_combined = tf.concat([flat_n, flat_h], axis = 1)
+				dense_3 = tf.layers.dense(inputs = flat_combined, units = 256, activation = tf.nn.relu)
 				dense_3_dropout = tf.layers.dropout(inputs = dense_3, rate = self.__dropout_rate, training = tf.logical_not(tf.equal(self.__dropout_rate, tf.constant(0.0))))
 
-				# LAYER 4
 				self.__pred = tf.layers.dense(inputs = dense_3_dropout, units = 34)
 
 				tf.add_to_collection("pred", self.__pred)
@@ -110,15 +110,11 @@ class HandPredictor(AbstractDNN):
 				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X, self.__dropout_rate: 0})
 			else:
 				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__dropout_rate: 0})
-				benchmark = self.__sess.run(tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = y_truth, logits = y_truth)))
 		tf.reset_default_graph()
 		if pred.shape[1] > 1:
 			pred = utils.softmax(pred)
 
-		if y_truth is None:
-			return pred
-		else:
-			return pred, cost, benchmark
+		return pred, cost
 
 	def save(self, save_dir):
 		with self.__graph.as_default() as g:

@@ -99,7 +99,7 @@ def load_dataset(dataset_paths):
 		processed_X[i, :, :, 3] = common_fixed_hand[i, :, :]
 		processed_y[i, :] = raw_data["hand_matrix"][i, j, :]
 
-	print("Loaded %d data, inflated into %d"%(processed_X.shape[0]/4, processed_X.shape[0]))
+	print("Loaded %d data"%(processed_X.shape[0]))
 
 	return processed_X, processed_y
 	
@@ -117,10 +117,10 @@ def cost(predictor):
 	if processed_test_X is None:
 		processed_test_X, processed_test_y = load_dataset(test_datasets)
 
-	pred, cost, benchmark = predictor.predict(processed_test_X, processed_test_y)
+	pred, cost = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
 
-	print("Overall cost (entropy): %.3f (%.3f)"%(cost, benchmark))
+	print("Overall cost (entropy): %.3f"%cost)
 	
 	chosen_case = random.randint(0, processed_test_y.shape[0]-1)
 	print("Example")
