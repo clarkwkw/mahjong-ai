@@ -120,6 +120,9 @@ class HandPredictor(AbstractDNN):
 
 		return pred, cost
 
+	def close_sess(self):
+		self.__sess.close()
+
 	def save(self, save_dir):
 		with self.__graph.as_default() as g:
 			saver = tf.train.Saver()
