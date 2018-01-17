@@ -11,7 +11,7 @@ train_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 1, 1)]
 
 test_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 2, 2)]
 
-required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix"]
+required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix", "remaining"]
 learning_rate = 1e-3
 processed_train_X, processed_train_y, processed_test_X, processed_test_y = None, None, None, None
 
@@ -66,6 +66,12 @@ def load_dataset(dataset_paths):
 
 	for key in required_matrices:
 		raw_data[key] = np.concatenate(raw_data[key])
+
+	filter = np.where(raw_data["remaining"] <= 60)
+
+	for key in required_matrices:
+		raw_data[key] = raw_data[key][filter]
+
 	#n_data = raw_data[list(raw_data.keys())[0]].shape[0]*4
 	n_data = raw_data[list(raw_data.keys())[0]].shape[0]
 	processed_X = np.zeros((n_data, 4, 9, 4))
