@@ -28,10 +28,9 @@ class HandPredictor(AbstractDNN):
 
 				self.__dataset_X = tf.placeholder(tf.float32, x_shape, name = "dataset_X")
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
-				dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
-				dataset = dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
-				self.__iterator = dataset.make_initializable_iterator()
-				self.__next_element = self.__iterator.get_next()
+				self.__dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
+				self.__dataset = dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
+				tf.add_to_collection("dataset", self.__dataset)
 
 				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 4, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
 				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 9], padding = "valid", activation = tf.nn.relu)
@@ -66,8 +65,7 @@ class HandPredictor(AbstractDNN):
 				self.__dropout_rate =  g.get_tensor_by_name("dropout_rate:0")
 				self.__dataset_X = g.get_tensor_by_name("dataset_X:0")
 				self.__dataset_y = g.get_tensor_by_name("dataset_y:0")
-				self.__iterator = g.get_operation_by_name("Iterator")
-				self.__next_element = g.get_operation_by_name("IteratorGetNext")
+				self.__dataset = tf.get_collection("dataset")[0]
 				self.__pred = tf.get_collection("pred")[0]
 				self.__err = tf.get_collection("err")[0]
 				self.__optimizer = tf.get_collection("optimizer")[0]
@@ -82,10 +80,14 @@ class HandPredictor(AbstractDNN):
 			train_X, train_y, valid_X, valid_y = utils.split_data(X, y_truth, 0.8)
 
 		with self.__graph.as_default() as g:
-			self.__sess.run(self.__iterator.initializer, feed_dict = {self.__dataset_X: train_X, self.__dataset_y: train_y})
+
+			iterator = self.__dataset.make_initializable_iterator()
+			next_element = iterator.get_next()
+
+			self.__sess.run(iterator.initializer, feed_dict = {self.__dataset_X: train_X, self.__dataset_y: train_y})
 			i = 0
 			while i < max_iter:
-				batch_X, batch_y = self.__sess.run(self.__next_element)
+				batch_X, batch_y = self.__sess.run(next_element)
 				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__dropout_rate: 0.2})
 				
 				if (i + 1)%step == 0:

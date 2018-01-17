@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import signal, sys
 from . import utils
+import tensorflow as tf
 
 EXIT_FLAG = False
 NAMES = ["A", "B", "C", "D"]
@@ -46,15 +47,11 @@ def preprocess(storage):
 	processed_X, processed_y = utils.handpredictor_preprocessing(storage)
 	return processed_X, processed_y
 
-def save_model(predictor, save_dir, episodes_i, restart_sess = False):
+def save_model(predictor, save_dir, episodes_i):
 	real_path = save_dir.rstrip("/")+"_%d"%(episodes_i)
 	utils.makesure_dir_exists(real_path)
 	predictor.save(real_path)
 	print("Episode #{:05}: saved to {}".format(episodes_i, real_path))
-	if restart_sess:
-		predictor.close_session()
-		predictor = HandPredictor.load(real_path)
-		return predictor
 
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
@@ -68,6 +65,7 @@ def parse_args(args_list):
 	return args
 
 def test(args):
+	tf.logging.set_verbosity(tf.logging.ERROR)
 	global EXIT_FLAG, LAST_SAVED
 	args = parse_args(args)
 
@@ -115,7 +113,7 @@ def test(args):
 		valid_err = predictor.train(processed_X, processed_y, is_adaptive = True, max_iter = float("inf"), show_step = False)
 		print("Episode #{:05}: {:.4f}".format(episodes_i + 1, valid_err))
 		if (episodes_i + 1)%args.save_freq == 0:
-			predictor = save_model(predictor, args.save_name, episodes_i + 1, restart_sess = True)
+			save_model(predictor, args.save_name, episodes_i + 1)
 			LAST_SAVED = episodes_i + 1
 
 		episodes_i += 1
