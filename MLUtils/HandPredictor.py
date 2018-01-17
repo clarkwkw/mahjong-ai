@@ -12,10 +12,10 @@ class HandPredictor(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
 		
 		self.__graph = tf.Graph()
-		config = tf.ConfigProto(**utils.parallel_parameters)
-		config.gpu_options.allow_growth = True
-		config.gpu_options.per_process_gpu_memory_fraction = 0.5
-		self.__sess = tf.Session(graph = self.__graph, config = config)
+		self.__config = tf.ConfigProto(**utils.parallel_parameters)
+		self.__config.gpu_options.allow_growth = True
+		self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5
+		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		
 		with self.__graph.as_default() as g:
 
@@ -74,6 +74,10 @@ class HandPredictor(AbstractDNN):
 
 		tf.reset_default_graph()
 
+	def restart_tf_session(self):
+		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
+		gc.collect()
+
 	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, show_step = False):
 		train_X, train_y = X, y_truth
 		prev_err = float("inf")
@@ -102,7 +106,6 @@ class HandPredictor(AbstractDNN):
 				i += 1
 				
 		tf.reset_default_graph()
-		gc.collect()
 		return prev_err
 
 	def predict(self, X, y_truth = None):

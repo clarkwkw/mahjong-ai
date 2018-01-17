@@ -109,6 +109,7 @@ def test(args):
 
 		#print("Episode #{:05}: training".format(episodes_i + 1))
 		valid_err = predictor.train(processed_X, processed_y, is_adaptive = True, max_iter = float("inf"), show_step = False)
+		predictor.restart_tf_session()
 		print("Episode #{:05}: {:.4f}".format(episodes_i + 1, valid_err))
 		if (episodes_i + 1)%args.save_freq == 0:
 			save_model(predictor, args.save_name, episodes_i + 1)
