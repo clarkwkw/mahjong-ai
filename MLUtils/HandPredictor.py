@@ -3,6 +3,7 @@ from . import utils
 import tensorflow as tf
 import random
 import numpy as np
+import gc
 
 save_file_name = "savefile.ckpt"
 gpu_usage_w_limit = True
@@ -101,6 +102,7 @@ class HandPredictor(AbstractDNN):
 				i += 1
 				
 		tf.reset_default_graph()
+		gc.collect()
 		return prev_err
 
 	def predict(self, X, y_truth = None):
