@@ -29,7 +29,7 @@ class HandPredictor(AbstractDNN):
 				self.__dataset_X = tf.placeholder(tf.float32, x_shape, name = "dataset_X")
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
 				self.__dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
-				self.__dataset = dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
+				self.__dataset = self.__dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
 				tf.add_to_collection("dataset", self.__dataset)
 
 				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 4, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
@@ -119,9 +119,6 @@ class HandPredictor(AbstractDNN):
 			pred = utils.softmax(pred)
 
 		return pred, cost
-
-	def close_session(self):
-		self.__sess.close()
 
 	def save(self, save_dir):
 		with self.__graph.as_default() as g:
