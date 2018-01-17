@@ -3,13 +3,14 @@ import Tile
 import numpy as np
 
 class Game(object):
-	def __init__(self, players, rand_record = False):
+	def __init__(self, players, rand_record = False, **rand_record_constraints):
 		self.__players = players
 		self.__deck = None
 		self.__started = False
 		self.__game_wind = "north"
 		self.__disposed_tiles = []
 		self.__rand_record = rand_record
+		self.__rand_record_constraints = rand_record_constraints
 
 	def add_notification(self, msg):
 		pass
@@ -46,7 +47,7 @@ class Game(object):
 
 		self.__deck = Tile.get_tiles(shuffle = True)
 		self.__game_wind = self.__next_game_wind()
-		save_round = random.randint(1, 50)
+		save_round = random.randint(1, self.__get_rand_record_constraint("max_tiles_left", 80))
 
 		for player in self.__players:
 			hand = self.__deck[0:13]
@@ -207,6 +208,9 @@ class Game(object):
 			tmp_player_id = (tmp_player_id + 1)%4
 
 		return tuple(neighbors)
+
+	def __get_rand_record_constraint(self, key, defalut_val):
+			return self.__rand_record_constraints.get(key, defalut_val)
 
 	def __check_neighbor_winning(self, player_id, dispose_tile):
 		check_player_id = (player_id + 1)%4

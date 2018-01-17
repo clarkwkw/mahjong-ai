@@ -101,6 +101,7 @@ class HandPredictor(AbstractDNN):
 				i += 1
 				
 		tf.reset_default_graph()
+		return prev_err
 
 	def predict(self, X, y_truth = None):
 		pred = None

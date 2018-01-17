@@ -3,6 +3,7 @@ test_cases = [
 	"fcnetwork", 
 	"calculate_score", 
 	"handpredictor",
+	"handpredictor_cont",
 	"handpredictor_d", 
 	"handpredictor_test", 
 	"rule_base_naive", 
