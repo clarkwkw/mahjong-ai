@@ -2,8 +2,11 @@ import numpy as np
 import random
 
 parallel_parameters = {
-    "intra_op_parallelism_threads": 8,
-    "inter_op_parallelism_threads": 8
+    "intra_op_parallelism_threads": 2,
+    "inter_op_parallelism_threads": 2,
+    "device_count": {
+        "GPU": 2
+    }
 }
 
 def softmax(y):
