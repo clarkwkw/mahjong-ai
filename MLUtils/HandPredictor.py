@@ -10,7 +10,10 @@ gpu_usage_w_limit = True
 
 class HandPredictor(AbstractDNN):
 	def __init__(self, from_save = None, learning_rate = 1e-2):
-		
+		def setup_dataset():
+			self.__dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
+			self.__dataset = self.__dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
+
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		self.__config.gpu_options.allow_growth = True
@@ -28,9 +31,7 @@ class HandPredictor(AbstractDNN):
 
 				self.__dataset_X = tf.placeholder(tf.float32, x_shape, name = "dataset_X")
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
-				self.__dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
-				self.__dataset = self.__dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
-				tf.add_to_collection("dataset", self.__dataset)
+				setup_dataset()
 
 				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 4, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
 				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 9], padding = "valid", activation = tf.nn.relu)
@@ -56,6 +57,8 @@ class HandPredictor(AbstractDNN):
 				tf.add_to_collection("optimizer", self.__optimizer)
 				
 				self.__sess.run(tf.global_variables_initializer())
+				#for op in g.get_operations():
+				#	print(op.name)
 			else:
 				saver = tf.train.import_meta_graph(from_save.rstrip("/") + "/" + save_file_name + ".meta")
 				saver.restore(self.__sess, from_save.rstrip("/") + "/" + save_file_name)
@@ -65,7 +68,9 @@ class HandPredictor(AbstractDNN):
 				self.__dropout_rate =  g.get_tensor_by_name("dropout_rate:0")
 				self.__dataset_X = g.get_tensor_by_name("dataset_X:0")
 				self.__dataset_y = g.get_tensor_by_name("dataset_y:0")
-				self.__dataset = tf.get_collection("dataset")[0]
+				setup_dataset()
+				self.__iterator = g.get_operation_by_name("Iterator")
+				self.__next_element = g.get_operation_by_name("IteratorGetNext")
 				self.__pred = tf.get_collection("pred")[0]
 				self.__err = tf.get_collection("err")[0]
 				self.__optimizer = tf.get_collection("optimizer")[0]
@@ -80,7 +85,6 @@ class HandPredictor(AbstractDNN):
 			train_X, train_y, valid_X, valid_y = utils.split_data(X, y_truth, 0.8)
 
 		with self.__graph.as_default() as g:
-
 			iterator = self.__dataset.make_initializable_iterator()
 			next_element = iterator.get_next()
 
