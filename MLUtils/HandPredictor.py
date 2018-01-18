@@ -77,7 +77,7 @@ class HandPredictor(AbstractDNN):
 
 		tf.reset_default_graph()
 
-	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, show_step = False):
+	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, on_dataset = True, show_step = False):
 		train_X, train_y = X, y_truth
 		prev_err = float("inf")
 
@@ -85,13 +85,18 @@ class HandPredictor(AbstractDNN):
 			train_X, train_y, valid_X, valid_y = utils.split_data(X, y_truth, 0.8)
 
 		with self.__graph.as_default() as g:
-			iterator = self.__dataset.make_initializable_iterator()
-			next_element = iterator.get_next()
-
-			self.__sess.run(iterator.initializer, feed_dict = {self.__dataset_X: train_X, self.__dataset_y: train_y})
+			if on_dataset:
+				iterator = self.__dataset.make_initializable_iterator()
+				next_element = iterator.get_next()
+				self.__sess.run(iterator.initializer, feed_dict = {self.__dataset_X: train_X, self.__dataset_y: train_y})
+			
 			i = 0
 			while i < max_iter:
-				batch_X, batch_y = self.__sess.run(next_element)
+				if on_dataset:
+					batch_X, batch_y = self.__sess.run(next_element)
+				else:
+					batch_X, batch_y = train_X, train_y
+					
 				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__dropout_rate: 0.2})
 				
 				if (i + 1)%step == 0:
