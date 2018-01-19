@@ -50,7 +50,7 @@ class HandPredictor(AbstractDNN):
 
 				tf.add_to_collection("pred", self.__pred)
 
-				self.__err = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
+				self.__err = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
 				tf.add_to_collection("err", self.__err)
 
 				self.__optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.__err)
