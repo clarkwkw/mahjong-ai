@@ -96,7 +96,6 @@ class HandPredictor(AbstractDNN):
 					batch_X, batch_y = self.__sess.run(next_element)
 				else:
 					batch_X, batch_y = train_X, train_y
-					
 				_, training_err = self.__sess.run([self.__optimizer, self.__err], feed_dict = {self.__X: batch_X, self.__y_truth: batch_y, self.__dropout_rate: 0.2})
 				
 				if (i + 1)%step == 0:
