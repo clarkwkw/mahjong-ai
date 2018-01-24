@@ -8,6 +8,7 @@ test_cases = [
 	"handpredictor_test", 
 	"rule_base_naive", 
 	"rule_base_mcts", 
+	"simpledeepq",
 	"start_game", 
 	"start_tggame", 
 	"validate_hand"

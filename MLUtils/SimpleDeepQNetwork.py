@@ -3,6 +3,7 @@ from . import utils
 import tensorflow as tf
 import random
 import numpy as np
+import json
 
 save_file_name = "savefile.ckpt"
 parameters_file_name = "paras.json"
@@ -11,34 +12,35 @@ gpu_usage_w_limit = True
 # Reference:
 # https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/5_Deep_Q_Network/DQN_modified.py
 
-class DeepQNetwork:
-	def __init__(self, from_save = None, n_inputs = None, n_actions = None, hidden_layers = [], learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 32):
+class SimpleDeepQNetwork:
+	def __init__(self, from_save = None, n_inputs = None, n_actions = None, hidden_layers = [], learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		if gpu_usage_w_limit:
 			self.__config.gpu_options.allow_growth = True
 			self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5
 
-		if type(n_inputs) != int or type(n_actions) != int:
-			raise Exception("n_input and n_actions must be integers")
-
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
+				if type(n_inputs) != int or type(n_actions) != int:
+					raise Exception("n_input and n_actions must be integers")
 				self.__n_inputs = n_inputs
+				self.__n_actions = n_actions
 				self.__epsilon = e_greedy
 				self.__memory_size = memory_size
 				self.__replace_target_iter = replace_target_iter
 				self.__batch_size = batch_size
+				self.__learn_step_counter = 0
 
-				self.__build_graph(sample_shape, hidden_layers, learning_rate)
-
+				self.__build_graph(n_inputs, n_actions, hidden_layers, learning_rate, reward_decay)
+				self.__sess.run(tf.global_variables_initializer())
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
 				
-				for key, value in paras_dict:
-					self.__dict__[key] = value
+				for key, value in paras_dict.items():
+					self.__dict__["_%s%s"%(self.__class__.__name__, key)] = value
 				
 				saver = tf.train.import_meta_graph(from_save.rstrip("/") + "/" + save_file_name + ".meta")
 				saver.restore(self.__sess, from_save.rstrip("/") + "/" + save_file_name)
@@ -49,23 +51,21 @@ class DeepQNetwork:
 				self.__q_eval = tf.get_collection("q_eval")[0]
 				self.__loss = tf.get_collection("loss")[0]
 				self.__train__op = tf.get_collection("train_op")[0]
-				self.__target_replace_op = tf.get_collection("target_replace_op")[0]
+				self.__target_replace_op = tf.get_collection("target_replace_op")
 
 			self.__memory_counter = 0
-			self.__memory = np.zeros((memory_size, n_inputs * 2 + 2))
-			self.__learn_step_counter = 0
+			self.__memory = np.zeros((self.__memory_size, self.__n_inputs * 2 + 2))
 
 		tf.reset_default_graph()
 
 	def __build_graph(self, n_inputs, n_actions, hidden_layers, learning_rate, reward_decay):
 		def add_dense_layers(inputs, id_prefix, hidden_layers, activation = tf.nn.relu, act_apply_last = False):
-			prev_layer = input
-			for i in range(len(hidden_layers) - 1):
-				n_neurons = hidden_layers[i]
-				prev_layer = tf.layers.dense(inputs = prev_layer, units = n_neurons, activation = activation, name = "%s_%d"%(id_prefix, i + 1))
+			prev_layer = inputs
+			for n_neurons in hidden_layers[0:len(hidden_layers) - 1]:
+				prev_layer = tf.layers.dense(inputs = prev_layer, units = n_neurons, activation = activation)
 
 			if len(hidden_layers) > 0:
-				prev_layer = tf.layers.dense(inputs = prev_layer, units = hidden_layers[len(hidden_layers) - 1], activation = activation if act_apply_last else None, name = "%s_%d"%(id_prefix, len(hidden_layers)))
+				prev_layer = tf.layers.dense(inputs = prev_layer, units = hidden_layers[len(hidden_layers) - 1], activation = activation if act_apply_last else None)
 			
 			return prev_layer
 
@@ -75,10 +75,10 @@ class DeepQNetwork:
 		self.__a = tf.placeholder(tf.int32, [None, ], name = "a") 
 		
 		with tf.variable_scope("eval_net"):
-			self.__q_eval = add_dense_layers(self.__sa, "eval_dense_", [10, n_actions])
+			self.__q_eval = add_dense_layers(self.__s, "eval_dense_", hidden_layers + [n_actions])
 
 		with tf.variable_scope("target_net"):
-			self.__q_next = add_dense_layers(self.__sa_, "target_dense_", [10, n_actions])
+			self.__q_next = add_dense_layers(self.__s_, "target_dense_", hidden_layers + [n_actions])
 
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
@@ -95,7 +95,12 @@ class DeepQNetwork:
 		tf.add_to_collection("q_eval", self.__q_eval)
 		tf.add_to_collection("loss", self.__loss)
 		tf.add_to_collection("train_op", self.__train__op)
-		tf.add_to_collection("target_replace_op", self.__target_replace_op)
+		for op in self.__target_replace_op:
+			tf.add_to_collection("target_replace_op", op)
+
+	@property 
+	def learn_step_counter(self):
+		return self.__learn_step_counter
 
 	def store_transition(self, state, action, reward, state_):
 		transition = np.hstack((state, [action, reward], state_))
@@ -103,16 +108,21 @@ class DeepQNetwork:
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
 
-	def choose_action(self, state, valid_actions):
-		if np.random.uniform() < self.__epsilon:
+	def choose_action(self, state, valid_actions = None, eps_greedy = True):
+		if np.random.uniform() < self.__epsilon or not eps_greedy:
 			inputs = state[np.newaxis, :]
 			with self.__graph.as_default() as g:
 				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs})
 			tf.reset_default_graph()
-
-			action = np.argmax(actions_value[:, valid_actions])
+			if valid_actions is not None:
+				action = valid_actions[np.argmax(actions_value[:, valid_actions])]
+			else:
+				action = np.argmax(actions_value)
 		else:
-			action = random.choice(valid_actions)
+			if valid_actions is not None:
+				action = random.choice(valid_actions)
+			else:
+				action = random.choice(list(range(n_actions)))
 
 		return action
 
@@ -133,16 +143,19 @@ class DeepQNetwork:
 					self.__s_: batch_memory[:, -self.__n_inputs:],
 				})
 		tf.reset_default_graph()
+		print("#%4d: %.4f"%(self.__learn_step_counter + 1, cost))
+
 		self.__learn_step_counter += 1
-		print("#%4d: %.4f"%(self.__learn_step_counter, cost))
 
 	def save(self, save_dir):
 		paras_dict = {
+			"__n_actions": self.__n_actions,
 			"__n_inputs": self.__n_inputs,
 			"__epsilon": self.__epsilon,
 			"__memory_size": self.__memory_size,
 			"__replace_target_iter": self.__replace_target_iter,
-			"__batch_size": self.__batch_size
+			"__batch_size": self.__batch_size,
+			"__learn_step_counter": self.__learn_step_counter
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

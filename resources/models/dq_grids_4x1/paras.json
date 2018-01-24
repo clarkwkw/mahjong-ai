@@ -1,0 +1,9 @@
+{
+    "__n_actions": 4,
+    "__n_inputs": 4,
+    "__epsilon": 0.9,
+    "__memory_size": 500,
+    "__replace_target_iter": 300,
+    "__batch_size": 100,
+    "__learn_step_counter": 30
+}
