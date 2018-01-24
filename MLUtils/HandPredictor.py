@@ -23,6 +23,8 @@ class HandPredictor(AbstractDNN):
 		# Test 1: HandPredictor.old.py
 		# Test 2: Added domain knowledge by changing the kernal size of the convolution layer
 		# Test 3: Added more convolution layers
+		# Test 4: Change to fully conneected network
+		# Test 5: Change training protocal: infinite training for 1 iteration
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
@@ -36,10 +38,12 @@ class HandPredictor(AbstractDNN):
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
 				setup_dataset()
 
+				
 				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
 				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
 				conv_h = tf.layers.conv2d(inputs = self.__X[:, 3:, :, :], filters = 3, kernel_size = [1, 1], padding = "same", activation = tf.nn.relu)
 				
+
 				#print(conv_h.get_shape())
 				flat_n = tf.reshape(conv_2, [-1, 3*9*12])
 				flat_h = tf.reshape(conv_h, [-1, 3*9])
@@ -48,7 +52,13 @@ class HandPredictor(AbstractDNN):
 				dense_3_dropout = tf.layers.dropout(inputs = dense_3, rate = self.__dropout_rate, training = tf.logical_not(tf.equal(self.__dropout_rate, tf.constant(0.0))))
 
 				self.__pred = tf.layers.dense(inputs = dense_3_dropout, units = 34)
+				'''
 
+				flat = tf.reshape(self.__X, [-1, 4*9*4])
+				dense_1 = tf.layers.dense(inputs = flat, units = 512, activation = tf.nn.relu)
+				dense_2 = tf.layers.dense(inputs = dense_1, units = 256, activation = tf.nn.relu)
+				self.__pred = tf.layers.dense(inputs = dense_2, units = 34)
+				'''
 				tf.add_to_collection("pred", self.__pred)
 
 				self.__err = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))

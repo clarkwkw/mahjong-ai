@@ -114,7 +114,7 @@ def test(args):
 		processed_X, processed_y = preprocess(recent_history)
 
 		#print("Episode #{:05}: training".format(episodes_i + 1))
-		valid_err = predictor.train(processed_X, processed_y, is_adaptive = True, max_iter = float("inf"), on_dataset = False, show_step = False)
+		valid_err = predictor.train(processed_X, processed_y, step = 1, is_adaptive = True, max_iter = 1, on_dataset = False, show_step = False)
 		print("Episode #{:05}: {:.4f}".format(episodes_i + 1, valid_err))
 		if (episodes_i + 1)%args.save_freq == 0:
 			save_model(predictor, args.save_name, episodes_i + 1, restart_sess = False)
