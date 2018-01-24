@@ -1,5 +1,6 @@
 import os, errno
 import numpy as np
+import random
 from sklearn.preprocessing import normalize
 
 scoring_scheme = [
@@ -61,8 +62,8 @@ def handpredictor_preprocessing_old(raw_data):
 	return processed_X, processed_y
 
 def handpredictor_preprocessing(raw_data):
-	n_data = raw_data["disposed_tiles_matrix"].shape[0]*4
-
+	#n_data = raw_data["disposed_tiles_matrix"].shape[0]*4
+	n_data = raw_data["disposed_tiles_matrix"].shape[0]
 	processed_X = np.zeros((n_data, 4, 9, 4))
 	processed_y = np.zeros((n_data, 34))
 
@@ -81,7 +82,7 @@ def handpredictor_preprocessing(raw_data):
 	raw_data["hand_matrix"] = np.greater(raw_data["hand_matrix"], 0) * 1.0
 
 	for i in range(raw_data["disposed_tiles_matrix"].shape[0]):
-		
+		'''
 		processed_X[i*4:(i+1)*4, :, :, 0] = common_disposed[i, :, :]
 		processed_X[i*4:(i+1)*4, :, :, 1] = raw_data["disposed_tiles_matrix"][i, :, :, :]
 		processed_X[i*4:(i+1)*4, :, :, 2] = raw_data["fixed_hand_matrix"][i, :, :, :]
@@ -94,6 +95,6 @@ def handpredictor_preprocessing(raw_data):
 		processed_X[i, :, :, 2] = raw_data["fixed_hand_matrix"][i, j, :, :]
 		processed_X[i, :, :, 3] = common_fixed_hand[i, :, :]
 		processed_y[i, :] = raw_data["hand_matrix"][i, j, :]
-		'''
+		
 
 	return processed_X, processed_y

@@ -4,9 +4,6 @@ import random
 parallel_parameters = {
     "intra_op_parallelism_threads": 8,
     "inter_op_parallelism_threads": 8,
-    "device_count": {
-        "GPU": 2
-    }
 }
 
 def softmax(y):

@@ -3,7 +3,6 @@ from . import utils
 import tensorflow as tf
 import random
 import numpy as np
-import gc
 
 save_file_name = "savefile.ckpt"
 gpu_usage_w_limit = True
@@ -16,10 +15,14 @@ class HandPredictor(AbstractDNN):
 
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
-		self.__config.gpu_options.allow_growth = True
-		self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5
+		if gpu_usage_w_limit:
+			self.__config.gpu_options.allow_growth = True
+			self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		
+		# Test 1: HandPredictor.old.py
+		# Test 2: Added domain knowledge by changing the kernal size of the convolution layer
+		# Test 3: Added more convolution layers
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
@@ -33,15 +36,13 @@ class HandPredictor(AbstractDNN):
 				self.__dataset_y = tf.placeholder(tf.float32, y_shape, name = "dataset_y")
 				setup_dataset()
 
-				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 4, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 9], padding = "valid", activation = tf.nn.relu)
+				conv_1 = tf.layers.conv2d(inputs = self.__X[:, 0:3, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
+				conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 12, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
+				conv_h = tf.layers.conv2d(inputs = self.__X[:, 3:, :, :], filters = 3, kernel_size = [1, 1], padding = "same", activation = tf.nn.relu)
 				
-				conv_h = tf.layers.conv2d(inputs = self.__X[:, 3:, :, :], filters = 2, kernel_size = [1, 1], padding = "same", activation = tf.nn.relu)
-				
-				#print(conv_2.get_shape())
 				#print(conv_h.get_shape())
-				flat_n = tf.reshape(conv_2, [-1, 3*12])
-				flat_h = tf.reshape(conv_h, [-1, 2*9])
+				flat_n = tf.reshape(conv_2, [-1, 3*9*12])
+				flat_h = tf.reshape(conv_h, [-1, 3*9])
 				flat_combined = tf.concat([flat_n, flat_h], axis = 1)
 				dense_3 = tf.layers.dense(inputs = flat_combined, units = 256, activation = tf.nn.relu)
 				dense_3_dropout = tf.layers.dropout(inputs = dense_3, rate = self.__dropout_rate, training = tf.logical_not(tf.equal(self.__dropout_rate, tf.constant(0.0))))
@@ -122,9 +123,11 @@ class HandPredictor(AbstractDNN):
 				pred = self.__sess.run(self.__pred, feed_dict = {self.__X: X, self.__dropout_rate: 0})
 			else:
 				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__dropout_rate: 0})
+			
+			pred = self.__sess.run(tf.sigmoid(pred), feed_dict = {})
 		tf.reset_default_graph()
-		if pred.shape[1] > 1:
-			pred = utils.softmax(pred)
+		#if pred.shape[1] > 1:
+		#	pred = utils.softmax(pred)
 
 		return pred, cost
 
