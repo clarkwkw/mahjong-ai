@@ -51,6 +51,7 @@ def test(args):
 		print("Starting a new one")
 		if args.hand_format is None:
 			print("unspecified hand_format, cannot start a new model")
+			print("choose one from %s"%utils.predictor_hand_format_to_loss.keys())
 			exit(-1)
 		predictor = HandPredictor(loss = utils.predictor_hand_format_to_loss[args.hand_format], learning_rate = learning_rate)
 		
@@ -101,7 +102,7 @@ def cost(predictor, hand_format):
 	pred, cost = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
 
-	print("Overall cost (entropy): %.3f"%cost)
+	print("Overall cost: %.3f"%cost)
 	
 	chosen_case = random.randint(0, processed_test_y.shape[0]-1)
 	print("Example")
