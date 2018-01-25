@@ -1,0 +1,7 @@
+{
+    "__n_actions": 4,
+    "__learning_rate": 0.01,
+    "__reward_decay": 0.9,
+    "__e_greedy": 0.9,
+    "__learn_step_counter": 2212
+}

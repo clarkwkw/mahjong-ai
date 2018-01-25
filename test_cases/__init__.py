@@ -9,6 +9,7 @@ test_cases = [
 	"rule_base_naive", 
 	"rule_base_mcts", 
 	"simpledeepq",
+	"simpleq",
 	"start_game", 
 	"start_tggame", 
 	"validate_hand"

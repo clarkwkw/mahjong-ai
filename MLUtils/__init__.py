@@ -1,4 +1,4 @@
 from .FCNetwork import FCNetwork
 from .HandPredictor import HandPredictor
-from .HandPredictorD import HandPredictorD
 from .SimpleDeepQNetwork import SimpleDeepQNetwork
+from .QLearningTable import QLearningTable
