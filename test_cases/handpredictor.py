@@ -42,25 +42,27 @@ def test(args):
 		predictor = HandPredictor.load(args.model_dir)
 		for sformat, loss in utils.predictor_hand_format_to_loss.items():
 			if loss == predictor.loss_mode:
-				args.hand_format = loss
+				args.hand_format = sformat
+				print("Inferred hand_format: %s"%args.hand_format)
 				break 
-	except:
+
+	except Exception as e:
 		print("Cannot load model from '%s'"%args.model_dir)
 		print("Starting a new one")
 		if args.hand_format is None:
 			print("unspecified hand_format, cannot start a new model")
 			exit(-1)
-		predictor = HandPredictor(loss = args.hand_format, learning_rate = learning_rate)
-	
+		predictor = HandPredictor(loss = utils.predictor_hand_format_to_loss[args.hand_format], learning_rate = learning_rate)
+		
 	if args.action == "train":
 		utils.makesure_dir_exists(args.model_dir)
-		train(predictor)
+		train(predictor, args.hand_format)
 		predictor.save(args.model_dir)
 		print("Saved to %s"%args.model_dir)
 	else:
-		cost(predictor)
+		cost(predictor, args.hand_format)
 
-def load_dataset(dataset_paths):
+def load_dataset(dataset_paths, hand_matrix_format):
 	print("Loading dataset")
 	raw_data = {key: [] for key in required_matrices}
 	for path in dataset_paths:
@@ -76,25 +78,25 @@ def load_dataset(dataset_paths):
 	for key in required_matrices:
 		raw_data[key] = raw_data[key][filter]
 
-	processed_X, processed_y = utils.handpredictor_preprocessing(raw_data)
+	processed_X, processed_y = utils.handpredictor_preprocessing(raw_data, hand_matrix_format = hand_matrix_format)
 
 	print("Loaded %d data"%(processed_X.shape[0]))
 
 	return processed_X, processed_y
 	
-def train(predictor):
+def train(predictor, hand_format):
 	global processed_train_X, processed_train_y
 
 	if processed_train_X is None:
-		processed_train_X, processed_train_y = load_dataset(train_datasets)
+		processed_train_X, processed_train_y = load_dataset(train_datasets, hand_matrix_format = hand_format)
 
-	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 1, max_iter = float("inf"), on_dataset = False, show_step = True)
+	predictor.train(processed_train_X, processed_train_y, is_adaptive = True, step = 1, max_iter = float("inf"), on_dataset = True, show_step = True)
 
-def cost(predictor):
+def cost(predictor, hand_format):
 	global processed_test_X, processed_test_y
 
 	if processed_test_X is None:
-		processed_test_X, processed_test_y = load_dataset(test_datasets)
+		processed_test_X, processed_test_y = load_dataset(test_datasets, hand_matrix_format = hand_format)
 
 	pred, cost = predictor.predict(processed_test_X, processed_test_y)
 	np.set_printoptions(precision = 3, suppress = True)
