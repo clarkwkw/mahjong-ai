@@ -6,9 +6,10 @@ import numpy as np
 
 save_file_name = "savefile.ckpt"
 gpu_usage_w_limit = True
+loss_choices = ["softmax", "sigmoid", "squared"]
 
 class HandPredictor(AbstractDNN):
-	def __init__(self, from_save = None, learning_rate = 1e-2):
+	def __init__(self, from_save = None, loss = None, learning_rate = 1e-2):
 		def setup_dataset():
 			self.__dataset = tf.contrib.data.Dataset.from_tensor_slices((self.__dataset_X, self.__dataset_y))
 			self.__dataset = self.__dataset.shuffle(buffer_size = 50000).repeat().batch(30000)
@@ -28,8 +29,14 @@ class HandPredictor(AbstractDNN):
 		with self.__graph.as_default() as g:
 
 			if from_save is None:
+				if not (loss in loss_choices):
+					raise Exception("loss must be one of %s"%loss_choices)
+
 				x_shape = [None, 4, 9, 4]
 				y_shape = [None, 34]
+				self.__loss_mode = loss
+				tf.constant(loss, name = "loss_mode")
+
 				self.__X = tf.placeholder(tf.float32, x_shape, name = "X")
 				self.__y_truth = tf.placeholder(tf.float32, y_shape, name = "y_truth")
 				self.__dropout_rate = tf.placeholder(tf.float32, [], name = "dropout_rate")
@@ -61,10 +68,16 @@ class HandPredictor(AbstractDNN):
 				'''
 				tf.add_to_collection("pred", self.__pred)
 
-				self.__err = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
+				if loss == "sigmoid":
+					self.__err = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
+				elif loss == "softmax":
+					self.__err = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels = self.__y_truth, logits = self.__pred))
+				elif loss == "squared":
+					self.__err = tf.reduce_mean(tf.squared_difference(self.__y_truth, self.__pred))
+
 				tf.add_to_collection("err", self.__err)
 
-				self.__optimizer = tf.train.AdamOptimizer(learning_rate).minimize(self.__err)
+				self.__optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(self.__err)
 				tf.add_to_collection("optimizer", self.__optimizer)
 				
 				self.__sess.run(tf.global_variables_initializer())
@@ -79,6 +92,7 @@ class HandPredictor(AbstractDNN):
 				self.__dropout_rate =  g.get_tensor_by_name("dropout_rate:0")
 				self.__dataset_X = g.get_tensor_by_name("dataset_X:0")
 				self.__dataset_y = g.get_tensor_by_name("dataset_y:0")
+				self.__loss_mode = self.__sess.run(g.get_tensor_by_name("loss_mode:0"), feed_dict = {})
 				setup_dataset()
 				self.__iterator = g.get_operation_by_name("Iterator")
 				self.__next_element = g.get_operation_by_name("IteratorGetNext")
@@ -87,6 +101,10 @@ class HandPredictor(AbstractDNN):
 				self.__optimizer = tf.get_collection("optimizer")[0]
 
 		tf.reset_default_graph()
+
+	@property
+	def loss_mode(self):
+		return self.__loss_mode
 
 	def train(self, X, y_truth, is_adaptive, step = 20, max_iter = 500, on_dataset = True, show_step = False):
 		train_X, train_y = X, y_truth
@@ -134,11 +152,12 @@ class HandPredictor(AbstractDNN):
 			else:
 				pred, cost = self.__sess.run([self.__pred, self.__err], feed_dict = {self.__X: X, self.__y_truth: y_truth, self.__dropout_rate: 0})
 			
-			pred = self.__sess.run(tf.sigmoid(pred), feed_dict = {})
-		tf.reset_default_graph()
-		#if pred.shape[1] > 1:
-		#	pred = utils.softmax(pred)
+			if self.__loss_mode == "sigmoid":
+				pred = self.__sess.run(tf.sigmoid(pred), feed_dict = {})
+			elif self.__loss_mode == "entropy":
+				pred = self.__sess.run(tf.nn.softmax(pred), feed_dict = {})
 
+		tf.reset_default_graph()
 		return pred, cost
 
 	def close_sess(self):

@@ -6,7 +6,6 @@ import unittest
 from sklearn.preprocessing import normalize
 from . import utils
 
-model_dir = None
 train_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 1, 1)]
 
 test_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 2, 2)]
@@ -19,12 +18,10 @@ def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("action", type = str, choices = ["train", "cost"], help = "What to do with the model")
 	parser.add_argument("model_dir", type = str, help = "Where is the model")
+	parser.add_argument("hand_format", type = str, nargs = "?", default = None, choices = utils.predictor_hand_format_to_loss.keys(), help = "How to represent the hand matrix")
 
 	args = parser.parse_args(args_list)
-
-	global model_dir
-	model_dir = args.model_dir
-	return args.action
+	return args
 
 def test(args):
 	global train_datasets, test_datasets
@@ -40,19 +37,26 @@ def test(args):
 	train_datasets, test_datasets = parsed_train_datasets, parsed_test_datasets
 
 	predictor = None
-	action = parse_args(args)
+	args = parse_args(args)
 	try:
-		predictor = HandPredictor.load(model_dir)
+		predictor = HandPredictor.load(args.model_dir)
+		for sformat, loss in utils.predictor_hand_format_to_loss.items():
+			if loss == predictor.loss_mode:
+				args.hand_format = loss
+				break 
 	except:
-		print("Cannot load model from '%s'"%model_dir)
+		print("Cannot load model from '%s'"%args.model_dir)
 		print("Starting a new one")
-		predictor = HandPredictor(learning_rate = learning_rate)
+		if args.hand_format is None:
+			print("unspecified hand_format, cannot start a new model")
+			exit(-1)
+		predictor = HandPredictor(loss = args.hand_format, learning_rate = learning_rate)
 	
-	if action == "train":
-		utils.makesure_dir_exists(model_dir)
+	if args.action == "train":
+		utils.makesure_dir_exists(args.model_dir)
 		train(predictor)
-		predictor.save(model_dir)
-		print("Saved to %s"%model_dir)
+		predictor.save(args.model_dir)
+		print("Saved to %s"%args.model_dir)
 	else:
 		cost(predictor)
 

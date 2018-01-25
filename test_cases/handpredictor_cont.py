@@ -21,31 +21,20 @@ MODEL_PARAMETERS = {
 	 "s_neighbor_suit": 0,
 	 "s_mixed_suit": 0
 }
-REQUIRED_MATRICES = ["hand_matrix", "fixed_hand_matrix", "disposed_tiles_matrix"]
+MEM_SIZE = 1000
+BATCH_SIZE = 300
+memory = {
+	"hand_matrix": np.zeros((MEM_SIZE, 4, 34)),
+	"fixed_hand_matrix": np.zeros(((MEM_SIZE, 4, 34))),
+	"disposed_tiles_matrix": np.zeros((MEM_SIZE, 4, 34))
+}
+
+mem_count = 0
 
 def signal_handler(signal, frame):
 	global EXIT_FLAG
 	print("Signal received, cleaning up..")
 	EXIT_FLAG = True
-
-def init_storage():
-	storage = {
-		"remaining": [],
-		"disposed_tiles_matrix": [],
-		"hand_matrix": [],
-		"fixed_hand_matrix": [],
-		"deck": [],
-		"winner": [],
-		"winner_score": []
-	}
-	return storage
-
-def preprocess(storage):
-	for key in REQUIRED_MATRICES:
-		storage[key] = np.stack(storage[key])
-
-	processed_X, processed_y = utils.handpredictor_preprocessing(storage)
-	return processed_X, processed_y
 
 def save_model(predictor, save_dir, episodes_i, restart_sess = False):
 	real_path = save_dir.rstrip("/")+"_%d"%(episodes_i)
@@ -59,63 +48,65 @@ def save_model(predictor, save_dir, episodes_i, restart_sess = False):
 
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
-	parser.add_argument("--model_dir", type = str, help = "Where is the model")
-	parser.add_argument("episodes", type = int, help = "No. of iterations to train")
-	parser.add_argument("games", type = int, help = "No. of games per iteration")
+	group = parser.add_mutually_exclusive_group(required = True)
+	group.add_argument("--model_dir", type = str, help = "Where is the model")
+	group.add_argument("--hand_format", type = str, choices = utils.predictor_hand_format_to_loss.keys(), help = "How to represent the hand matrix")
+
+	parser.add_argument("episodes", type = int, help = "No. of episodes to train")
 	parser.add_argument("save_freq", type = int, help = "No. of episodes to save a model")
-	parser.add_argument("save_name", type = str, help = "Path to save the models")
+	parser.add_argument("save_name", type = str, help = "Path to save the new models")
 
 	args = parser.parse_args(args_list)
 	return args
 
 def test(args):
 	tf.logging.set_verbosity(tf.logging.ERROR)
-	global EXIT_FLAG, LAST_SAVED
+	global EXIT_FLAG, LAST_SAVED, mem_count
 	args = parse_args(args)
 
 	players = [Player.Player(MoveGenerator.RuleBasedAINaive, player_name = name, **MODEL_PARAMETERS) for name in NAMES] 
-	game = Game.Game(players, rand_record = True, max_tiles_left = 60)
+	predictor = None
 	try:
-		if args.model_dir is None:
-			raise
-		predictor = HandPredictor.load(args.model_dir)
+		if args.model_dir is not None:
+			predictor = HandPredictor.load(args.model_dir)
+			for sformat, loss in utils.predictor_hand_format_to_loss.items():
+				if loss == predictor.loss_mode:
+					args.hand_format = loss
+					break 
 	except:
 		print("Cannot load model from '%s'"%args.model_dir)
-		print("Starting a new one")
-		predictor = HandPredictor(learning_rate = LEARNING_RATE)
+		exit(-1)
+	finally:
+		if predictor is None:
+			print("Starting a new one")
+			predictor = HandPredictor(loss = utils.predictor_hand_format_to_loss[args.hand_format], learning_rate = LEARNING_RATE)
 
 	episodes_i, games_i = 0, 0
 	signal.signal(signal.SIGINT, signal_handler)
 
 	while episodes_i < args.episodes and not EXIT_FLAG:
-		games_i = 0
-		recent_history = init_storage()
-
+		game = Game.Game(players, rand_record = "all", max_tiles_left = 60)
 		#print("Episode #{:05}: generating data".format(episodes_i + 1))
 		
-		while games_i < args.games and not EXIT_FLAG:
-			winner, losers, penalty = game.start_game() 
-			winner_score = 0
-			if winner is not None:
-				winner_score = utils.scoring_scheme[penalty][len(losers) > 1]
+		winner, losers, penalty = game.start_game() 
 			
-			game_state = game.freezed_state
+		game_state, n_states = game.freezed_state
 			
-			if game_state is not None:
-				recent_history["winner_score"].append(winner_score)
-				for key in recent_history:
-					if key != "winner_score":
-						recent_history[key].append(game_state[key])
-				games_i += 1
+		if game_state is not None:
+			indices = np.arange(mem_count, mem_count + n_states)
+			indices = indices % MEM_SIZE
 
-		if EXIT_FLAG:
-			break
+			for key, matrix in memory.items():
+				memory[key][indices , :, :] = game_state[key]
+			mem_count += n_states
 
-		processed_X, processed_y = preprocess(recent_history)
+		sample_indices = np.random.choice(np.arange(min(MEM_SIZE, mem_count)), size = BATCH_SIZE)
+		samples = {key: memory[key][sample_indices, :, :] for key in memory}
 
-		#print("Episode #{:05}: training".format(episodes_i + 1))
-		valid_err = predictor.train(processed_X, processed_y, step = 1, is_adaptive = True, max_iter = 1, on_dataset = False, show_step = False)
-		print("Episode #{:05}: {:.4f}".format(episodes_i + 1, valid_err))
+		processed_X, processed_y = utils.handpredictor_preprocessing(samples, hand_matrix_format = args.hand_format)
+
+		err = predictor.train(processed_X, processed_y, step = 1, is_adaptive = False, max_iter = 1, on_dataset = False, show_step = False)
+		print("Episode #{:05}: {:.4f}".format(episodes_i + 1, err))
 		if (episodes_i + 1)%args.save_freq == 0:
 			save_model(predictor, args.save_name, episodes_i + 1, restart_sess = False)
 			LAST_SAVED = episodes_i + 1

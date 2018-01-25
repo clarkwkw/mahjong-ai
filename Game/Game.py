@@ -3,14 +3,18 @@ import Tile
 import numpy as np
 
 class Game(object):
-	def __init__(self, players, rand_record = False, **rand_record_constraints):
+	def __init__(self, players, rand_record = None, **rand_record_constraints):
+		if not (rand_record in ["all", "once", None]):
+			raise Exception("rand_record must be one of %s"%rand_record)
 		self.__players = players
 		self.__deck = None
 		self.__started = False
 		self.__game_wind = "north"
 		self.__disposed_tiles = []
+
 		self.__rand_record = rand_record
 		self.__rand_record_constraints = rand_record_constraints
+		self.__freeze_state_init()
 
 	def add_notification(self, msg):
 		pass
@@ -33,13 +37,20 @@ class Game(object):
 
 	@property
 	def freezed_state(self):
-		if not self.__rand_record:
+		if self.__rand_record is None:
 			raise Exception("did not turn on 'rand_record' flag") 
 
-		if not self.__freezed:
-			return None
+		if self.__mem_count == 0:
+			return None, None
 
-		return self.__record
+		combined_record = {}
+		n_records = 0
+
+		for key, matrices in self.__record.items():
+			combined_record[key] = np.stack(matrices, axis = 0)
+			n_records = len(matrices)
+
+		return combined_record, n_records
 
 	def start_game(self):
 		if self.__started:
@@ -62,7 +73,7 @@ class Game(object):
 			self.__freeze_state_init()
 		
 		while len(self.__deck) > 0:
-			if self.__rand_record and len(self.__deck) == save_round:
+			if self.__rand_record == "all" or (self.__rand_record == "once" and len(self.__deck) == save_round):
 				self.__freeze_state()
 
 			cur_player = self.__players[cur_player_id]
@@ -85,8 +96,7 @@ class Game(object):
 					self.__started = False
 					if self.__rand_record:
 						losers = [i for i in range(4) if i != cur_player_id]
-						self.__record["winner"][cur_player_id] = 1
-						self.__record["loser"][losers] = 1.0/3
+						self.__freeze_state_set_winlose(cur_player_id, losers)
 					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
 
 				if dispose_tile is not None:
@@ -99,8 +109,7 @@ class Game(object):
 					if winner_id is not None:
 						self.__started = False
 						if self.__rand_record:
-							self.__record["winner"][winner_id] = 1
-							self.__record["loser"][cur_player_id] = 1
+							self.__freeze_state_set_winlose(winner_id, [cur_player_id])
 						return self.__players[winner_id], [cur_player], score
 				
 				cur_player.kong(kong_tile, location = kong_location, source = kong_src)
@@ -112,8 +121,7 @@ class Game(object):
 			if winner_id is not None:
 				self.__started = False
 				if self.__rand_record:
-					self.__record["winner"][winner_id] = 1
-					self.__record["loser"][cur_player_id] = 1
+					self.__freeze_state_set_winlose(winner_id, [cur_player_id])
 				return self.__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong
@@ -168,8 +176,17 @@ class Game(object):
 		return None, None, None
 
 	def __freeze_state_init(self):
-		self.__freezed = False
-		self.__record = {
+		self.__mem_count = 0
+		self.__record = {key: [] for key in ["remaining", "disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix", "deck", "winner", "loser"]}
+
+	def __freeze_state_set_winlose(self, winner, losers):
+		for matrix in self.__record["winner"]:
+			matrix[winner] = 1
+		for matrix in self.__record["loser"]:
+			matrix[losers] = 1.0/len(losers)
+
+	def __freeze_state(self):
+		new_record = {
 			"remaining": -1,
 			"disposed_tiles_matrix": np.zeros((4, 34)),
 			"hand_matrix": np.zeros((4, 34)),
@@ -179,22 +196,22 @@ class Game(object):
 			"loser": np.zeros((4))
 		}
 
-	def __freeze_state(self):
-		if self.__freezed:
-			return
-
-		self.__record["remaining"] = len(self.__deck)
+		new_record["remaining"] = len(self.__deck)
 		i = 0
+
 		for player in self.__players:
 			for tile in player.get_discarded_tiles():
-				self.__record["disposed_tiles_matrix"][i, Tile.convert_tile_index(tile)] += 1
+				new_record["disposed_tiles_matrix"][i, Tile.convert_tile_index(tile)] += 1
 			for _, _, tiles in player.fixed_hand:
 				for tile in tiles:
-					self.__record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
+					new_record["fixed_hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
 			for tile in player.hand:
-				self.__record["hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
+				new_record["hand_matrix"][i, Tile.convert_tile_index(tile)] += 1
 			i += 1
-		self.__freezed = True
+
+		for key, matrix in new_record.items():
+			self.__record[key].append(matrix)
+		self.__mem_count += 1
 
 	def __get_neighbor_players(self, player_id, degenerated = True):
 		tmp_player_id = (player_id + 1)%4
