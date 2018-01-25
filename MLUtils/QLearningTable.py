@@ -5,6 +5,9 @@ import json
 q_table_file_name = "q_table.npy"
 parameters_file_name = "paras.json"
 
+# Reference:
+# https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/3_Sarsa_maze/RL_brain.py
+
 class QLearningTable:
 	def __init__(self, from_save = None, n_actions = None, learning_rate = 0.01, reward_decay = 0.9, e_greedy = 0.9):
 		if from_save is None:
