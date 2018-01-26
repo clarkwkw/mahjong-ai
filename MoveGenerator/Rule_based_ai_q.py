@@ -77,8 +77,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 	def update_transition(self, reward, state_):
 		if not self.q_network_is_train or not self.q_network_waiting:
 			return
-		if state_ == "terminal":
-			state_ = np.full(len(q_features), -1)
+		if type(state_) == str and state_ == "terminal":
+			state_ = np.full(len(q_features), -1.0)
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
 		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_)
