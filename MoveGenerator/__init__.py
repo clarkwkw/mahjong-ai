@@ -4,6 +4,7 @@ from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 from .MCTSCpp import RuleBasedAINaiveMCTSCpp
 from .MCTSPy import RuleBasedAINaiveMCTSPy
 from .TGHuman import TGHuman
+from .Rule_based_ai_q import RuleBasedAIQ
 
 __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,

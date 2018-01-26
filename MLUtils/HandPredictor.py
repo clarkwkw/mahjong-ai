@@ -140,7 +140,7 @@ class HandPredictor(AbstractDNN):
 			
 			if self.__loss_mode == "sigmoid":
 				pred = self.__sess.run(tf.sigmoid(pred), feed_dict = {})
-			elif self.__loss_mode == "entropy":
+			elif self.__loss_mode == "softmax":
 				pred = self.__sess.run(tf.nn.softmax(pred), feed_dict = {})
 
 		tf.reset_default_graph()

@@ -4,6 +4,17 @@ import json
 
 q_table_file_name = "q_table.npy"
 parameters_file_name = "paras.json"
+loaded_models = {
+	
+}
+
+def get_QLearningTable(path, **kwargs):
+	if path not in loaded_models:
+		try:
+			loaded_models[path] = QLearningTable.load(from_save = path)
+		except:
+			loaded_models[path] = QLearningTable(**kwargs)
+	return loaded_models[path]
 
 # Reference:
 # https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/3_Sarsa_maze/RL_brain.py
