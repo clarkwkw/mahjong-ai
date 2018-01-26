@@ -5,6 +5,7 @@ import signal
 from MLUtils import get_DeepQNetwork
 import Player, Game
 import MoveGenerator
+from . import utils
 
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
@@ -80,11 +81,11 @@ def test(args):
 	players.append(deepq_player)
 
 	signal.signal(signal.SIGINT, signal_handler)
-	game, shuffled_players = None, None
+	game, shuffled_players, last_saved = None, None, -1
 	for i in range(args.n_episodes):
 		if EXIT_FLAG:
 			break
-			
+
 		if i % freq_shuffle_players == 0:
 			shuffled_players =  random.sample(players, k = 4)
 			game = Game.Game(shuffled_players)
@@ -105,8 +106,13 @@ def test(args):
 
 		if (i+1) % game_record_size == 0:
 			print("#%5d: %.2f%%/%.2f%%"%(i+1, game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
+			last_saved = i
+			path = args.save_name + "_%d"%(i + 1)
+			utils.makesure_dir_exists(path)
+			model.save(path)
 
 	if args.action == "train" and args.save_name is not None:
-		model.save(args.save_name)
-
-
+		if last_saved < args.n_episodes - 1:
+			path = args.save_name + "_%d"%args.n_episodes
+			utils.makesure_dir_exists(path)
+			model.save(path)

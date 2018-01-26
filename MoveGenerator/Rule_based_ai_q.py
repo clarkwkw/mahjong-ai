@@ -61,6 +61,11 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		}
 		super(RuleBasedAIQ, self).__init__(**kwargs)
 
+	def reset_new_game(self):
+		super(RuleBasedAIQ, self).reset_new_game()
+		if self.q_network_is_train and self.q_network_waiting:
+			self.update_transition(0, "terminal")
+
 	def __update_history(self, state, action):
 		if not self.q_network_is_train or self.q_network_waiting:
 			return
@@ -72,7 +77,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 	def update_transition(self, reward, state_):
 		if not self.q_network_is_train or not self.q_network_waiting:
 			return
-
+		if state_ == "terminal":
+			state_ = np.full(len(q_features), -1)
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
 		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_)
@@ -186,7 +192,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		if self.q_network_is_train and self.q_network_waiting:
 			state = qnetwork_encode_state(player.fixed_hand, player.hand)
-			self.update_transition(score, state)
+			self.update_transition(score, "terminal")
 		return super(RuleBasedAIQ, self).decide_win(player, grouped_hand, new_tile, src, score, neighbors, game)
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
