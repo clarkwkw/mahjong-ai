@@ -5,14 +5,9 @@ import numpy as np
 import Tile
 from TGLanguage import get_tile_name, get_text
 from MLUtils import get_DeepQNetwork
+from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 
 display_name = "RNAIQ"
-model_paras = {
-	"n_inputs": 10,
-	"n_actions": 8,
-	"hidden_layers": [150, 40]
-}
-
 
 '''
 Deep Q Network model:
@@ -38,7 +33,7 @@ character_chow, character_pong, dots_chow, dots_pong, bamboo_chow, bamboo_pong, 
 state_action space = 572416
 
 '''
-q_features = ["fh_character_chow", "fh_character_pong", "fh_bamboo_chow", "fh_bamboo_pong", "fh_dots_chow", "fh_dots_pong", "fh_honor_pong", "h_character",  "h_bamboo", "h_dots"]
+q_features = ["fh_characters_chow", "fh_characters_pong", "fh_bamboo_chow", "fh_bamboo_pong", "fh_dots_chow", "fh_dots_pong", "fh_honor_pong", "h_characters",  "h_bamboo", "h_dots"]
 q_decisions = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
 
 def qnetwork_encode_state(fixed_hand, hand):
@@ -49,8 +44,9 @@ def qnetwork_encode_state(fixed_hand, hand):
 		state[feature_index] = 1
 		
 	for tile in hand:
-		feature_index = q_features.index("h_%s"%tile.suit)
-		state[feature_index] += 1
+		if tile.suit != "honor":
+			feature_index = q_features.index("h_%s"%tile.suit)
+			state[feature_index] += 1
 
 	return state
 
@@ -63,7 +59,6 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			"state": None,
 			"action": None
 		}
-		get_DeepQNetwork(self.q_network_path, **model_paras)
 		super(RuleBasedAIQ, self).__init__(**kwargs)
 
 	def __update_history(self, state, action):
@@ -80,7 +75,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
-		q_network.store_transition(self.q_network_history["state"], self.q_network["action"], reward, state_)
+		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_)
 		
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		self.begin_decision()
@@ -96,20 +91,20 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		state = qnetwork_encode_state(fixed_hand, hand)
 		self.update_transition(0, state)
 
-		valid_actions = [q_decision.index(new_tile.suit + "_chow"), q_decision.index("no_action")]
+		valid_actions = [q_decisions.index(new_tile.suit + "_chow"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
 		self.__update_history(state, action)
 
 		self.end_decision()
 		
-		if action == q_decision.index("no_action"):
-			self.print_msg("%s chooses not to Chow %s."%(self.player_name, chow_tiles_str))
+		if action == q_decisions.index("no_action"):
+			self.print_msg("%s chooses not to Chow %s."%(self.player_name, new_tile.symbol))
 			return False, None
 		else:
 			chow_tiles_tgstrs = []
 			chow_tiles_str = ""
 			choice = random.choice(choices)
-			for i in range(choice - 1, choices + 2):
+			for i in range(choice - 1, choice + 2):
 				neighbor_tile = new_tile.generate_neighbor_tile(i)
 				chow_tiles_str += neighbor_tile.symbol
 				chow_tiles_tgstrs.append(neighbor_tile.get_display_name(game.lang_code, is_short = False))
@@ -144,13 +139,13 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		state = qnetwork_encode_state(fixed_hand, hand)
 		self.update_transition(0, state)
 
-		valid_actions = [q_decision.index(new_tile.suit + "_pong"), q_decision.index("no_action")]
+		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
 		self.__update_history(state, action)
 
 		self.end_decision()
 
-		if action == q_decision.index("no_action"):
+		if action == q_decisions.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_KONG")%(self.player_name, kong_tile.get_display_name(game.lang_code, is_short = False)))
@@ -174,12 +169,12 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		state = qnetwork_encode_state(fixed_hand, hand)
 		self.update_transition(0, state)
 
-		valid_actions = [q_decision.index(new_tile.suit + "_pong"), q_decision.index("no_action")]
+		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
 		self.__update_history(state, action)
 
 		self.end_decision()
-		if action == q_decision.index("no_action"):
+		if action == q_decisions.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_PONG")%(self.player_name, new_tile.get_display_name(game.lang_code, is_short = False)))

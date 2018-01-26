@@ -15,9 +15,9 @@ loaded_models = {
 def get_DeepQNetwork(path, **kwargs):
 	if path not in loaded_models:
 		try:
-			loaded_models[path] = QLearningTable.load(from_save = path)
+			loaded_models[path] = SimpleDeepQNetwork.load(from_save = path)
 		except:
-			loaded_models[path] = QLearningTable(**kwargs)
+			loaded_models[path] = SimpleDeepQNetwork(**kwargs)
 	return loaded_models[path]
 
 
@@ -145,10 +145,10 @@ class SimpleDeepQNetwork:
 
 		return action
 
-	def learn(self):
+	def learn(self, display_cost = True):
 		if self.__learn_step_counter % self.__replace_target_iter == 0:
 			self.__sess.run(self.__target_replace_op)
-			print("#%4d: Replaced target network"%(self.__learn_step_counter))
+			#print("#%4d: Replaced target network"%(self.__learn_step_counter))
 
 		sample_index = np.random.choice(min(self.__memory_size, self.__batch_size), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
@@ -162,7 +162,8 @@ class SimpleDeepQNetwork:
 					self.__s_: batch_memory[:, -self.__n_inputs:],
 				})
 		tf.reset_default_graph()
-		print("#%4d: %.4f"%(self.__learn_step_counter + 1, cost))
+		if display_cost:
+			print("#%4d: %.4f"%(self.__learn_step_counter + 1, cost))
 
 		self.__learn_step_counter += 1
 
