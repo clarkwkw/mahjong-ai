@@ -243,20 +243,15 @@ class DeepQGenerator(MoveGenerator):
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
 		self.begin_decision()
-		state = None
+		state = qnetwork_encode_state(player, neighbors)
 		if self.q_network_is_train and self.q_network_waiting:
-			state = qnetwork_encode_state(player, neighbors)
 			self.update_transition(0, state)
 
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
 		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = qnetwork_encode_state(player, neighbors) if state is None else state
-
-		if self.q_network_waiting:
-			self.update_transition(0, state)
-
+		
 		valid_actions = []
 		tiles = player.hand if new_tile is None else player.hand + [new_tile]
 		for tile in tiles:
