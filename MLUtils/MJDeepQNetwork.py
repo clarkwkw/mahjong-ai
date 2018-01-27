@@ -176,8 +176,7 @@ class MJDeepQNetwork:
 			"__memory_size": self.__memory_size,
 			"__replace_target_iter": self.__replace_target_iter,
 			"__batch_size": self.__batch_size,
-			"__learn_step_counter": self.__learn_step_counter,
-			"__dropout_rate": self.__dropout_rate
+			"__learn_step_counter": self.__learn_step_counter
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)
