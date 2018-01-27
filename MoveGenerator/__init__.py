@@ -5,6 +5,7 @@ from .MCTSCpp import RuleBasedAINaiveMCTSCpp
 from .MCTSPy import RuleBasedAINaiveMCTSPy
 from .TGHuman import TGHuman
 from .Rule_based_ai_q import RuleBasedAIQ
+from .DeepQGenerator import DeepQGenerator
 
 __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,

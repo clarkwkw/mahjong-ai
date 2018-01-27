@@ -87,7 +87,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			raise Exception("the network is NOT waiting for a transition")
 
 		if type(state_) == str and state_ == "terminal":
-			state_ = np.full(len(q_features), -1000)
+			state_ = np.full(len(q_features), 0.0)
 
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
@@ -210,7 +210,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		if self.q_network_is_train and self.q_network_waiting:
-			self.update_transition(score, "terminal")
+			self.update_transition(10, "terminal")
 
 		return super(RuleBasedAIQ, self).decide_win(player, grouped_hand, new_tile, src, score, neighbors, game)
 

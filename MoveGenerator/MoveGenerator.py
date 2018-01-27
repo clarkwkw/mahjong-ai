@@ -56,6 +56,9 @@ class MoveGenerator:
 	def reset_new_game(self):
 		pass
 
+	def notify_lose(self, score):
+		pass
+
 	def begin_decision(self):
 		self.__start_time = timer()
 

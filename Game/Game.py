@@ -97,7 +97,12 @@ class Game(object):
 					if self.__rand_record:
 						losers = [i for i in range(4) if i != cur_player_id]
 						self.__freeze_state_set_winlose(cur_player_id, losers)
-					return cur_player, self.__get_neighbor_players(cur_player_id, degenerated = False), score
+					
+					neighbors = self.__get_neighbor_players(cur_player_id, degenerated = False)
+					for p in neighbors:
+						p.notify_lose(score/3.0)
+
+					return cur_player, neighbors, score
 
 				if dispose_tile is not None:
 					break
@@ -110,6 +115,8 @@ class Game(object):
 						self.__started = False
 						if self.__rand_record:
 							self.__freeze_state_set_winlose(winner_id, [cur_player_id])
+
+						cur_player.notify_lose(score)
 						return self.__players[winner_id], [cur_player], score
 				
 				cur_player.kong(kong_tile, location = kong_location, source = kong_src)
@@ -122,6 +129,7 @@ class Game(object):
 				self.__started = False
 				if self.__rand_record:
 					self.__freeze_state_set_winlose(winner_id, [cur_player_id])
+				cur_player.notify_lose(score)
 				return self.__players[winner_id], [cur_player], score
 
 			# Check whether any of the other players "is able to" and "wants to" Pong/ Kong

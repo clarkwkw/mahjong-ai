@@ -14,6 +14,7 @@ loaded_models = {
 
 n_actions = 42
 sample_shape = [9, 34, 1]
+sample_n_inputs = 9 * 34 * 1
 def get_MJDeepQNetwork(path, **kwargs):
 	if path not in loaded_models:
 		try:
@@ -37,8 +38,6 @@ class MJDeepQNetwork:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				if type(n_inputs) != int or type(n_actions) != int:
-					raise Exception("n_input and n_actions must be integers")
 				self.__epsilon = e_greedy
 				self.__memory_size = memory_size
 				self.__replace_target_iter = replace_target_iter
@@ -60,6 +59,7 @@ class MJDeepQNetwork:
 				self.__s_ = g.get_tensor_by_name("s_:0")
 				self.__r = g.get_tensor_by_name("r:0")
 				self.__a = g.get_tensor_by_name("a:0")
+				self.__a_filter = g.get_tensor_by_name("a_filter:0")
 				self.__is_train = g.get_tensor_by_name("is_train:0")
 				self.__q_eval = tf.get_collection("q_eval")[0]
 				self.__loss = tf.get_collection("loss")[0]
@@ -67,7 +67,7 @@ class MJDeepQNetwork:
 				self.__target_replace_op = tf.get_collection("target_replace_op")
 
 			self.__memory_counter = 0
-			self.__memory = np.zeros((self.__memory_size, self.__n_inputs * 2 + 2))
+			self.__memory = np.zeros((self.__memory_size, sample_n_inputs * 2 + 2 + n_actions))
 
 		tf.reset_default_graph()
 
@@ -87,13 +87,16 @@ class MJDeepQNetwork:
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
 		self.__r = tf.placeholder(tf.float32, [None, ], name = "r")
 		self.__a = tf.placeholder(tf.int32, [None, ], name = "a")
+		self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter")
 		self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
 		
 		with tf.variable_scope("eval_net"):
 			self.__q_eval = make_connection(self.__s, self.__is_train, dropout_rate)
+			self.__q_eval = self.__q_eval + self.__a_filter
 
 		with tf.variable_scope("target_net"):
 			self.__q_next = make_connection(self.__s_, self.__is_train, dropout_rate)
+			self.__q_next = self.__q_next + self.__a_filter
 
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
@@ -117,34 +120,36 @@ class MJDeepQNetwork:
 	def learn_step_counter(self):
 		return self.__learn_step_counter
 
-	def store_transition(self, state, action, reward, state_):
-		transition = np.hstack((state, [action, reward], state_))
+	def store_transition(self, state, action, reward, state_, action_filter = None):
+		if action_filter is None:
+			action_filter = np.zeros(n_actions)
+
+		transition = np.hstack((state.reshape((sample_n_inputs)), [action, reward], state_.reshape((sample_n_inputs)), action_filter))
 		index = self.__memory_counter % self.__memory_size
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
 
-	def choose_action(self, state, valid_actions = None, eps_greedy = True):
+	def choose_action(self, state, action_filter = None, eps_greedy = True):
+		if action_filter is None:
+			action_filter = np.zeros(n_actions)
+
 		if np.random.uniform() < self.__epsilon or not eps_greedy:
 			inputs = state[np.newaxis, :]
+			action_filter = action_filter[np.newaxis, :]
+
 			with self.__graph.as_default() as g:
-				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs, self.__is_train: False})
+				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs, self.__a_filter: action_filter, self.__is_train: False})
+			
 			tf.reset_default_graph()
-			if valid_actions is not None:
-				action = valid_actions[np.argmax(actions_value[:, valid_actions])]
-			else:
-				action = np.argmax(actions_value)
+			action = np.argmax(actions_value)
 		else:
-			if valid_actions is not None:
-				action = random.choice(valid_actions)
-			else:
-				action = random.choice(list(range(n_actions)))
+			action = random.choice(np.arange(n_actions)[action_filter >= 0])
 
 		return action
 
 	def learn(self, display_cost = True):
 		if self.__learn_step_counter % self.__replace_target_iter == 0:
 			self.__sess.run(self.__target_replace_op)
-			#print("#%4d: Replaced target network"%(self.__learn_step_counter))
 
 		sample_index = np.random.choice(min(self.__memory_size, self.__batch_size), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
@@ -152,10 +157,11 @@ class MJDeepQNetwork:
 			_, cost = self.__sess.run(
 				[self.__train__op, self.__loss],
 				feed_dict = {
-					self.__s: batch_memory[:, :self.__n_inputs],
-					self.__a: batch_memory[:, self.__n_inputs],
-					self.__r: batch_memory[:, self.__n_inputs + 1],
-					self.__s_: batch_memory[:, -self.__n_inputs:],
+					self.__s: batch_memory[:, :sample_n_inputs].reshape([-1] + sample_shape),
+					self.__a: batch_memory[:, sample_n_inputs],
+					self.__r: batch_memory[:, sample_n_inputs + 1],
+					self.__s_: batch_memory[:, (sample_n_inputs + 2):(sample_n_inputs*2 + 2)].reshape([-1] + sample_shape),
+					self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):],
 					self.__is_train: True
 				})
 		tf.reset_default_graph()
@@ -166,8 +172,6 @@ class MJDeepQNetwork:
 
 	def save(self, save_dir):
 		paras_dict = {
-			"__n_actions": self.__n_actions,
-			"__n_inputs": self.__n_inputs,
 			"__epsilon": self.__epsilon,
 			"__memory_size": self.__memory_size,
 			"__replace_target_iter": self.__replace_target_iter,

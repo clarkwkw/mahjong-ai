@@ -285,3 +285,6 @@ class Player(object):
 
 		self.__hand = sorted(self.__hand)
 		self.__move_generator.reset_new_game()
+
+	def notify_lose(self, score):
+		self.__move_generator.notify_lose(score)
