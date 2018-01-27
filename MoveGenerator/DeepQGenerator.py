@@ -66,7 +66,9 @@ class DeepQGenerator(MoveGenerator):
 			self.q_network_waiting = False
 
 	def notify_loss(self, score):
-		self.update_transition(-1.0*score, "terminal")
+		if self.q_network_is_train and self.q_network_waiting:
+			self.update_transition(-1.0*score, "terminal")
+			self.q_network_waiting = False
 
 	def __update_history(self, state, action, action_filter):
 		if not self.q_network_is_train:
