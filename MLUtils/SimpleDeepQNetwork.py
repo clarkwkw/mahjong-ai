@@ -25,7 +25,7 @@ def get_DeepQNetwork(path, **kwargs):
 # https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/5_Deep_Q_Network/DQN_modified.py
 
 class SimpleDeepQNetwork:
-	def __init__(self, from_save = None, n_inputs = None, n_actions = None, hidden_layers = [], custom_graph = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
+	def __init__(self, from_save = None, n_inputs = None, n_actions = None, hidden_layers = [], learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		if gpu_usage_w_limit:
@@ -70,7 +70,7 @@ class SimpleDeepQNetwork:
 
 		tf.reset_default_graph()
 
-	def __build_graph(self, n_inputs, n_actions, hidden_layers, learning_rate, reward_decay, custom_graph = None):
+	def __build_graph(self, n_inputs, n_actions, hidden_layers, learning_rate, reward_decay):
 		def add_dense_layers(inputs, id_prefix, hidden_layers, activation = tf.nn.relu, act_apply_last = False):
 			prev_layer = inputs
 			for n_neurons in hidden_layers[0:len(hidden_layers) - 1]:
@@ -86,19 +86,12 @@ class SimpleDeepQNetwork:
 		self.__r = tf.placeholder(tf.float32, [None, ], name = "r")
 		self.__a = tf.placeholder(tf.int32, [None, ], name = "a") 
 		
-		if custom_graph is None:
-			with tf.variable_scope("eval_net"):
-				self.__q_eval = add_dense_layers(self.__s, "eval_dense_", hidden_layers + [n_actions])
+		with tf.variable_scope("eval_net"):
+			self.__q_eval = add_dense_layers(self.__s, "eval_dense_", hidden_layers + [n_actions])
 
-			with tf.variable_scope("target_net"):
-				self.__q_next = add_dense_layers(self.__s_, "target_dense_", hidden_layers + [n_actions])
-		else:
-			with tf.variable_scope("eval_net"):
-				self.__q_eval = custom_graph(self.__s, "eval")
-			
-			with tf.variable_scope("target_net"):
-				self.__q_next = custom_graph(self.__s_, "target")
-
+		with tf.variable_scope("target_net"):
+			self.__q_next = add_dense_layers(self.__s_, "target_dense_", hidden_layers + [n_actions])
+		
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
 		a_indices = tf.stack([tf.range(tf.shape(self.__a)[0], dtype = tf.int32), self.__a], axis=1)

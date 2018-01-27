@@ -67,18 +67,26 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			self.update_transition(0, "terminal")
 
 	def __update_history(self, state, action):
-		if not self.q_network_is_train or self.q_network_waiting:
+		if not self.q_network_is_train:
 			return
+
+		if self.q_network_waiting:
+			raise Exception("the network is waiting for a transition")
 
 		self.q_network_waiting = True
 		self.q_network_history["state"] = state
 		self.q_network_history["action"] = action
 
 	def update_transition(self, reward, state_):
-		if not self.q_network_is_train or not self.q_network_waiting:
+		if not self.q_network_is_train:
 			return
+
+		if not self.q_network_waiting:
+			raise Exception("the network is NOT waiting for a transition")
+
 		if type(state_) == str and state_ == "terminal":
 			state_ = np.full(len(q_features), -1.0)
+
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
 		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_)
@@ -95,7 +103,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 		q_network = get_DeepQNetwork(self.q_network_path)
 		state = qnetwork_encode_state(fixed_hand, hand)
-		self.update_transition(0, state)
+		if self.q_network_waiting:
+			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_chow"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
@@ -143,7 +152,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 		q_network = get_DeepQNetwork(self.q_network_path)
 		state = qnetwork_encode_state(fixed_hand, hand)
-		self.update_transition(0, state)
+		if self.q_network_waiting:
+			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
@@ -173,7 +183,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 		q_network = get_DeepQNetwork(self.q_network_path)
 		state = qnetwork_encode_state(fixed_hand, hand)
-		self.update_transition(0, state)
+		if self.q_network_waiting:
+			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
 		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)

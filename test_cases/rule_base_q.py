@@ -10,6 +10,7 @@ from . import utils
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
+freq_model_save = 10000
 game_record_size = 100
 game_record_count = 0
 
@@ -19,7 +20,12 @@ game_record = np.zeros((game_record_size, 4, 2))
 deep_q_model_paras = {
 	"n_inputs": 10,
 	"n_actions": 8,
-	"hidden_layers": [150, 40]
+	"hidden_layers": [150, 40],
+	"learning_rate" = 1e-3,
+	"reward_decay" = 1, 
+	"replace_target_iter" = 300, 
+	"memory_size" = 1000, 
+	"batch_size" = 300
 }
 
 trainer_conf = ["heuristics", "heuristics", "heuristics"]
@@ -106,10 +112,14 @@ def test(args):
 
 		if (i+1) % game_record_size == 0:
 			print("#%5d: %.2f%%/%.2f%%"%(i+1, game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
+		
+		'''
+		if (i+1) % freq_model_save == 0:
 			last_saved = i
 			path = args.save_name + "_%d"%(i + 1)
 			utils.makesure_dir_exists(path)
 			model.save(path)
+		'''
 
 	if args.action == "train" and args.save_name is not None:
 		if last_saved < args.n_episodes - 1:
