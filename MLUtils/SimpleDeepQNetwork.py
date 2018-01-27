@@ -60,13 +60,14 @@ class SimpleDeepQNetwork:
 				self.__s_ = g.get_tensor_by_name("s_:0")
 				self.__r = g.get_tensor_by_name("r:0")
 				self.__a = g.get_tensor_by_name("a:0")
+				self.__a_filter = g.get_tensor_by_name("a_filter:0")
 				self.__q_eval = tf.get_collection("q_eval")[0]
 				self.__loss = tf.get_collection("loss")[0]
 				self.__train__op = tf.get_collection("train_op")[0]
 				self.__target_replace_op = tf.get_collection("target_replace_op")
 
 			self.__memory_counter = 0
-			self.__memory = np.zeros((self.__memory_size, self.__n_inputs * 2 + 2))
+			self.__memory = np.zeros((self.__memory_size, self.__n_inputs * 2 + 2 + self.__n_actions))
 
 		tf.reset_default_graph()
 
@@ -85,16 +86,19 @@ class SimpleDeepQNetwork:
 		self.__s_ = tf.placeholder(tf.float32, [None, n_inputs], name = "s_")
 		self.__r = tf.placeholder(tf.float32, [None, ], name = "r")
 		self.__a = tf.placeholder(tf.int32, [None, ], name = "a") 
-		
+		self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter")
+
 		with tf.variable_scope("eval_net"):
 			self.__q_eval = add_dense_layers(self.__s, "eval_dense_", hidden_layers + [n_actions])
+			self.__q_eval = self.__q_eval + self.__a_filter
 
 		with tf.variable_scope("target_net"):
 			self.__q_next = add_dense_layers(self.__s_, "target_dense_", hidden_layers + [n_actions])
+			self.__q_next = self.__q_next + self.__a_filter
 		
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
-		a_indices = tf.stack([tf.range(tf.shape(self.__a)[0], dtype = tf.int32), self.__a], axis=1)
+		a_indices = tf.stack([tf.range(tf.shape(self.__a)[0], dtype = tf.int32), self.__a], axis = 1)
 		self.__q_eval_wrt_a = tf.gather_nd(params = self.__q_eval, indices = a_indices)
 		
 		self.__loss = tf.reduce_mean(tf.squared_difference(self.__q_target, self.__q_eval_wrt_a), name = "TD_error")
@@ -114,27 +118,30 @@ class SimpleDeepQNetwork:
 	def learn_step_counter(self):
 		return self.__learn_step_counter
 
-	def store_transition(self, state, action, reward, state_):
-		transition = np.hstack((state, [action, reward], state_))
+	def store_transition(self, state, action, reward, state_, action_filter = None):
+		if action_filter is None:
+			action_filter = np.zeros(self.__n_actions)
+
+		transition = np.hstack((state, [action, reward], state_, action_filter))
 		index = self.__memory_counter % self.__memory_size
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
 
-	def choose_action(self, state, valid_actions = None, eps_greedy = True):
+	def choose_action(self, state, action_filter = None, eps_greedy = True):
+		if action_filter is None:
+			action_filter = np.zeros(self.__n_actions)
+
 		if np.random.uniform() < self.__epsilon or not eps_greedy:
 			inputs = state[np.newaxis, :]
+			action_filter = action_filter[np.newaxis, :]
+
 			with self.__graph.as_default() as g:
-				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs})
+				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs, self.__a_filter: action_filter})
+			
 			tf.reset_default_graph()
-			if valid_actions is not None:
-				action = valid_actions[np.argmax(actions_value[:, valid_actions])]
-			else:
-				action = np.argmax(actions_value)
+			action = np.argmax(actions_value)
 		else:
-			if valid_actions is not None:
-				action = random.choice(valid_actions)
-			else:
-				action = random.choice(list(range(n_actions)))
+			action = random.choice(np.arange(self.__n_actions)[action_filter >= 0])
 
 		return action
 
@@ -152,7 +159,8 @@ class SimpleDeepQNetwork:
 					self.__s: batch_memory[:, :self.__n_inputs],
 					self.__a: batch_memory[:, self.__n_inputs],
 					self.__r: batch_memory[:, self.__n_inputs + 1],
-					self.__s_: batch_memory[:, -self.__n_inputs:],
+					self.__s_: batch_memory[:, (self.__n_inputs + 2):(self.__n_inputs*2 + 2)],
+					self.__a_filter: batch_memory[:, (self.__n_inputs*2 + 2):],
 				})
 		tf.reset_default_graph()
 		if display_cost:

@@ -81,13 +81,18 @@ def test(args):
 
 		while not ((x == 0 and y == 0) or EXIT_FLAG):
 			valid_actions = get_valid_actions(x, y)
-			action = model.choose_action(state, list(range(len(ACTIONS))), eps_greedy = args.action == "train")
+			action_filter = np.full(len(ACTIONS), float("-inf"))
+			action_filter[valid_actions] = 0
+			action = model.choose_action(state, action_filter = action_filter, eps_greedy = args.action == "train")
 			if action in valid_actions:
 				x, y = x + ACTIONS[action, 0], y + ACTIONS[action, 1]
+			else:
+				print("Chosen an action (%s) not in valid_actions (%s)"%(action, valid_actions))
+				exit(-1)
 			new_state = np.zeros((HEIGHT * WIDTH))
 			new_state[y*WIDTH + x] = 1
 			reward = 10 if x == 0 and y == 0 else -1
-			model.store_transition(state, action, reward, new_state)
+			model.store_transition(state, action, reward, new_state, action_filter)
 			state = new_state
 			step += 1
 

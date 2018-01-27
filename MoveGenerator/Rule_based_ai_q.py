@@ -57,7 +57,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		self.q_network_waiting = False
 		self.q_network_history = {
 			"state": None,
-			"action": None
+			"action": None,
+			"action_filter": None
 		}
 		super(RuleBasedAIQ, self).__init__(**kwargs)
 
@@ -66,7 +67,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		if self.q_network_is_train and self.q_network_waiting:
 			self.update_transition(0, "terminal")
 
-	def __update_history(self, state, action):
+	def __update_history(self, state, action, action_filter):
 		if not self.q_network_is_train:
 			return
 
@@ -76,6 +77,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 		self.q_network_waiting = True
 		self.q_network_history["state"] = state
 		self.q_network_history["action"] = action
+		self.q_network_history["action_filter"] = action_filter
 
 	def update_transition(self, reward, state_):
 		if not self.q_network_is_train:
@@ -85,11 +87,11 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			raise Exception("the network is NOT waiting for a transition")
 
 		if type(state_) == str and state_ == "terminal":
-			state_ = np.full(len(q_features), -1.0)
+			state_ = np.full(len(q_features), -1000)
 
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)
-		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_)
+		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"])
 		
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		self.begin_decision()
@@ -107,8 +109,10 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_chow"), q_decisions.index("no_action")]
-		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
-		self.__update_history(state, action)
+		action_filter = np.full(len(q_decisions), float("-inf"))
+		action_filter[valid_actions] = 0
+		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 		
@@ -156,8 +160,10 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
-		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
-		self.__update_history(state, action)
+		action_filter = np.full(len(q_decisions), float("-inf"))
+		action_filter[valid_actions] = 0
+		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 
@@ -187,8 +193,10 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			self.update_transition(0, state)
 
 		valid_actions = [q_decisions.index(new_tile.suit + "_pong"), q_decisions.index("no_action")]
-		action = q_network.choose_action(state, valid_actions, eps_greedy = self.q_network_is_train)
-		self.__update_history(state, action)
+		action_filter = np.full(len(q_decisions), float("-inf"))
+		action_filter[valid_actions] = 0
+		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 		if action == q_decisions.index("no_action"):
@@ -202,8 +210,8 @@ class RuleBasedAIQ(RuleBasedAINaive):
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		if self.q_network_is_train and self.q_network_waiting:
-			state = qnetwork_encode_state(player.fixed_hand, player.hand)
 			self.update_transition(score, "terminal")
+
 		return super(RuleBasedAIQ, self).decide_win(player, grouped_hand, new_tile, src, score, neighbors, game)
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
