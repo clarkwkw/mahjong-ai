@@ -63,6 +63,7 @@ class DeepQGenerator(MoveGenerator):
 	def reset_new_game(self):
 		if self.q_network_is_train and self.q_network_waiting:
 			self.update_transition(0, "terminal")
+			self.q_network_waiting = False
 
 	def notify_loss(self, score):
 		self.update_transition(-1.0*score, "terminal")
