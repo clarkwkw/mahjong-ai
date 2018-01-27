@@ -19,7 +19,7 @@ game_record = np.zeros((game_record_size, 4, 2))
 
 deep_q_model_paras = {
 	"learning_rate": 1e-3,
-	"reward_decay": 1, 
+	"reward_decay": 0.9, 
 	"replace_target_iter": 300, 
 	"memory_size": 1000, 
 	"batch_size": 300

@@ -150,7 +150,7 @@ class SimpleDeepQNetwork:
 			self.__sess.run(self.__target_replace_op)
 			#print("#%4d: Replaced target network"%(self.__learn_step_counter))
 
-		sample_index = np.random.choice(min(self.__memory_size, self.__batch_size), size = self.__batch_size)
+		sample_index = np.random.choice(min(self.__memory_size, self.__memory_counter), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
 		with self.__graph.as_default() as g:
 			_, cost = self.__sess.run(

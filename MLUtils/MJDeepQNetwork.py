@@ -151,7 +151,7 @@ class MJDeepQNetwork:
 		if self.__learn_step_counter % self.__replace_target_iter == 0:
 			self.__sess.run(self.__target_replace_op)
 
-		sample_index = np.random.choice(min(self.__memory_size, self.__batch_size), size = self.__batch_size)
+		sample_index = np.random.choice(min(self.__memory_size, self.__memory_counter), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
 		with self.__graph.as_default() as g:
 			_, cost = self.__sess.run(
