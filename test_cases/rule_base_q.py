@@ -21,11 +21,11 @@ deep_q_model_paras = {
 	"n_inputs": 10,
 	"n_actions": 8,
 	"hidden_layers": [150, 40],
-	"learning_rate" = 1e-3,
-	"reward_decay" = 1, 
-	"replace_target_iter" = 300, 
-	"memory_size" = 1000, 
-	"batch_size" = 300
+	"learning_rate": 1e-3,
+	"reward_decay": 1, 
+	"replace_target_iter": 300, 
+	"memory_size": 1000, 
+	"batch_size": 300
 }
 
 trainer_conf = ["heuristics", "heuristics", "heuristics"]
