@@ -90,7 +90,7 @@ class MJDeepQNetwork:
 
 			dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
 
-			return tf.layers.dense(inputs = dropout, units = n_actions)
+			return tf.layers.dense(inputs = dense, units = n_actions)
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
