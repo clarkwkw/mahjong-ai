@@ -73,14 +73,23 @@ class MJDeepQNetwork:
 
 	def __build_graph(self, learning_rate, reward_decay, dropout_rate):
 		def make_connection(inputs, is_train, dropout_rate):
-			# 9*34*8
-			conv_1 = tf.layers.conv2d(inputs = inputs, filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-			# 1*32*16
-			conv_2 = tf.layers.conv2d(inputs = conv_1, filters = 16, kernel_size = [sample_shape[0], 3], padding = "valid", activation = tf.nn.relu)
+			# 3*34*8
+			conv_fh_1 = tf.layers.conv2d(inputs = inputs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
+			# 1*32*8
+			conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
+			conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
 			
-			flat = tf.reshape(conv_2, [-1, 32*16])
-			dense = tf.layers.dense(inputs = flat, units = 2048, activation = tf.nn.relu)
-			dropout = tf.layers.dropout(inputs = dense, rate = dropout_rate, training = is_train)
+			# 1*34*8
+			conv_discard = tf.layers.conv2d(inputs = inputs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
+			conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
+
+			raw_hfh_flat = tf.reshape(inputs[:, 0:2, :, :], [-1, 2*34])
+
+			flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
+			dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = is_train)
+
+			dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
+
 			return tf.layers.dense(inputs = dropout, units = n_actions)
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
