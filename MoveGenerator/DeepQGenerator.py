@@ -62,12 +62,12 @@ class DeepQGenerator(MoveGenerator):
 
 	def reset_new_game(self):
 		if self.q_network_is_train and self.q_network_waiting:
-			self.update_transition(0, "terminal")
+			self.update_transition("terminal", 0)
 			self.q_network_waiting = False
 
 	def notify_loss(self, score):
 		if self.q_network_is_train and self.q_network_waiting:
-			self.update_transition(-1.0*score, "terminal")
+			self.update_transition("terminal", -1.0*score)
 			self.q_network_waiting = False
 
 	def __update_history(self, state, action, action_filter):
@@ -82,7 +82,7 @@ class DeepQGenerator(MoveGenerator):
 		self.q_network_history["action"] = action
 		self.q_network_history["action_filter"] = action_filter
 
-	def update_transition(self, reward, state_):
+	def update_transition(self, state_, reward = None):
 		if not self.q_network_is_train:
 			return
 
@@ -91,6 +91,12 @@ class DeepQGenerator(MoveGenerator):
 
 		if type(state_) == str and state_ == "terminal":
 			state_ = np.full(34*9, 0.0)
+
+		if reward is None:
+			if self.q_network_history["action"] >= 34 and self.q_network_history["action"] <= 40:
+				reward = 5
+			else:
+				reward = 0
 
 		self.q_network_waiting = False
 		q_network = get_MJDeepQNetwork(self.q_network_path)
@@ -110,18 +116,18 @@ class DeepQGenerator(MoveGenerator):
 		state = qnetwork_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
-			self.update_transition(0, state)
+			self.update_transition(state)
 
 		valid_actions = [34 + q_decisions_.index("%s_chow"%new_tile.suit), 34 + q_decisions_.index("no_action")]
 		action_filter = np.full(q_n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
-		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 		
 		if action == q_decisions_.index("no_action"):
-			self.print_msg("%s chooses not to Chow %s."%(self.player_name, new_tile.symbol))
+			self.print_msg("%s chooses not to Chow %s [%.2f]."%(self.player_name, new_tile.symbol, value))
 			return False, None
 		else:
 			chow_tiles_tgstrs = []
@@ -132,7 +138,7 @@ class DeepQGenerator(MoveGenerator):
 				chow_tiles_str += neighbor_tile.symbol
 				chow_tiles_tgstrs.append(neighbor_tile.get_display_name(game.lang_code, is_short = False))
 
-			self.print_msg("%s chooses to Chow %s."%(self.player_name, chow_tiles_str))
+			self.print_msg("%s chooses to Chow %s [%.2f]."%(self.player_name, chow_tiles_str, value))
 
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_CHOW")%(self.player_name, ",".join(chow_tiles_tgstrs)))
@@ -162,24 +168,24 @@ class DeepQGenerator(MoveGenerator):
 		state = qnetwork_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
-			self.update_transition(0, state)
+			self.update_transition(state)
 
 		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
 		action_filter = np.full(q_n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
-		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 
 		if action == q_decisions_.index("no_action"):
-			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
+			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s [%.2f]."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_KONG")%(self.player_name, kong_tile.get_display_name(game.lang_code, is_short = False)))
 
 			return True
 		else:
-			self.print_msg("%s [%s] chooses not to form a Kong %s%s%s%s."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol))
+			self.print_msg("%s [%s] chooses not to form a Kong %s%s%s%s [%.2f]."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, value))
 			return False
 
 	def decide_pong(self, player, new_tile, neighbors, game):
@@ -196,30 +202,29 @@ class DeepQGenerator(MoveGenerator):
 		state = qnetwork_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
-			self.update_transition(0, state)
+			self.update_transition(state)
 
 		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
 		action_filter = np.full(q_n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
-		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 		if action == q_decisions_.index("no_action"):
-			self.print_msg("%s [%s] chooses to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
+			self.print_msg("%s [%s] chooses to form a Pong %s%s%s. [%.2f]"%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_PONG")%(self.player_name, new_tile.get_display_name(game.lang_code, is_short = False)))
 			return True
 		else:
-			self.print_msg("%s [%s] chooses not to form a Pong %s%s%s."%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol))
+			self.print_msg("%s [%s] chooses not to form a Pong %s%s%s. [%.2f]"%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol, value))
 			return False
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		self.begin_decision()
 		if self.q_network_is_train and self.q_network_waiting:
-			self.update_transition(score, "terminal")
+			self.update_transition("terminal", score)
 
-		
 		fixed_hand, hand = player.fixed_hand, player.hand
 		if self.display_step:
 			if src == "steal":
@@ -243,9 +248,12 @@ class DeepQGenerator(MoveGenerator):
 
 	def decide_drop_tile(self, player, new_tile, neighbors, game):
 		self.begin_decision()
+
+		fixed_hand, hand = player.fixed_hand, player.hand
 		state = qnetwork_encode_state(player, neighbors)
+
 		if self.q_network_is_train and self.q_network_waiting:
-			self.update_transition(0, state)
+			self.update_transition(state)
 
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
@@ -260,10 +268,10 @@ class DeepQGenerator(MoveGenerator):
 		action_filter = np.full(q_n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
 
-		action = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train)
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
-		self.print_msg("%s [%s] chooses to drop %s."%(self.player_name, display_name, drop_tile.symbol))
+		self.print_msg("%s [%s] chooses to drop %s. [%.2f]"%(self.player_name, display_name, drop_tile.symbol, value))
 		self.end_decision(True)
 
 		if game.lang_code is not None:

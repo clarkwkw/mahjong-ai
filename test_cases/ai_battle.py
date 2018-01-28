@@ -36,6 +36,14 @@ _models = {
 			"parallel": False,
 			"mcts_max_iter": 1000
 		}
+	},
+	"mjdeepq":{
+		"class": MoveGenerator.DeepQGenerator,
+		"parameters":{
+			"q_network_path": "resources/models/mjdeepq",
+			"is_train": False,
+			"display_step": False
+		}
 	}
 }
 

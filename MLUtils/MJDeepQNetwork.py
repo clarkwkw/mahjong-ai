@@ -129,7 +129,7 @@ class MJDeepQNetwork:
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
 
-	def choose_action(self, state, action_filter = None, eps_greedy = True):
+	def choose_action(self, state, action_filter = None, eps_greedy = True, return_value = False):
 		if action_filter is None:
 			action_filter = np.zeros(n_actions)
 
@@ -142,10 +142,16 @@ class MJDeepQNetwork:
 			
 			tf.reset_default_graph()
 			action = np.argmax(actions_value)
+			value = actions_value[0, action]
 		else:
 			action = random.choice(np.arange(n_actions)[action_filter >= 0])
+			value = np.nan
+		
+		if return_value:
+			return action, value
 
 		return action
+
 
 	def learn(self, display_cost = True):
 		if self.__learn_step_counter % self.__replace_target_iter == 0:

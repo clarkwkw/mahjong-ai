@@ -20,6 +20,7 @@ game_record = np.zeros((game_record_size, 4, 2))
 deep_q_model_paras = {
 	"learning_rate": 1e-3,
 	"reward_decay": 0.9, 
+	"e_greedy": 0.8,
 	"replace_target_iter": 300, 
 	"memory_size": 1000, 
 	"batch_size": 300
@@ -49,8 +50,8 @@ def signal_handler(signal, frame):
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--model_dir", type = str, help = "Where is the model")
-	parser.add_argument("action", type = str, choices = ["train", "test"], help = "What to do with the model")
-	parser.add_argument("n_episodes", nargs = "?", default = 1000, type = int, help = "No. of episodes to go through")
+	parser.add_argument("action", type = str, choices = ["train", "test", "play"], help = "What to do with the model")
+	parser.add_argument("n_episodes", nargs = "?", default = 1, type = int, help = "No. of episodes to go through")
 	parser.add_argument("save_name", nargs = "?", default = None, type = str, help = "Path to save the model")
 	args = parser.parse_args(args_list)
 	return args
@@ -61,29 +62,34 @@ def test(args):
 
 	if args.action == "train":
 		if args.save_name is None:
-			response = input("You have not entered the save_name, are you sure? [y/n] ").lower()
+			response = input("You have not entered save_name, are you sure? [y/n] ").lower()
 			if response != "y":
 				exit(-1)
 
 		args.model_dir = "rule_base_q_test" if args.model_dir is None else args.model_dir
 	
-	elif args.action == "test":
+	elif args.action in ["test", "play"]:
 		if args.model_dir is None:
-			raise Exception("model_dir must be given to test")
+			raise Exception("model_dir must be given to test/play")
 
 	model = get_MJDeepQNetwork(args.model_dir, **deep_q_model_paras)
 
 	players = []
 	i = 0
 	for model_tag in trainer_conf:
-		player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"])
+		if args.action == "play":
+			player = Player.Player(MoveGenerator.Human, player_name = names[i])
+		else:
+			player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
+			#player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"])
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train")
+	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(deepq_player)
 
-	signal.signal(signal.SIGINT, signal_handler)
+	if args.action != "play":
+		signal.signal(signal.SIGINT, signal_handler)
 	game, shuffled_players, last_saved = None, None, -1
 	for i in range(args.n_episodes):
 		if EXIT_FLAG:
@@ -94,7 +100,8 @@ def test(args):
 			game = Game.Game(shuffled_players)
 
 		winner, losers, penalty = game.start_game()
-		model.learn(display_cost = (i+1) % game_record_size == 0)
+		if args.action == "train":
+			model.learn(display_cost = (i+1) % game_record_size == 0)
 		
 		index = game_record_count%game_record_size
 		game_record[index, :, :] = np.zeros((4, 2))
@@ -108,8 +115,10 @@ def test(args):
 				game_record[index, loser_id, 1] = 1
 
 		if (i+1) % game_record_size == 0:
-			print("#%5d: %.2f%%/%.2f%%"%(i+1, game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
-		
+			print("#%5d: %.2f%%/%.2f%%\t%.2f%%/%.2f%%\t%.2f%%/%.2f%%\t%.2f%%/%.2f%%"%(i+1, game_record[:, 0, 0].mean()* 100, game_record[:, 0, 1].mean()* 100,
+																							game_record[:, 1, 0].mean()* 100, game_record[:, 1, 1].mean()* 100, 
+																							game_record[:, 2, 0].mean()* 100, game_record[:, 2, 1].mean()* 100, 
+																							game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
 		'''
 		if (i+1) % freq_model_save == 0:
 			last_saved = i
