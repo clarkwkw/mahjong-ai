@@ -87,7 +87,7 @@ class RuleBasedAIQ(RuleBasedAINaive):
 			raise Exception("the network is NOT waiting for a transition")
 
 		if type(state_) == str and state_ == "terminal":
-			state_ = np.full(len(q_features), 0.0)
+			state_ = self.q_network_history["state"]
 
 		self.q_network_waiting = False
 		q_network = get_DeepQNetwork(self.q_network_path)

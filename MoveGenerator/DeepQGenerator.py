@@ -90,7 +90,7 @@ class DeepQGenerator(MoveGenerator):
 			raise Exception("the network is NOT waiting for a transition")
 
 		if type(state_) == str and state_ == "terminal":
-			state_ = np.full(34*9, 0.0)
+			state_ = self.q_network_history["state"]
 
 		if reward is None:
 			if self.q_network_history["action"] >= 34 and self.q_network_history["action"] <= 40:
