@@ -94,7 +94,7 @@ class DeepQGenerator(MoveGenerator):
 
 		if reward is None:
 			if self.q_network_history["action"] >= 34 and self.q_network_history["action"] <= 40:
-				reward = 5
+				reward = 0
 			else:
 				reward = 0
 
