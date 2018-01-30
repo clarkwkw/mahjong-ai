@@ -41,7 +41,7 @@ def qnetwork_encode_state(fixed_hand, hand):
 	for meld_type, _, tiles in fixed_hand:
 		meld_type = "pong" if meld_type == "kong" else meld_type
 		feature_index = q_features.index("fh_%s_%s"%(tiles[0].suit, meld_type))
-		state[feature_index] = 1
+		state[feature_index] += 1
 		
 	for tile in hand:
 		if tile.suit != "honor":
