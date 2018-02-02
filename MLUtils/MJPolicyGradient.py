@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from . import utils
 
 # Reference: https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/7_Policy_gradient_softmax/RL_brain.py
 save_file_name = "savefile.ckpt"
@@ -36,6 +37,7 @@ class MJPolicyGradient:
 				self.__build_graph(learning_rate, dropout_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
+				self.__learn_step_counter = 0
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
@@ -94,31 +96,40 @@ class MJPolicyGradient:
 
 		tf.add_to_collection("all_act_prob", self.__all_act_prob)
 		tf.add_to_collection("loss", self.__loss)
-		tf.add_to_collection("train_op", self.__train__op)
+		tf.add_to_collection("train_op", self.__train_op)
 
-	def choose_action(self, observation, acts_filter = None):
-		if acts_filter is None:
-			acts_filter = np.zeros((n_actions))
+	@property 
+	def learn_step_counter(self):
+		return self.__learn_step_counter
 
-		prob_weights = self.sess.run(self.__act_all_prob, 
+	def choose_action(self, observation, action_filter = None, return_value = False):
+		if action_filter is None:
+			action_filter = np.zeros((n_actions))
+
+		prob_weights = self.__sess.run(
+			self.__all_act_prob, 
 			feed_dict = {
 				self.__obs: observation[np.newaxis, :],
-				self.__acts_filter: acts_filter[np.newaxis, :],
+				self.__acts_filter: action_filter[np.newaxis, :],
 				self.__is_train: False
 			})
 		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
+		value = prob_weights[0, : action]
+		if return_value:
+			return action, return_value
+
 		return action
 
-	def store_transition(self, s, a, a_filter, r):
-		self.__ep_obs.append(s)
-		self.__ep_as.append(a)
-		self.__ep_a_filter.append(a_filter)
-		self.__ep_rs.append(r)
+	def store_transition(self, state, action, action_filter, reward):
+		self.__ep_obs.append(state)
+		self.__ep_as.append(action)
+		self.__ep_a_filter.append(action_filter)
+		self.__ep_rs.append(reward)
 
-	def learn(self):
-		def discount_and_norm_rewards(self):
+	def learn(self, display_cost = True):
+		def discount_and_norm_rewards():
 			# discount episode rewards
-			discounted_ep_rs = np.zeros_like(self.__ep_rs)
+			discounted_ep_rs = np.zeros_like(self.__ep_rs, dtype = np.float32)
 
 			running_add = 0
 			for t in reversed(range(0, len(self.__ep_rs))):
@@ -134,27 +145,31 @@ class MJPolicyGradient:
 
 
 		# discount and normalize episode reward
-		discounted_ep_rs_norm = self._discount_and_norm_rewards()
+		discounted_ep_rs_norm = discount_and_norm_rewards()
 
 		# train on episode
-		_, loss = self.sess.run(
+		_, loss = self.__sess.run(
 			[self.__train_op, self.__loss], 
 			feed_dict={
 				self.__obs: np.stack(self.__ep_obs, axis = 0),
 				self.__acts_filter: np.stack(self.__ep_a_filter, axis = 0),
-				self.__acts: np.array(self.ep_as),
-				self.__vs: discounted_ep_rs_norm,
+				self.__acts: np.array(self.__ep_as),
+				self.__vt: discounted_ep_rs_norm,
 				self.__is_train: True
 			}
 		)
 
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
-		
+		if display_cost:
+			print("#%4d: %.4f"%(self.__learn_step_counter + 1, loss))
+		self.__learn_step_counter += 1
+
 		return loss
 
 	def save(self, save_dir):
 		paras_dict = {
-			"__reward_decay": self.__reward_decay
+			"__reward_decay": self.__reward_decay,
+			"__learn_step_counter": self.__learn_step_counter
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

@@ -7,6 +7,7 @@ test_cases = [
 	"handpredictor_d", 
 	"handpredictor_test",
 	"mjdeepq", 
+	"mjpg",
 	"rule_base_mcts",
 	"rule_base_naive", 
 	"rule_base_q",

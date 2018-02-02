@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJDeepQNetwork
+from MLUtils import get_MJPolicyGradient
 import Player, Game
 import MoveGenerator
 from . import utils
@@ -14,20 +14,15 @@ freq_model_save = 10000
 game_record_size = 100
 game_record_count = 0
 
-# heuristics_deepq, heuristics
 game_record = np.zeros((game_record_size, 4, 2))
 
-deep_q_model_paras = {
+pg_model_paras = {
 	"learning_rate": 1e-3,
-	"reward_decay": 0.9, 
-	"e_greedy": 0.8,
-	"replace_target_iter": 300, 
-	"memory_size": 1000, 
-	"batch_size": 300
+	"reward_decay": 0.9
 }
-deep_q_model_dir = "rule_base_q_test"
 
-trainer_conf = ["deepq", "deepq", "deepq"]
+pg_model_dir = "pg_model_test"
+trainer_conf = ["policy_gradient", "policy_gradient", "policy_gradient"]
 trainer_models = {
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -41,11 +36,11 @@ trainer_models = {
 			 "s_mixed_suit": 0
 		}
 	},
-	"deepq": {
-		"class": MoveGenerator.DeepQGenerator,
-		"parameters": {
+	"policy_gradient": {
+		"class": MoveGenerator.PGGenerator,
+		"parameters":{
 			"display_step": False,
-			"q_network_path": deep_q_model_dir,
+			"pg_model_path": pg_model_dir,
 			"is_train": False
 		}
 	}
@@ -75,13 +70,13 @@ def test(args):
 			if response != "y":
 				exit(-1)
 
-		args.model_dir = deep_q_model_dir if args.model_dir is None else args.model_dir
+		args.model_dir = pg_model_dir if args.model_dir is None else args.model_dir
 	
 	elif args.action in ["test", "play"]:
 		if args.model_dir is None:
 			raise Exception("model_dir must be given to test/play")
 
-	model = get_MJDeepQNetwork(args.model_dir, **deep_q_model_paras)
+	model = get_MJPolicyGradient(args.model_dir, **pg_model_paras)
 
 	players = []
 	i = 0
@@ -93,8 +88,8 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
-	players.append(deepq_player)
+	pg_player = Player.Player(MoveGenerator.PGGenerator, player_name = names[i], pg_model_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
+	players.append(pg_player)
 
 	if args.action != "play":
 		signal.signal(signal.SIGINT, signal_handler)
