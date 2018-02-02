@@ -11,19 +11,8 @@ loaded_models = {
 	
 }
 
-n_actions = 42
-sample_shape = [9, 34, 1]
-sample_n_inputs = 9 * 34 * 1
-def get_MJPolicyGradient(path, **kwargs):
-	if path not in loaded_models:
-		try:
-			loaded_models[path] = MJPolicyGradient.load(path)
-		except Exception as e:
-			loaded_models[path] = MJPolicyGradient(**kwargs)
-	return loaded_models[path]
-
-class MJPolicyGradient:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95, dropout_rate = 0.1):
+class PolicyGradient:
+	def __init__(self, from_save = None, n_inputs = None, n_actions = None, hidden_layers = None, learning_rate = 0.01, reward_decay = 0.95):
 		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], []
 
 		self.__graph = tf.Graph()
@@ -35,10 +24,11 @@ class MJPolicyGradient:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				self.__build_graph(learning_rate, dropout_rate)
+				self.__build_graph(n_inputs, n_actions, hidden_layers, learning_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
+				self.__n_actions = n_actions
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
@@ -51,39 +41,30 @@ class MJPolicyGradient:
 				self.__obs = g.get_tensor_by_name("observations:0")
 				self.__acts = g.get_tensor_by_name("actions_num:0")
 				self.__vt = g.get_tensor_by_name("actions_value:0")
-				self.__is_train = g.get_tensor_by_name("is_train:0")
 
 				self.__all_act_prob = tf.get_collection("all_act_prob")[0]
 				self.__loss = tf.get_collection("loss")[0]
 				self.__train__op = tf.get_collection("train_op")[0]
 
-	def __build_graph(self, learning_rate, dropout_rate):
+	def __build_graph(self, n_inputs, n_actions, hidden_layers, learning_rate):
+		def add_dense_layers(inputs, hidden_layers, activation = tf.nn.relu, act_apply_last = False):
+			prev_layer = inputs
+			for n_neurons in hidden_layers[0:len(hidden_layers) - 1]:
+				prev_layer = tf.layers.dense(inputs = prev_layer, units = n_neurons, activation = activation)
+
+			if len(hidden_layers) > 0:
+				prev_layer = tf.layers.dense(inputs = prev_layer, units = hidden_layers[len(hidden_layers) - 1], activation = activation if act_apply_last else None)
+			
+			return prev_layer
+
 		with tf.name_scope('inputs'):
-			self.__obs = tf.placeholder(tf.float32, [None] + sample_shape, name = "observations")
+			self.__obs = tf.placeholder(tf.float32, [None, n_inputs], name = "observations")
 			self.__acts = tf.placeholder(tf.int32, [None, ], name = "actions_num")
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
-			self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
+	
+		result = add_dense_layers(self.__obs, hidden_layers + [n_actions])
 
-		# 3*34*8
-		conv_fh_1 = tf.layers.conv2d(inputs = self.__obs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-		# 1*32*8
-		conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
-		conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
-		
-		# 1*34*8
-		conv_discard = tf.layers.conv2d(inputs = self.__obs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
-		conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
-
-		raw_hfh_flat = tf.reshape(self.__obs[:, 0:2, :, :], [-1, 2*34])
-
-		flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
-		dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = self.__is_train)
-
-		dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
-
-		result = tf.layers.dense(inputs = dense, units = n_actions)
-
-		self.__all_act_prob = tf.nn.softmax(result, name='act_prob')  # use softmax to convert to probability
+		self.__all_act_prob = tf.nn.softmax(result, name = 'act_prob')  # use softmax to convert to probability
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
@@ -104,14 +85,13 @@ class MJPolicyGradient:
 	def choose_action(self, observation, action_filter = None, return_value = False):
 
 		if action_filter is None:
-			action_filter = np.full(n_actions, 1.0)
+			action_filter = np.full(self.__n_actions, 1.0)
 
 		n_actions_avail = np.sum(action_filter > 0)
 		prob_weights = self.__sess.run(
 			self.__all_act_prob, 
 			feed_dict = {
-				self.__obs: observation[np.newaxis, :],
-				self.__is_train: False
+				self.__obs: observation[np.newaxis, :]
 			})
 
 		prob_weights = np.multiply(prob_weights, action_filter)
@@ -164,12 +144,11 @@ class MJPolicyGradient:
 			feed_dict={
 				self.__obs: np.stack(self.__ep_obs, axis = 0),
 				self.__acts: np.array(self.__ep_as),
-				self.__vt: discounted_ep_rs_norm,
-				self.__is_train: True
+				self.__vt: discounted_ep_rs_norm
 			}
 		)
 
-		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], [] 
+		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], []
 		if display_cost:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, loss))
 		self.__learn_step_counter += 1
@@ -179,7 +158,8 @@ class MJPolicyGradient:
 	def save(self, save_dir):
 		paras_dict = {
 			"__reward_decay": self.__reward_decay,
-			"__learn_step_counter": self.__learn_step_counter
+			"__learn_step_counter": self.__learn_step_counter,
+			"__n_actions": self.__n_actions
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

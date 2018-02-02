@@ -12,6 +12,7 @@ test_cases = [
 	"rule_base_naive", 
 	"rule_base_q",
 	"simpledeepq",
+	"simplepg",
 	"simpleq",
 	"start_game", 
 	"start_tggame", 

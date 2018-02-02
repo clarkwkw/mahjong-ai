@@ -52,8 +52,7 @@ class PGGenerator(MoveGenerator):
 		self.pg_model_waiting = False
 		self.pg_model_history = {
 			"state": None,
-			"action": None,
-			"action_filter" : None
+			"action": None
 		}
 
 	def print_msg(self, msg):
@@ -70,7 +69,7 @@ class PGGenerator(MoveGenerator):
 			self.update_transition(-1.0*score)
 			self.pg_model_waiting = False
 
-	def __update_history(self, state, action, action_filter):
+	def __update_history(self, state, action):
 		if not self.pg_model_is_train:
 			return
 
@@ -80,7 +79,6 @@ class PGGenerator(MoveGenerator):
 		self.pg_model_waiting = True
 		self.pg_model_history["state"] = state
 		self.pg_model_history["action"] = action
-		self.pg_model_history["action_filter"] = action_filter
 
 	def update_transition(self, reward = None):
 		if not self.pg_model_is_train:
@@ -97,7 +95,7 @@ class PGGenerator(MoveGenerator):
 
 		self.pg_model_waiting = False
 		pg_model = get_MJPolicyGradient(self.pg_model_path)
-		pg_model.store_transition(self.pg_model_history["state"], self.pg_model_history["action"], self.pg_model_history["action_filter"], reward)
+		pg_model.store_transition(self.pg_model_history["state"], self.pg_model_history["action"], reward)
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		self.begin_decision()
@@ -116,10 +114,10 @@ class PGGenerator(MoveGenerator):
 			self.update_transition()
 
 		valid_actions = [34 + q_decisions_.index("%s_chow"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
-		action_filter[valid_actions] = 0
+		action_filter = np.zeros(q_n_decisions)
+		action_filter[valid_actions] = 1
 		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
-		self.__update_history(state, action, action_filter)
+		self.__update_history(state, action)
 
 		self.end_decision()
 		
@@ -168,10 +166,10 @@ class PGGenerator(MoveGenerator):
 			self.update_transition()
 
 		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
-		action_filter[valid_actions] = 0
+		action_filter = np.zeros(q_n_decisions)
+		action_filter[valid_actions] = 1
 		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
-		self.__update_history(state, action, action_filter)
+		self.__update_history(state, action)
 
 		self.end_decision()
 
@@ -202,10 +200,10 @@ class PGGenerator(MoveGenerator):
 			self.update_transition()
 
 		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
-		action_filter[valid_actions] = 0
+		action_filter = np.zeros(q_n_decisions)
+		action_filter[valid_actions] = 1
 		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
-		self.__update_history(state, action, action_filter)
+		self.__update_history(state, action)
 
 		self.end_decision()
 		if action == q_decisions_.index("no_action"):
@@ -262,11 +260,11 @@ class PGGenerator(MoveGenerator):
 		for tile in tiles:
 			valid_actions.append(Tile.convert_tile_index(tile))
 
-		action_filter = np.full(q_n_decisions, float("-inf"))
-		action_filter[valid_actions] = 0
+		action_filter = np.zeros(q_n_decisions)
+		action_filter[valid_actions] = 1
 
 		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
-		self.__update_history(state, action, action_filter)
+		self.__update_history(state, action)
 		drop_tile = Tile.convert_tile_index(action)
 		self.print_msg("%s [%s] chooses to drop %s. [%.2f]"%(self.player_name, display_name, drop_tile.symbol, value))
 		self.end_decision(True)
