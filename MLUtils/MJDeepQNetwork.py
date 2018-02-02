@@ -18,8 +18,8 @@ sample_n_inputs = 9 * 34 * 1
 def get_MJDeepQNetwork(path, **kwargs):
 	if path not in loaded_models:
 		try:
-			loaded_models[path] = MJDeepQNetwork.load(from_save = path)
-		except:
+			loaded_models[path] = MJDeepQNetwork.load(path)
+		except Exception as e:
 			loaded_models[path] = MJDeepQNetwork(**kwargs)
 	return loaded_models[path]
 

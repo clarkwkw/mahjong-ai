@@ -15,7 +15,7 @@ loaded_models = {
 def get_DeepQNetwork(path, **kwargs):
 	if path not in loaded_models:
 		try:
-			loaded_models[path] = SimpleDeepQNetwork.load(from_save = path)
+			loaded_models[path] = SimpleDeepQNetwork.load(path)
 		except:
 			loaded_models[path] = SimpleDeepQNetwork(**kwargs)
 	return loaded_models[path]
