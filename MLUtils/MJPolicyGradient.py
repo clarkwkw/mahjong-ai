@@ -64,24 +64,24 @@ class MJPolicyGradient:
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
 			self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
 
-		# 3*34*8
-		conv_fh_1 = tf.layers.conv2d(inputs = self.__obs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-		# 1*32*8
-		conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
-		conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
+		conv_neighbor_1 = tf.layers.conv2d(inputs = self.__obs[:, 3:9, :, :], filters = 16, kernel_size = [2, 3], strides = [2, 1], padding = "valid", activation = tf.nn.relu)
+		# 1*30*16
+		conv_neighbor_2 = tf.layers.max_pooling2d(inputs = conv_neighbor_1, pool_size = [3, 3], strides = [1, 1], padding = "valid")
+		conv_neighbor_flat = tf.reshape(conv_neighbor_2, [-1, 30*16])
+
+		# 34
+		disposed_flat = tf.reshape(self.__obs[:, 2, :, :] + self.__obs[:, 4, :, :] + self.__obs[:, 6, :, :] + self.__obs[:, 8, :, :], [-1, 34])
+
+		# 64
+		hfh_flat = tf.reshape(self.__obs[:, 0:2, :, :], [-1, 34*2])
+
+		flat = tf.concat([hfh_flat, disposed_flat, conv_neighbor_flat], axis = 1)
 		
-		# 1*34*8
-		conv_discard = tf.layers.conv2d(inputs = self.__obs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
-		conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
+		dense_1 = tf.layers.dense(inputs = flat, units = 2048, activation = tf.nn.relu)
 
-		raw_hfh_flat = tf.reshape(self.__obs[:, 0:2, :, :], [-1, 2*34])
+		dense_2 = tf.layers.dense(inputs = dense_1, units = 1024, activation = tf.nn.relu)
 
-		flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
-		dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = self.__is_train)
-
-		dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
-
-		result = tf.layers.dense(inputs = dense, units = n_actions)
+		result = tf.layers.dense(inputs = dense_2, units = n_actions)
 
 		self.__all_act_prob = tf.nn.softmax(result, name='act_prob')  # use softmax to convert to probability
 

@@ -73,24 +73,25 @@ class MJDeepQNetwork:
 
 	def __build_graph(self, learning_rate, reward_decay, dropout_rate):
 		def make_connection(inputs, is_train, dropout_rate):
-			# 3*34*8
-			conv_fh_1 = tf.layers.conv2d(inputs = inputs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-			# 1*32*8
-			conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
-			conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
+			# 3*32*16
+			conv_neighbor_1 = tf.layers.conv2d(inputs = inputs[:, 3:9, :, :], filters = 16, kernel_size = [2, 3], strides = [2, 1], padding = "valid", activation = tf.nn.relu)
+			# 1*30*16
+			conv_neighbor_2 = tf.layers.max_pooling2d(inputs = conv_neighbor_1, pool_size = [3, 3], strides = [1, 1], padding = "valid")
+			conv_neighbor_flat = tf.reshape(conv_neighbor_2, [-1, 30*16])
+
+			# 34
+			disposed_flat = tf.reshape(inputs[:, 2, :, :] + inputs[:, 4, :, :] + inputs[:, 6, :, :] + inputs[:, 8, :, :], [-1, 34])
+
+			# 64
+			hfh_flat = tf.reshape(inputs[:, 0:2, :, :], [-1, 34*2])
+
+			flat = tf.concat([hfh_flat, disposed_flat, conv_neighbor_flat], axis = 1)
 			
-			# 1*34*8
-			conv_discard = tf.layers.conv2d(inputs = inputs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
-			conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
+			dense_1 = tf.layers.dense(inputs = flat, units = 2048, activation = tf.nn.relu)
 
-			raw_hfh_flat = tf.reshape(inputs[:, 0:2, :, :], [-1, 2*34])
+			dense_2 = tf.layers.dense(inputs = dense_1, units = 1024, activation = tf.nn.relu)
 
-			flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
-			dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = is_train)
-
-			dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
-
-			return tf.layers.dense(inputs = dense, units = n_actions)
+			return tf.layers.dense(inputs = dense_2, units = n_actions)
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")

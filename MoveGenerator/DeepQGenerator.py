@@ -10,38 +10,18 @@ from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 display_name = "DeepQ"
 
 '''
-Deep Q Network model:
+Policy Gradient model:
 state:
-hand, 
-fixed_hand x 4,
-disposed_tile x 4
-34 * 9 * 1
+see utils.py
 
 actions:
 discarding any tile 34
 character_chow, character_pong, dots_chow, dots_pong, bamboo_chow, bamboo_pong, honor_pong, no_action
 = 42
 '''
-q_n_decisions = 42
-q_decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
 
-
-def qnetwork_encode_state(player, neighbors):
-	state = np.zeros((9, 34, 1))
-	for tile in player.hand:
-		state[0, Tile.convert_tile_index(tile), :] += 1
-
-	players = [player] + list(neighbors)
-	for i in range(len(players)):
-		p = players[i]
-		for _, _, tiles in p.fixed_hand:
-			for tile in tiles:
-				state[1 + i, Tile.convert_tile_index(tile), :] += 1
-
-		for tile in p.get_discarded_tiles():
-			state[5 + i, Tile.convert_tile_index(tile), :] += 1
-
-	return state
+n_decisions = 42
+decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
 
 class DeepQGenerator(MoveGenerator):
 	def __init__(self, player_name, q_network_path, is_train, display_tgboard = False, display_step = False):
@@ -113,20 +93,20 @@ class DeepQGenerator(MoveGenerator):
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
 		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = qnetwork_encode_state(player, neighbors)
+		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
 			self.update_transition(state)
 
-		valid_actions = [34 + q_decisions_.index("%s_chow"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
+		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
+		action_filter = np.full(n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
 		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 		
-		if action == q_decisions_.index("no_action"):
+		if action == decisions_.index("no_action"):
 			self.print_msg("%s chooses not to Chow %s [%.2f]."%(self.player_name, new_tile.symbol, value))
 			return False, None
 		else:
@@ -165,20 +145,20 @@ class DeepQGenerator(MoveGenerator):
 			location = "hand"
 
 		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = qnetwork_encode_state(player, neighbors)
+		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
 			self.update_transition(state)
 
-		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
+		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
+		action_filter = np.full(n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
 		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
 
-		if action == q_decisions_.index("no_action"):
+		if action == decisions_.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s [%.2f]."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_KONG")%(self.player_name, kong_tile.get_display_name(game.lang_code, is_short = False)))
@@ -199,19 +179,19 @@ class DeepQGenerator(MoveGenerator):
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
 		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = qnetwork_encode_state(player, neighbors)
+		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.q_network_waiting:
 			self.update_transition(state)
 
-		valid_actions = [34 + q_decisions_.index("%s_pong"%new_tile.suit), 34 + q_decisions_.index("no_action")]
-		action_filter = np.full(q_n_decisions, float("-inf"))
+		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
+		action_filter = np.full(n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
 		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
-		if action == q_decisions_.index("no_action"):
+		if action == decisions_.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s. [%.2f]"%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_PONG")%(self.player_name, new_tile.get_display_name(game.lang_code, is_short = False)))
@@ -250,7 +230,7 @@ class DeepQGenerator(MoveGenerator):
 		self.begin_decision()
 
 		fixed_hand, hand = player.fixed_hand, player.hand
-		state = qnetwork_encode_state(player, neighbors)
+		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.q_network_is_train and self.q_network_waiting:
 			self.update_transition(state)
@@ -265,7 +245,7 @@ class DeepQGenerator(MoveGenerator):
 		for tile in tiles:
 			valid_actions.append(Tile.convert_tile_index(tile))
 
-		action_filter = np.full(q_n_decisions, float("-inf"))
+		action_filter = np.full(n_decisions, float("-inf"))
 		action_filter[valid_actions] = 0
 
 		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.q_network_is_train, return_value = True)
@@ -278,4 +258,3 @@ class DeepQGenerator(MoveGenerator):
 			game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_DISCARD")%(self.player_name, drop_tile.get_display_name(game.lang_code, is_short = False)))
 
 		return drop_tile
-		
