@@ -72,11 +72,16 @@ class MJDeepQNetwork:
 		tf.reset_default_graph()
 
 	def __build_graph(self, learning_rate, reward_decay, dropout_rate):
-		def make_connection(inputs, is_train, dropout_rate):
+		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+		def make_connection(inputs, c_name):
+			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
 			# 3*32*16
-			conv_neighbor_1 = tf.layers.conv2d(inputs = inputs[:, 3:9, :, :], filters = 16, kernel_size = [2, 3], strides = [2, 1], padding = "valid", activation = tf.nn.relu)
+			filter_1 = tf.get_variable("filter_1", [2, 3, 1, 16], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [16], initializer = b_init, collections = collects)
+			conv_neighbor_1 = tf.nn.conv2d(input = inputs[:, 3:9, :, :], filter = filter_1, strides = [1, 2, 1, 1], padding = "VALID") + bias_1
+			
 			# 1*30*16
-			conv_neighbor_2 = tf.layers.max_pooling2d(inputs = conv_neighbor_1, pool_size = [3, 3], strides = [1, 1], padding = "valid")
+			conv_neighbor_2 = tf.nn.max_pool(conv_neighbor_1, [1, 3, 3, 1], [1, 1, 1, 1], padding = 'VALID') 
 			conv_neighbor_flat = tf.reshape(conv_neighbor_2, [-1, 30*16])
 
 			# 34
@@ -87,11 +92,19 @@ class MJDeepQNetwork:
 
 			flat = tf.concat([hfh_flat, disposed_flat, conv_neighbor_flat], axis = 1)
 			
-			dense_1 = tf.layers.dense(inputs = flat, units = 2048, activation = tf.nn.relu)
+			dense_weight_1 = tf.get_variable("dense_weight_1", [582, 2048], initializer = w_init, collections = collects)
+			dense_bias_1 = tf.get_variable("dense_bias_1", [2048], initializer = b_init, collections = collects)
+			
+			dense_1 = tf.nn.relu(tf.matmul(flat, dense_weight_1) + dense_bias_1)
 
-			dense_2 = tf.layers.dense(inputs = dense_1, units = 1024, activation = tf.nn.relu)
+			dense_weight_2 = tf.get_variable("dense_weight_2", [2048, 1024], initializer = w_init, collections = collects)
+			dense_bias_2 = tf.get_variable("dense_bias_2", [1024], initializer = b_init, collections = collects)
+			dense_2 = tf.nn.relu(tf.matmul(dense_1, dense_weight_2) + dense_bias_2)
 
-			return tf.layers.dense(inputs = dense_2, units = n_actions)
+			dense_weight_3 = tf.get_variable("dense_weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+			dense_bias_3 = tf.get_variable("dense_bias_3", [n_actions], initializer = b_init, collections = collects)
+			
+			return tf.matmul(dense_2, dense_weight_3) + dense_bias_3
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
@@ -101,11 +114,11 @@ class MJDeepQNetwork:
 		self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
 		
 		with tf.variable_scope("eval_net"):
-			self.__q_eval = make_connection(self.__s, self.__is_train, dropout_rate)
+			self.__q_eval = make_connection(self.__s, "eval_net_params")
 			self.__q_eval = self.__q_eval + self.__a_filter
 
 		with tf.variable_scope("target_net"):
-			self.__q_next = make_connection(self.__s_, self.__is_train, dropout_rate)
+			self.__q_next = make_connection(self.__s_, "target_net_params")
 			self.__q_next = self.__q_next + self.__a_filter
 
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
@@ -116,8 +129,8 @@ class MJDeepQNetwork:
 		self.__loss = tf.reduce_mean(tf.squared_difference(self.__q_target, self.__q_eval_wrt_a), name = "TD_error")
 		self.__train__op = tf.train.RMSPropOptimizer(learning_rate).minimize(self.__loss)
 
-		eval_net_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
-		target_net_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
+		eval_net_params = tf.get_collection("eval_net_params")
+		target_net_params = tf.get_collection("target_net_params")
 		self.__target_replace_op = [tf.assign(t, e) for t, e in zip(target_net_params, eval_net_params)]
 
 		tf.add_to_collection("q_eval", self.__q_eval)
