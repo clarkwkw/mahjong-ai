@@ -27,7 +27,7 @@ deep_q_model_paras = {
 }
 deep_q_model_dir = "rule_base_q_test"
 
-trainer_conf = ["deepq", "deepq", "deepq"]
+trainer_conf = ["random", "random", "random"]
 trainer_models = {
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -47,6 +47,12 @@ trainer_models = {
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
 			"is_train": False
+		}
+	},
+	"random": {
+		"class": MoveGenerator.RandomGenerator,
+		"parameters":{
+			"display_step": False
 		}
 	}
 }

@@ -7,11 +7,12 @@ from .TGHuman import TGHuman
 from .Rule_based_ai_q import RuleBasedAIQ
 from .DeepQGenerator import DeepQGenerator
 from .PGGenerator import PGGenerator
+from .RandomGenerator import RandomGenerator
 
 __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,
 	"RuleBasedAINaiveMCTSCpp": RuleBasedAINaiveMCTSCpp,
-	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy,
+	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy
 }
 
 def get_model_by_id(model_id):
