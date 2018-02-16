@@ -76,6 +76,7 @@ class MJDeepQNetwork:
 		def make_connection(state, action_filter, c_name):
 			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
 			# 3*32*16
+			'''
 			filter_1 = tf.get_variable("filter_1", [2, 3, 1, 16], initializer = w_init, collections = collects)
 			bias_1 = tf.get_variable("bias_1", [16], initializer = b_init, collections = collects)
 			conv_neighbor_1 = tf.nn.conv2d(input = state[:, 3:9, :, :], filter = filter_1, strides = [1, 2, 1, 1], padding = "VALID") + bias_1
@@ -103,14 +104,27 @@ class MJDeepQNetwork:
 
 			dense_weight_3 = tf.get_variable("dense_weight_3", [1024, n_actions], initializer = w_init, collections = collects)
 			dense_bias_3 = tf.get_variable("dense_bias_3", [n_actions], initializer = b_init, collections = collects)
-			
+			'''
+
+			state = tf.reshape(state, [-1, 9*34])
+			weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
+
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+
+			weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+
 			action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
 			action_bias_1 = tf.get_variable("action_bias_1", [n_actions], initializer = w_init, collections = collects)
-			action_dense_1 = tf.nn.relu(tf.matmul(action_filter, action_weight_1) + action_bias_1)
+			action_dense_1 = tf.sigmoid(tf.matmul(action_filter, action_weight_1) + action_bias_1)
 
 			action_weight_2 = tf.get_variable("action_weight_2", [n_actions, n_actions], initializer = w_init, collections = collects)
 
-			return tf.matmul(dense_2, dense_weight_3) + dense_bias_3 + tf.matmul(action_dense_1, action_weight_2)
+			return tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(action_dense_1, action_weight_2)
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
