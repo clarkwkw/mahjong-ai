@@ -79,13 +79,19 @@ class MJPolicyGradient:
 		weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
 		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
-		result = tf.matmul(layer_2, weight_3) + bias_3
+		action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
+		action_bias_1 = tf.get_variable("action_bias_1", [n_actions], initializer = w_init, collections = collects)
+		action_dense_1 = tf.sigmoid(tf.matmul(action_filter, action_weight_1) + action_bias_1)
+
+		action_weight_2 = tf.get_variable("action_weight_2", [n_actions, n_actions], initializer = w_init, collections = collects)
+
+		result = tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(action_dense_1, action_weight_2)
 
 		self.__all_act_prob = tf.nn.softmax(result)
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
-			neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = tf.multiply(result, self.__a_filter), labels = self.__acts)   # this is negative log of chosen action
+			neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = result, labels = self.__acts)   # this is negative log of chosen action
 			self.__loss = tf.reduce_mean(neg_log_prob * self.__vt)  # reward guided loss
 
 		with tf.name_scope('train'):
