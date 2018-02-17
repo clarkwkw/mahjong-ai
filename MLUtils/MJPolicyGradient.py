@@ -79,11 +79,9 @@ class MJPolicyGradient:
 		weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
 		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
-		result = tf.matmul(layer_2, weight_3)
+		result = tf.matmul(layer_2, weight_3) + bias_3
 
-		self.__all_act_prob = tf.multiply(tf.nn.softmax(result), self.__a_filter)
-		# renormalize prob
-		self.__all_act_prob = tf.divide(self.__all_act_prob, tf.reshape(tf.reduce_sum(self.__all_act_prob, axis = 1), (-1, 1)))
+		self.__all_act_prob = tf.nn.softmax(result)
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
@@ -113,6 +111,16 @@ class MJPolicyGradient:
 				self.__a_filter: action_filter[np.newaxis, :]
 			})
 
+		n_actions_avail = np.sum(action_filter > 0)
+		prob_weights = np.multiply(prob_weights, action_filter)
+		overall = prob_weights.sum(axis = 1)
+		zero_prob_entries = np.where(overall < 1e-6)[0]
+		if zero_prob_entries.shape[0] > 0:
+			action_indices = np.where(action_filter > 0)[0]
+			prob_weights[zero_prob_entries, action_indices] = 1.0/n_actions_avail
+			overall = prob_weights.sum(axis = 1)
+		
+		prob_weights /= overall[:, np.newaxis]
 		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
 		value = prob_weights[:, action]
 
