@@ -18,11 +18,11 @@ game_record = np.zeros((game_record_size, 4, 2))
 
 pg_model_paras = {
 	"learning_rate": 1e-3,
-	"reward_decay": 0.9
+	"reward_decay": 0.99
 }
 
 pg_model_dir = "pg_model_test"
-trainer_conf = ["policy_gradient", "policy_gradient", "policy_gradient"]
+trainer_conf = ["random", "random", "random"]
 trainer_models = {
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -42,6 +42,12 @@ trainer_models = {
 			"display_step": False,
 			"pg_model_path": pg_model_dir,
 			"is_train": False
+		}
+	},
+	"random": {
+		"class": MoveGenerator.RandomGenerator,
+		"parameters":{
+			"display_step": False
 		}
 	}
 }

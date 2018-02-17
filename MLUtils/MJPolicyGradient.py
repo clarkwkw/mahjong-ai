@@ -23,8 +23,8 @@ def get_MJPolicyGradient(path, **kwargs):
 	return loaded_models[path]
 
 class MJPolicyGradient:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95, dropout_rate = 0.1):
-		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], []
+	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95):
+		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
 
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
@@ -35,7 +35,7 @@ class MJPolicyGradient:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				self.__build_graph(learning_rate, dropout_rate)
+				self.__build_graph(learning_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
@@ -51,43 +51,43 @@ class MJPolicyGradient:
 				self.__obs = g.get_tensor_by_name("observations:0")
 				self.__acts = g.get_tensor_by_name("actions_num:0")
 				self.__vt = g.get_tensor_by_name("actions_value:0")
-				self.__is_train = g.get_tensor_by_name("is_train:0")
+				self.__a_filter = g.get_tensor_by_name("actions_filter:0")
 
 				self.__all_act_prob = tf.get_collection("all_act_prob")[0]
 				self.__loss = tf.get_collection("loss")[0]
 				self.__train__op = tf.get_collection("train_op")[0]
 
-	def __build_graph(self, learning_rate, dropout_rate):
+	def __build_graph(self, learning_rate):
+		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+		collects = [tf.GraphKeys.GLOBAL_VARIABLES]
+
 		with tf.name_scope('inputs'):
 			self.__obs = tf.placeholder(tf.float32, [None] + sample_shape, name = "observations")
 			self.__acts = tf.placeholder(tf.int32, [None, ], name = "actions_num")
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
-			self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
+			self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "actions_filter")
 
-		conv_neighbor_1 = tf.layers.conv2d(inputs = self.__obs[:, 3:9, :, :], filters = 16, kernel_size = [2, 3], strides = [2, 1], padding = "valid", activation = tf.nn.relu)
-		# 1*30*16
-		conv_neighbor_2 = tf.layers.max_pooling2d(inputs = conv_neighbor_1, pool_size = [3, 3], strides = [1, 1], padding = "valid")
-		conv_neighbor_flat = tf.reshape(conv_neighbor_2, [-1, 30*16])
+		state = tf.reshape(self.__obs, [-1, 9*34])
+		weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
+		bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+		layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
 
-		# 34
-		disposed_flat = tf.reshape(self.__obs[:, 2, :, :] + self.__obs[:, 4, :, :] + self.__obs[:, 6, :, :] + self.__obs[:, 8, :, :], [-1, 34])
+		weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+		bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+		layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-		# 64
-		hfh_flat = tf.reshape(self.__obs[:, 0:2, :, :], [-1, 34*2])
+		weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
-		flat = tf.concat([hfh_flat, disposed_flat, conv_neighbor_flat], axis = 1)
-		
-		dense_1 = tf.layers.dense(inputs = flat, units = 2048, activation = tf.nn.relu)
+		result = tf.matmul(layer_2, weight_3)
 
-		dense_2 = tf.layers.dense(inputs = dense_1, units = 1024, activation = tf.nn.relu)
-
-		result = tf.layers.dense(inputs = dense_2, units = n_actions)
-
-		self.__all_act_prob = tf.nn.softmax(result, name='act_prob')  # use softmax to convert to probability
+		self.__all_act_prob = tf.multiply(tf.nn.softmax(result), self.__a_filter)
+		# renormalize prob
+		self.__all_act_prob = tf.divide(self.__all_act_prob, tf.reshape(tf.reduce_sum(self.__all_act_prob, axis = 1), (-1, 1)))
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
-			neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = result, labels = self.__acts)   # this is negative log of chosen action
+			neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = tf.multiply(result, self.__a_filter), labels = self.__acts)   # this is negative log of chosen action
 			self.__loss = tf.reduce_mean(neg_log_prob * self.__vt)  # reward guided loss
 
 		with tf.name_scope('train'):
@@ -106,24 +106,13 @@ class MJPolicyGradient:
 		if action_filter is None:
 			action_filter = np.full(n_actions, 1.0)
 
-		n_actions_avail = np.sum(action_filter > 0)
 		prob_weights = self.__sess.run(
 			self.__all_act_prob, 
 			feed_dict = {
 				self.__obs: observation[np.newaxis, :],
-				self.__is_train: False
+				self.__a_filter: action_filter[np.newaxis, :]
 			})
 
-		prob_weights = np.multiply(prob_weights, action_filter)
-		overall = prob_weights.sum(axis = 1)
-
-		zero_prob_entries = np.where(overall < 1e-6)[0]
-		if zero_prob_entries.shape[0] > 0:
-			action_indices = np.where(action_filter > 0)[0]
-			prob_weights[zero_prob_entries, action_indices] = 1.0/n_actions_avail
-			overall = prob_weights.sum(axis = 1)
-		
-		prob_weights /= overall[:, np.newaxis]
 		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
 		value = prob_weights[:, action]
 
@@ -132,10 +121,11 @@ class MJPolicyGradient:
 
 		return action
 
-	def store_transition(self, state, action, reward):
+	def store_transition(self, state, action, reward, a_filter):
 		self.__ep_obs.append(state)
 		self.__ep_as.append(action)
 		self.__ep_rs.append(reward)
+		self.__ep_a_filter.append(a_filter)
 
 	def learn(self, display_cost = True):
 		def discount_and_norm_rewards():
@@ -165,11 +155,12 @@ class MJPolicyGradient:
 				self.__obs: np.stack(self.__ep_obs, axis = 0),
 				self.__acts: np.array(self.__ep_as),
 				self.__vt: discounted_ep_rs_norm,
-				self.__is_train: True
+				self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
 			}
 		)
 
-		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], [] 
+		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
+		 
 		if display_cost:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, loss))
 		self.__learn_step_counter += 1
