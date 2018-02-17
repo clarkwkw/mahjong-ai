@@ -118,13 +118,15 @@ class MJDeepQNetwork:
 			weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
 			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
+			'''
 			action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
 			action_bias_1 = tf.get_variable("action_bias_1", [n_actions], initializer = w_init, collections = collects)
 			action_dense_1 = tf.sigmoid(tf.matmul(action_filter, action_weight_1) + action_bias_1)
 
 			action_weight_2 = tf.get_variable("action_weight_2", [n_actions, n_actions], initializer = w_init, collections = collects)
+			'''
 
-			return tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(action_dense_1, action_weight_2)
+			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
 
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
