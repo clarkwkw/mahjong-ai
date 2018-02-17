@@ -81,7 +81,7 @@ class MJPolicyGradient:
 
 		action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
 		action_bias_1 = tf.get_variable("action_bias_1", [n_actions], initializer = w_init, collections = collects)
-		action_dense_1 = tf.sigmoid(tf.matmul(action_filter, action_weight_1) + action_bias_1)
+		action_dense_1 = tf.sigmoid(tf.matmul(self.__a_filter, action_weight_1) + action_bias_1)
 
 		action_weight_2 = tf.get_variable("action_weight_2", [n_actions, n_actions], initializer = w_init, collections = collects)
 
