@@ -10,7 +10,7 @@ from . import utils
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
-freq_model_save = 10000
+freq_model_save = None
 game_record_size = 100
 game_record_count = 0
 
@@ -77,6 +77,7 @@ def test(args):
 				exit(-1)
 
 		args.model_dir = pg_model_dir if args.model_dir is None else args.model_dir
+		freq_model_save = args.n_episodes//10
 	
 	elif args.action in ["test", "play"]:
 		if args.model_dir is None:
@@ -128,13 +129,13 @@ def test(args):
 																							game_record[:, 1, 0].mean()* 100, game_record[:, 1, 1].mean()* 100, 
 																							game_record[:, 2, 0].mean()* 100, game_record[:, 2, 1].mean()* 100, 
 																							game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
-		'''
-		if (i+1) % freq_model_save == 0:
+
+		if args.action == "train" and args.save_name is not None and (i+1) % freq_model_save == 0:
 			last_saved = i
 			path = args.save_name + "_%d"%(i + 1)
 			utils.makesure_dir_exists(path)
 			model.save(path)
-		'''
+
 
 	if args.action == "train" and args.save_name is not None:
 		if last_saved < args.n_episodes - 1:
