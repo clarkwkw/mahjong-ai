@@ -117,16 +117,6 @@ class MJPolicyGradient:
 				self.__a_filter: action_filter[np.newaxis, :]
 			})
 
-		n_actions_avail = np.sum(action_filter > 0)
-		prob_weights = np.multiply(prob_weights, action_filter)
-		overall = prob_weights.sum(axis = 1)
-		zero_prob_entries = np.where(overall < 1e-6)[0]
-		if zero_prob_entries.shape[0] > 0:
-			action_indices = np.where(action_filter > 0)[0]
-			prob_weights[zero_prob_entries, action_indices] = 1.0/n_actions_avail
-			overall = prob_weights.sum(axis = 1)
-		
-		prob_weights /= overall[:, np.newaxis]
 		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
 		value = prob_weights[:, action]
 

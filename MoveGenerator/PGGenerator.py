@@ -91,7 +91,21 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action = None
+		while action is None:
+			if action is not None:
+				self.__update_history(state, action, action_filter)
+				self.update_transition(state, -10)
+			
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+			
+			if action in valid_actions:
+				break
+			elif not self.pg_model_is_train:
+				action = random.choice(valid_actions)
+				
+			action = None
+
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
@@ -143,7 +157,21 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action = None
+		while action is None:
+			if action is not None:
+				self.__update_history(state, action, action_filter)
+				self.update_transition(state, -10)
+			
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+			
+			if action in valid_actions:
+				break
+			elif not self.pg_model_is_train:
+				action = random.choice(valid_actions)
+
+			action = None
+
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
@@ -177,7 +205,21 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action = None
+		while action is None:
+			if action is not None:
+				self.__update_history(state, action, action_filter)
+				self.update_transition(state, -10)
+			
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+			
+			if action in valid_actions:
+				break
+			elif not self.pg_model_is_train:
+				action = random.choice(valid_actions)
+
+			action = None
+
 		self.__update_history(state, action, action_filter)
 
 		self.end_decision()
@@ -237,8 +279,21 @@ class PGGenerator(MoveGenerator):
 
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		action = None
+		while action is None:
+			if action is not None:
+				self.__update_history(state, action, action_filter)
+				self.update_transition(state, -10)
+			
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+			
+			if action in valid_actions:
+				break
+			elif not self.pg_model_is_train:
+				action = random.choice(valid_actions)
 
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+			action = None
+
 		self.__update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
 		self.print_msg("%s [%s] chooses to drop %s. [%.2f]"%(self.player_name, display_name, drop_tile.symbol, value))
