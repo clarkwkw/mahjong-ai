@@ -107,6 +107,7 @@ class DeepQGenerator(MoveGenerator):
 				break
 			elif not self.q_network_is_train:
 				action = random.choice(valid_actions)
+				break
 
 		self.__update_history(state, action, action_filter)
 
@@ -171,6 +172,7 @@ class DeepQGenerator(MoveGenerator):
 				break
 			elif not self.q_network_is_train:
 				action = random.choice(valid_actions)
+				break
 
 		self.__update_history(state, action, action_filter)
 
@@ -216,6 +218,7 @@ class DeepQGenerator(MoveGenerator):
 				break
 			elif not self.q_network_is_train:
 				action = random.choice(valid_actions)
+				break
 
 		self.__update_history(state, action, action_filter)
 
@@ -288,6 +291,7 @@ class DeepQGenerator(MoveGenerator):
 				break
 			elif not self.q_network_is_train:
 				action = random.choice(valid_actions)
+				break
 
 		self.__update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
