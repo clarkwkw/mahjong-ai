@@ -19,6 +19,7 @@ def get_MJPolicyGradient(path, **kwargs):
 		try:
 			loaded_models[path] = MJPolicyGradient.load(path)
 		except Exception as e:
+			print(e)
 			loaded_models[path] = MJPolicyGradient(**kwargs)
 	return loaded_models[path]
 
@@ -48,14 +49,14 @@ class MJPolicyGradient:
 
 				saver = tf.train.import_meta_graph(from_save.rstrip("/") + "/" + save_file_name + ".meta")
 				saver.restore(self.__sess, from_save.rstrip("/") + "/" + save_file_name)
-				self.__obs = g.get_tensor_by_name("observations:0")
-				self.__acts = g.get_tensor_by_name("actions_num:0")
-				self.__vt = g.get_tensor_by_name("actions_value:0")
-				self.__a_filter = g.get_tensor_by_name("actions_filter:0")
+				self.__obs = g.get_tensor_by_name("inputs/observations:0")
+				self.__acts = g.get_tensor_by_name("inputs/actions_num:0")
+				self.__vt = g.get_tensor_by_name("inputs/actions_value:0")
+				self.__a_filter = g.get_tensor_by_name("inputs/actions_filter:0")
 
 				self.__all_act_prob = tf.get_collection("all_act_prob")[0]
 				self.__loss = tf.get_collection("loss")[0]
-				self.__train__op = tf.get_collection("train_op")[0]
+				self.__train_op = tf.get_collection("train_op")[0]
 
 	def __build_graph(self, learning_rate):
 		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
