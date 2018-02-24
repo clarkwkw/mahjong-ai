@@ -81,7 +81,11 @@ def test(args):
 			if response != "y":
 				exit(-1)
 
-		args.model_dir = deep_q_model_dir if args.model_dir is None else args.model_dir
+		if args.model_dir is None:
+			args.model_dir = deep_q_model_dir
+		else:
+			trainer_models["deepq"]["parameters"]["q_network_path"] = args.model_dir
+			
 		freq_model_save = args.n_episodes//10
 
 	elif args.action in ["test", "play"]:
