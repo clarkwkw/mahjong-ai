@@ -40,8 +40,22 @@ _models = {
 	"mjdeepq":{
 		"class": MoveGenerator.DeepQGenerator,
 		"parameters":{
-			"q_network_path": "resources/models/mjdeepq",
+			"q_network_path": "resources/models/mjdeepq_rand",
 			"is_train": False,
+			"display_step": False
+		}
+	},
+	"policy_gradient":{
+		"class": MoveGenerator.PGGenerator,
+		"parameters":{
+			"pg_model_path": "resources/models/mjpg_rand",
+			"is_train": False,
+			"display_step": False
+		}
+	},
+	"rand":{
+		"class": MoveGenerator.RandomGenerator,
+		"parameters":{
 			"display_step": False
 		}
 	}
@@ -73,13 +87,13 @@ def parse_args(args_list):
 	parser.add_argument("--m2", type = str, choices = _models.keys(), default = "heuristics", help = "Model 2")
 	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
 	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
-	parser.add_argument('--data_dir', type = str, default = "", help = "Output directory of generated data")
+	parser.add_argument('--data_dir', type = str, default = None, help = "Output directory of generated data")
 
 	args = parser.parse_args(args_list)
 
 	print("parallel value:", args.parallel)
 	global _data_dir
-	_data_dir = None if len(args.data_dir) == 0 else args.data_dir
+	_data_dir = args.data_dir
 	print("data_dir:", _data_dir)
 	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
 	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
@@ -118,7 +132,7 @@ def test(args):
 	try:
 		for i in range(_n_game):
 			players = random.sample(_player_master_list, k = len(_player_master_list))
-			game = Game.Game(players, rand_record = _data_dir is not None)
+			game = Game.Game(players, rand_record = _data_dir)
 			for j in range(_n_round):
 				winner, losers, penalty = game.start_game()
 				winner_score = 0
