@@ -44,6 +44,7 @@ trainer_models = {
 	"deepq": {
 		"class": MoveGenerator.DeepQGenerator,
 		"parameters": {
+			"is_deep": True,
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
 			"is_train": False
