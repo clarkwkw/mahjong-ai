@@ -18,6 +18,7 @@ game_record_count = 0
 game_record = np.zeros((game_record_size, 4, 2))
 
 deep_q_model_paras = {
+	"is_deep": True,
 	"learning_rate": 1e-3,
 	"reward_decay": 0.9, 
 	"e_greedy": 0.8,
@@ -28,7 +29,6 @@ deep_q_model_paras = {
 deep_q_model_dir = "rule_base_q_test"
 
 trainer_conf = ["random", "random", "random"]
-is_deep = True
 
 trainer_models = {
 	"heuristics": {
@@ -46,7 +46,6 @@ trainer_models = {
 	"deepq": {
 		"class": MoveGenerator.DeepQGenerator,
 		"parameters": {
-			"is_deep": is_deep,
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
 			"is_train": False
@@ -107,7 +106,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_deep = is_deep, is_train = args.action == "train", display_step = args.action == "play")
+	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(deepq_player)
 
 	if args.action != "play":

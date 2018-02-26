@@ -94,14 +94,14 @@ class MJDeepQNetwork:
 		def make_deep_connection(state, action_filter, c_name):
 			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
 			# 1*27*1
-			hand_negated = tf.multiply(state[:, 0, :, :], tf.constant(-1.0))
+			hand_negated = tf.multiply(state[:, 0:1, :, :], tf.constant(-1.0))
 			chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
 			chows = tf.multiply(hand_negated, tf.constant(-1.0))
 			
-			tile_used = tf.reduce_sum(state[:, 1:, :, :], axis = 1)
+			tile_used = tf.reduce_sum(state[:, 1:, :, :], axis = 1, keep_dims = True)
 
 			input_all = tf.concat([state[:, 0:2, :, :], chows, tile_used], axis = 1)
-			input_flat = tf.reshape([-1, 4*34])
+			input_flat = tf.reshape(input_all, [-1, 4*34])
 
 			weight_1 = tf.get_variable("weight_1", [4*34, 3072], initializer = w_init, collections = collects)
 			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
