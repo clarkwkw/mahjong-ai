@@ -1,4 +1,3 @@
-from .AbstractDNN import AbstractDNN
 from . import utils
 import tensorflow as tf
 import random

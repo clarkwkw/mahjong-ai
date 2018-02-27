@@ -24,7 +24,7 @@ def get_MJPolicyGradient(path, **kwargs):
 	return loaded_models[path]
 
 class MJPolicyGradient:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95):
+	def __init__(self, from_save = None, is_deep = None, learning_rate = 0.01, reward_decay = 0.95):
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
 
 		self.__graph = tf.Graph()
@@ -36,7 +36,7 @@ class MJPolicyGradient:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				self.__build_graph(learning_rate)
+				self.__build_graph(is_deep, learning_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
@@ -58,7 +58,7 @@ class MJPolicyGradient:
 				self.__loss = tf.get_collection("loss")[0]
 				self.__train_op = tf.get_collection("train_op")[0]
 
-	def __build_graph(self, learning_rate):
+	def __build_graph(self, is_deep, learning_rate):
 		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
 		collects = [tf.GraphKeys.GLOBAL_VARIABLES]
 
@@ -68,14 +68,33 @@ class MJPolicyGradient:
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
 			self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "actions_filter")
 
-		state = tf.reshape(self.__obs, [-1, 9*34])
-		weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
-		bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
-		layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
+		if not is_deep:
+			state = tf.reshape(self.__obs, [-1, 9*34])
+			weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
 
-		weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
-		bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
-		layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+		else:
+			state = self.__obs
+			hand_negated = tf.multiply(state[:, 0:1, :, :], tf.constant(-1.0))
+			chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
+			chows = tf.multiply(hand_negated, tf.constant(-1.0))
+			
+			tile_used = tf.reduce_sum(state[:, 1:, :, :], axis = 1, keep_dims = True)
+
+			input_all = tf.concat([state[:, 0:2, :, :], chows, tile_used], axis = 1)
+			input_flat = tf.reshape(input_all, [-1, 4*34])
+
+			weight_1 = tf.get_variable("weight_1", [4*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
+
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
 		weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
 		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
@@ -175,7 +194,8 @@ class MJPolicyGradient:
 	def save(self, save_dir):
 		paras_dict = {
 			"__reward_decay": self.__reward_decay,
-			"__learn_step_counter": self.__learn_step_counter
+			"__learn_step_counter": self.__learn_step_counter,
+			"__is_deep": self.__is_deep
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

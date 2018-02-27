@@ -17,6 +17,7 @@ game_record_count = 0
 game_record = np.zeros((game_record_size, 4, 2))
 
 pg_model_paras = {
+	"is_deep": True,
 	"learning_rate": 1e-3,
 	"reward_decay": 0.99
 }
@@ -77,7 +78,7 @@ def test(args):
 				exit(-1)
 
 		if args.model_dir is None:
-			args.model_dir = deep_q_model_dir
+			args.model_dir = pg_model_dir
 		else:
 			trainer_models["policy_gradient"]["parameters"]["pg_model_path"] = args.model_dir
 			
