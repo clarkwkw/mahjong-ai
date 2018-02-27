@@ -40,6 +40,7 @@ class MJPolicyGradient:
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
+				self.__is_deep = is_deep
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
