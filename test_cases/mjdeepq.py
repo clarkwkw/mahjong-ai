@@ -140,13 +140,13 @@ def test(args):
 																							game_record[:, 1, 0].mean()* 100, game_record[:, 1, 1].mean()* 100, 
 																							game_record[:, 2, 0].mean()* 100, game_record[:, 2, 1].mean()* 100, 
 																							game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
-
+		'''
 		if args.action == "train" and args.save_name is not None and (i+1) % freq_model_save == 0:
 			last_saved = i
 			path = args.save_name + "_%d"%(i + 1)
 			utils.makesure_dir_exists(path)
 			model.save(path)
-
+		'''
 
 	if args.action == "train" and args.save_name is not None:
 		if last_saved < args.n_episodes - 1:
