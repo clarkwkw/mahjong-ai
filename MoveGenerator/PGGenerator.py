@@ -19,6 +19,13 @@ discarding any tile 34
 character_chow, character_pong, dots_chow, dots_pong, bamboo_chow, bamboo_pong, honor_pong, no_action
 = 42
 '''
+
+REWARD_VICTORY = 300
+REWARD_DRAW = 0
+REWARD_LOSE = 0
+REWARD_INVALID_DECISION = -1
+REWARD_NON_TERMINAL = 0
+
 n_decisions = 42
 decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
 
@@ -41,12 +48,12 @@ class PGGenerator(MoveGenerator):
 
 	def reset_new_game(self):
 		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition(-50)
+			self.update_transition(REWARD_DRAW)
 			self.pg_model_waiting = False
 
 	def notify_loss(self, score):
 		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition(-100)
+			self.update_transition(REWARD_LOSE)
 			self.pg_model_waiting = False
 
 	def __update_history(self, state, action, action_filter):
@@ -86,7 +93,7 @@ class PGGenerator(MoveGenerator):
 		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.pg_model_waiting:
-			self.update_transition()
+			self.update_transition(REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -96,7 +103,7 @@ class PGGenerator(MoveGenerator):
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
 			self.__update_history(state, action, action_filter)
-			self.update_transition(-10)
+			self.update_transition(REWARD_INVALID_DECISION)
 
 		self.__update_history(state, action, action_filter)
 
@@ -144,7 +151,7 @@ class PGGenerator(MoveGenerator):
 		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.pg_model_waiting:
-			self.update_transition()
+			self.update_transition(REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -154,7 +161,7 @@ class PGGenerator(MoveGenerator):
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
 			self.__update_history(state, action, action_filter)
-			self.update_transition(-10)
+			self.update_transition(REWARD_INVALID_DECISION)
 
 		self.__update_history(state, action, action_filter)
 
@@ -184,7 +191,7 @@ class PGGenerator(MoveGenerator):
 		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.pg_model_waiting:
-			self.update_transition()
+			self.update_transition(REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -194,7 +201,7 @@ class PGGenerator(MoveGenerator):
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
 			self.__update_history(state, action, action_filter)
-			self.update_transition(-10)
+			self.update_transition(REWARD_INVALID_DECISION)
 			
 		self.__update_history(state, action, action_filter)
 
@@ -211,7 +218,7 @@ class PGGenerator(MoveGenerator):
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		self.begin_decision()
 		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition(100)
+			self.update_transition(REWARD_VICTORY)
 
 		fixed_hand, hand = player.fixed_hand, player.hand
 		if self.display_step:
@@ -241,7 +248,7 @@ class PGGenerator(MoveGenerator):
 		state = utils.dnn_encode_state(player, neighbors)
 
 		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition()
+			self.update_transition(REWARD_NON_TERMINAL)
 
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
@@ -260,7 +267,7 @@ class PGGenerator(MoveGenerator):
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
 			self.__update_history(state, action, action_filter)
-			self.update_transition(-10)
+			self.update_transition(REWARD_INVALID_DECISION)
 
 		self.__update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
