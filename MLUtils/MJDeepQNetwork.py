@@ -30,6 +30,8 @@ class MJDeepQNetwork:
 	def __init__(self, from_save = None, is_deep = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, dropout_rate = 0.1, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
+		self.__is_deep = False
+		
 		if gpu_usage_w_limit:
 			self.__config.gpu_options.allow_growth = True
 			self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5

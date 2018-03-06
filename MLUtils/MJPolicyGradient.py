@@ -26,7 +26,8 @@ def get_MJPolicyGradient(path, **kwargs):
 class MJPolicyGradient:
 	def __init__(self, from_save = None, is_deep = None, learning_rate = 0.01, reward_decay = 0.95):
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
-
+		self.__is_deep = False
+		
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		if gpu_usage_w_limit:
