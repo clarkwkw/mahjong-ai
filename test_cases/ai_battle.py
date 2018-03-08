@@ -92,7 +92,9 @@ _freezed_states = {
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("m1", type = str, choices = _models.keys(), help = "Model 1")
-	parser.add_argument("--m2", type = str, choices = _models.keys(), default = "heuristics", help = "Model 2")
+	parser.add_argument("m2", type = str, choices = _models.keys(), help = "Model 2")
+	parser.add_argument("m3", type = str, choices = _models.keys(), help = "Model 3")
+	parser.add_argument("m4", type = str, choices = _models.keys(), help = "Model 4")
 	parser.add_argument("--mcts_iter", type = int, default = 1000, help = "No. of iterations for MCTS algorithm")
 	parser.add_argument('--parallel', action = 'store_true', help = "Execute parallelized model")
 	parser.add_argument('--data_dir', type = str, default = None, help = "Output directory of generated data")
@@ -103,23 +105,22 @@ def parse_args(args_list):
 	global _data_dir
 	_data_dir = args.data_dir
 	print("data_dir:", _data_dir)
-	modify_player_model(0, args.m1, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
-	modify_player_model(1, args.m2, parallel = args.parallel, mcts_max_iter = args.mcts_iter)
-
+	for i in range(4):
+		modify_player_model(i, vars(args)["m%d"%(i+1)], parallel = args.parallel, mcts_max_iter = args.mcts_iter)
+	
 def modify_player_model(model_index, model_str, **kwargs):
-	for i in range(2):
-		player_meta = (_models[model_str]["class"], dict(_models[model_str]["parameters"]))
-		player_meta[1]["player_name"] = _player_names[2 * i + model_index]
-		for arg, value in kwargs.items():
-			if arg in player_meta[1]:
-				player_meta[1][arg] = value
+	player_meta = (_models[model_str]["class"], dict(_models[model_str]["parameters"]))
+	player_meta[1]["player_name"] = _player_names[model_index]
+	for arg, value in kwargs.items():
+		if arg in player_meta[1]:
+			player_meta[1][arg] = value
 
-		_player_model_strs[2 * i + model_index] = model_str
-		if "parallel" in player_meta[1]:
-			_player_model_strs[2 * i + model_index] += "-P" if "parallel" in  player_meta[1] and player_meta[1]["parallel"] else "-NP"
-		if "mcts_max_iter" in player_meta[1]:
-			_player_model_strs[2 * i + model_index] += "-"+str(player_meta[1]["mcts_max_iter"])
-		_player_parameters[2 * i + model_index] = player_meta
+	_player_model_strs[model_index] = model_str
+	if "parallel" in player_meta[1]:
+		_player_model_strs[model_index] += "-P" if "parallel" in  player_meta[1] and player_meta[1]["parallel"] else "-NP"
+	if "mcts_max_iter" in player_meta[1]:
+		_player_model_strs[model_index] += "-"+str(player_meta[1]["mcts_max_iter"])
+	_player_parameters[model_index] = player_meta
 
 def test(args):
 	global _freezed_count, _data_dir
