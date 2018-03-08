@@ -1,16 +1,10 @@
 import os
 os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1,2"
-import Game
-import Player
-import MoveGenerator
-import Tile
-import ScoringRules
 import test_cases
 import argparse
 import traceback
 import importlib
-import MLUtils
 from timeit import default_timer as timer
 
 _test_cases_dir = "test_cases"
