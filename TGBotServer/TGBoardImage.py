@@ -2,8 +2,12 @@
 The credit of the background and tiles images goes to the project: masylum/whatajong
 https://github.com/masylum/whatajong
 '''
+try:
+	from PIL import Image, ImageFont, ImageDraw
+	PIL_IMPORTED = True
+except:
+	PIL_IMPORTED = False
 
-from PIL import Image, ImageFont, ImageDraw
 import Tile
 import subprocess
 from .TGBoardSettings import *
@@ -172,6 +176,9 @@ class TGBoard:
 		return buffered_reader
 		
 def generate_TG_board(lang_code, player_name, fixed_hand, hand, neighbors, game, new_tile = None, print_stolen_tiles = False):
+	global PIL_IMPORTED
+	if not PIL_IMPORTED:
+		raise Exception("failed to import PIL")
 	board = TGBoard()
 	board.add_aligned_line(get_text(lang_code, "TITLE_GAME")%(get_tile_name(lang_code, "honor", game.game_wind), game.deck_size))
 	
@@ -229,6 +236,9 @@ def generate_TG_board(lang_code, player_name, fixed_hand, hand, neighbors, game,
 
 # extra_tile: (player, tile)
 def generate_TG_end_board(lang_code, players, game, center_player, extra_tile = None):
+	global PIL_IMPORTED
+	if not PIL_IMPORTED:
+		raise Exception("failed to import PIL")
 	board = TGBoard()
 	board.add_aligned_line(get_text(lang_code, "TITLE_GAME")%(get_tile_name(lang_code, "honor", game.game_wind), game.deck_size))
 	center_player_index = players.index(center_player)
