@@ -2,10 +2,11 @@ import random
 import Tile
 import numpy as np
 
+rand_record_opts = ["all", "once", None]
 class Game(object):
 	def __init__(self, players, rand_record = None, **rand_record_constraints):
-		if not (rand_record in ["all", "once", None]):
-			raise Exception("rand_record must be one of %s"%rand_record)
+		if rand_record not in rand_record_opts:
+			raise Exception("rand_record must be one of %s, got %s"%(rand_record_opts, rand_record))
 		self.__players = players
 		self.__deck = None
 		self.__started = False

@@ -40,7 +40,7 @@ _models = {
 	"mjdeepq":{
 		"class": MoveGenerator.DeepQGenerator,
 		"parameters":{
-			"q_network_path": "resources/models/mjdeepq_rand",
+			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
 			"is_train": False,
 			"display_step": False
 		}
@@ -48,7 +48,7 @@ _models = {
 	"policy_gradient":{
 		"class": MoveGenerator.PGGenerator,
 		"parameters":{
-			"pg_model_path": "resources/models/mjpg_rand",
+			"pg_model_path": "resources/models/balance_reward/flat_mjpg_rand",
 			"is_train": False,
 			"display_step": False
 		}
@@ -160,7 +160,7 @@ def test(args):
 				print("Game #{:04d}-{:02d}:\t{:s}".format(i, j, '\t'.join(score_strs)))
 				
 				if _data_dir is not None:
-					state = game.freezed_state
+					state, _ = game.freezed_state
 					if state is not None:
 						for key in _freezed_states:
 							if key == "winner_score":
