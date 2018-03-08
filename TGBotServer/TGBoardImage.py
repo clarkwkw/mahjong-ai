@@ -15,8 +15,8 @@ from TGLanguage import get_text, get_tile_name
 import io
 
 TILES_IMG = {}
-BG_IMG = Image.open(BG_IMG_PATH)
-FONT = ImageFont.truetype(FONT_FILE, FONT_SIZE)
+BG_IMG = Image.open(BG_IMG_PATH) if PIL_IMPORTED else None
+FONT = ImageFont.truetype(FONT_FILE, FONT_SIZE)  if PIL_IMPORTED else None
 DIRECTION_INT = {"left": 1, "right": -1}
 
 board_viewer = None
