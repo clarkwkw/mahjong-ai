@@ -143,13 +143,13 @@ def test(args):
 		'''
 		if args.action == "train" and args.save_name is not None and (i+1) % freq_model_save == 0:
 			last_saved = i
-			path = args.save_name + "_%d"%(i + 1)
+			path = args.save_name.rstrip("/") + "_%d"%(i + 1)
 			utils.makesure_dir_exists(path)
 			model.save(path)
 		'''
 
 	if args.action == "train" and args.save_name is not None:
 		if last_saved < args.n_episodes - 1:
-			path = args.save_name + "_%d"%args.n_episodes
+			path = args.save_name.rstrip("/") + "_%d"%args.n_episodes
 			utils.makesure_dir_exists(path)
 			model.save(path)

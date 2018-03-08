@@ -71,6 +71,7 @@ _player_master_list = []
 _player_model_strs = [0, 0, 0, 0]
 _data_dir = None
 _freezed_count = 0
+'''
 _freezed_states = {
 	"remaining": [],
 	"disposed_tiles_matrix": [],
@@ -80,7 +81,10 @@ _freezed_states = {
 	"winner": [],
 	"winner_score": []
 }
-
+'''
+_freezed_states = {
+	"remaining": []
+}
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("m1", type = str, choices = _models.keys(), help = "Model 1")
@@ -154,10 +158,12 @@ def test(args):
 				if _data_dir is not None:
 					state = game.freezed_state
 					if state is not None:
-						_freezed_states["winner_score"].append(winner_score)
 						for key in _freezed_states:
-							if key != "winner_score":
+							if key == "winner_score":
+								_freezed_states["winner_score"].append(winner_score)
+							else:
 								_freezed_states[key].append(state[key])
+
 						_freezed_count += 1
 
 	except:
