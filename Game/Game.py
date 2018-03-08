@@ -45,13 +45,11 @@ class Game(object):
 			return None, None
 
 		combined_record = {}
-		n_records = 0
 
 		for key, matrices in self.__record.items():
 			combined_record[key] = np.stack(matrices, axis = 0)
-			n_records = len(matrices)
 
-		return combined_record, n_records
+		return combined_record, self.__mem_count
 
 	def start_game(self):
 		if self.__started:
@@ -74,7 +72,7 @@ class Game(object):
 			self.__freeze_state_init()
 		
 		while len(self.__deck) > 0:
-			if self.__rand_record == "all" or (self.__rand_record == "once" and len(self.__deck) == save_round):
+			if self.__rand_record == "all" or (self.__rand_record == "once" and len(self.__deck) == save_round and self.__mem_count == 0):
 				self.__freeze_state()
 
 			cur_player = self.__players[cur_player_id]
