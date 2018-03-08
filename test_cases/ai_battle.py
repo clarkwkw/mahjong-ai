@@ -69,6 +69,7 @@ _n_round = 8
 _player_parameters = [0, 0, 0, 0]
 _player_master_list = []
 _player_model_strs = [0, 0, 0, 0]
+_remaining_tiles = 0
 # how frequent should the data be collected?
 # once: collected at the end of the game
 # all: collected after a move has been made
@@ -123,7 +124,7 @@ def modify_player_model(model_index, model_str, **kwargs):
 	_player_parameters[model_index] = player_meta
 
 def test(args):
-	global _freezed_count, _data_dir
+	global _freezed_count, _data_dir, _remaining_tiles
 	ex = None
 	players = []
 	game = None
@@ -144,6 +145,7 @@ def test(args):
 			game = Game.Game(players, rand_record = _data_freq if _data_dir is not None else None)
 			for j in range(_n_round):
 				winner, losers, penalty = game.start_game()
+				_remaining_tiles = (_remaining_tiles*(i*_n_round + j) + game.deck_size)/(i*_n_round + j + 1)
 				winner_score = 0
 				if winner is not None:
 					index_winner = _player_master_list.index(winner)
@@ -175,6 +177,7 @@ def test(args):
 		traceback.print_exc()
 	print("Average      :\t{:4.2f}\t{:4.2f}\t{:4.2f}\t{:4.2f}".format(scoring_matrix[:, :, 0].mean(), scoring_matrix[:, :, 1].mean(), scoring_matrix[:, :, 2].mean(), scoring_matrix[:, :, 3].mean()))
 	print("Total        :\t{:4.0f}\t{:4.0f}\t{:4.0f}\t{:4.0f}".format(scoring_matrix[:, :, 0].sum(), scoring_matrix[:, :, 1].sum(), scoring_matrix[:, :, 2].sum(), scoring_matrix[:, :, 3].sum()))
+	print("Average no. of remaining tiles: %.2f"%_remaining_tiles)
 	print("Average time spent on deciding which tile to discard:")
 
 	for player in _player_master_list:
