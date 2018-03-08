@@ -69,6 +69,10 @@ _n_round = 8
 _player_parameters = [0, 0, 0, 0]
 _player_master_list = []
 _player_model_strs = [0, 0, 0, 0]
+# how frequent should the data be collected?
+# once: collected at the end of the game
+# all: collected after a move has been made
+_data_freq = "once"
 _data_dir = None
 _freezed_count = 0
 '''
@@ -136,7 +140,7 @@ def test(args):
 	try:
 		for i in range(_n_game):
 			players = random.sample(_player_master_list, k = len(_player_master_list))
-			game = Game.Game(players, rand_record = _data_dir)
+			game = Game.Game(players, rand_record = _data_freq if _data_dir is not None else None)
 			for j in range(_n_round):
 				winner, losers, penalty = game.start_game()
 				winner_score = 0
