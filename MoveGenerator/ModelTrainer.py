@@ -4,11 +4,11 @@ from . import utils
 import numpy as np
 import Tile
 
-REWARD_VICTORY = 300
-REWARD_DRAW = 0
-REWARD_LOSE = 0
+REWARD_VICTORY = 10
+REWARD_DRAW = 10
+REWARD_LOSE = 10
 REWARD_INVALID_DECISION = -1
-REWARD_NON_TERMINAL = 0
+REWARD_NON_TERMINAL = 10
 
 n_decisions = 42
 decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
