@@ -127,7 +127,7 @@ class MJPolicyGradient:
 	def learn_step_counter(self):
 		return self.__learn_step_counter
 
-	def choose_action(self, observation, action_filter = None, return_value = False):
+	def choose_action(self, observation, action_filter = None, return_value = False, strict_filter = False):
 
 		if action_filter is None:
 			action_filter = np.full(n_actions, 1.0)
@@ -138,8 +138,16 @@ class MJPolicyGradient:
 				self.__obs: observation[np.newaxis, :],
 				self.__a_filter: action_filter[np.newaxis, :]
 			})
-
-		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
+		if strict_filter:
+			valid_actions = np.where(action_filter > 0)[0]
+			prob_weights_reduced = prob_weights.ravel()[valid_actions]
+			if prob_weights_reduced.sum() < 1e-5:
+				prob_weights_reduced = np.full(prob_weights_reduced.shape[0], 1.0/prob_weights_reduced.shape[0])
+			else:
+				prob_weights_reduced = prob_weights_reduced / prob_weights_reduced.sum()
+			action = np.random.choice(valid_actions.tolist(), p = prob_weights_reduced)
+		else:
+			action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
 		value = prob_weights[:, action]
 
 		if return_value:

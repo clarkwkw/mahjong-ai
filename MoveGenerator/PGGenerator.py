@@ -101,12 +101,15 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = not self.is_train)
 		
 		if action not in valid_actions:
-			action = random.choice(valid_actions)
-			self.update_history(state, action, action_filter)
-			self.update_transition(None, REWARD_INVALID_DECISION)
+			if is_train:
+				action = random.choice(valid_actions)
+				self.update_history(state, action, action_filter)
+				self.update_transition(None, REWARD_INVALID_DECISION)
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 
@@ -159,12 +162,15 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = not self.is_train)
 		
 		if action not in valid_actions:
-			action = random.choice(valid_actions)
-			self.update_history(state, action, action_filter)
-			self.update_transition(None, REWARD_INVALID_DECISION)
+			if is_train:
+				action = random.choice(valid_actions)
+				self.update_history(state, action, action_filter)
+				self.update_transition(None, REWARD_INVALID_DECISION)
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 
@@ -199,12 +205,15 @@ class PGGenerator(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = not self.is_train)
 		
 		if action not in valid_actions:
-			action = random.choice(valid_actions)
-			self.update_history(state, action, action_filter)
-			self.update_transition(None, REWARD_INVALID_DECISION)
+			if is_train:
+				action = random.choice(valid_actions)
+				self.update_history(state, action, action_filter)
+				self.update_transition(None, REWARD_INVALID_DECISION)
+			else:
+				raise Exception("Invalid action when not training")
 			
 		self.update_history(state, action, action_filter)
 
@@ -265,12 +274,15 @@ class PGGenerator(MoveGenerator):
 
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
-		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True)
+		action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = not self.is_train)
 		
 		if action not in valid_actions:
-			action = random.choice(valid_actions)
-			self.update_history(state, action, action_filter)
-			self.update_transition(None, REWARD_INVALID_DECISION)
+			if is_train:
+				action = random.choice(valid_actions)
+				self.update_history(state, action, action_filter)
+				self.update_transition(None, REWARD_INVALID_DECISION)
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)

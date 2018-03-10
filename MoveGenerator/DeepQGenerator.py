@@ -110,13 +110,15 @@ class DeepQGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True)
+			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
 			if action in valid_actions:
 				break
-			elif not self.is_train:
+			elif self.is_train:
 				action = random.choice(valid_actions)
 				break
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 
@@ -175,13 +177,15 @@ class DeepQGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True)
+			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
 			if action in valid_actions:
 				break
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 
@@ -215,19 +219,22 @@ class DeepQGenerator(MoveGenerator):
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
+		action_filter[valid_actions] = 1
 		action = None
 		while True:
 			if action is not None:
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True)
+			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
 			if action in valid_actions:
 				break
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 
@@ -294,13 +301,15 @@ class DeepQGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True)
+			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
 			if action in valid_actions:
 				break
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
+			else:
+				raise Exception("Invalid action when not training")
 
 		self.update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
