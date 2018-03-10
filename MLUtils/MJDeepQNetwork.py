@@ -19,6 +19,7 @@ def get_MJDeepQNetwork(path, **kwargs):
 		try:
 			loaded_models[path] = MJDeepQNetwork.load(path)
 		except Exception as e:
+			print(e)
 			loaded_models[path] = MJDeepQNetwork(**kwargs)
 	return loaded_models[path]
 
