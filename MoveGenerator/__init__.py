@@ -3,6 +3,7 @@ from .MoveGenerator import MoveGenerator
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 from .MCTSCpp import RuleBasedAINaiveMCTSCpp
 from .MCTSPy import RuleBasedAINaiveMCTSPy
+from .ModelTrainer import ModelTrainer
 from .TGHuman import TGHuman
 from .Rule_based_ai_q import RuleBasedAIQ
 from .DeepQGenerator import DeepQGenerator

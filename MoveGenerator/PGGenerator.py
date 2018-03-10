@@ -34,50 +34,53 @@ class PGGenerator(MoveGenerator):
 		super(PGGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
 		self.display_step = display_step
 		self.pg_model_path = pg_model_path
-		self.pg_model_is_train = is_train
-		self.pg_model_waiting = False
-		self.pg_model_history = {
-			"state": None,
-			"action": None,
-			"action_filter": None
-		}
+		self.is_train = is_train
+		self.clear_history()
 
 	def print_msg(self, msg):
 		if self.display_step:
 			print(msg)
 
 	def reset_new_game(self):
-		if self.pg_model_is_train and self.pg_model_waiting:
+		if self.is_train and self.history_waiting:
 			self.update_transition(REWARD_DRAW)
-			self.pg_model_waiting = False
+			self.history_waiting = False
 
 	def notify_loss(self, score):
-		if self.pg_model_is_train and self.pg_model_waiting:
+		if self.is_train and self.history_waiting:
 			self.update_transition(REWARD_LOSE)
-			self.pg_model_waiting = False
+			self.history_waiting = False
 
-	def __update_history(self, state, action, action_filter):
-		if not self.pg_model_is_train:
+	def update_history(self, state, action, action_filter):
+		if not self.is_train:
 			return
 
-		if self.pg_model_waiting:
+		if self.history_waiting:
 			raise Exception("the network is waiting for a transition")
 
-		self.pg_model_waiting = True
+		self.history_waiting = True
 		self.pg_model_history["state"] = state
 		self.pg_model_history["action"] = action
 		self.pg_model_history["action_filter"] = action_filter
 
-	def update_transition(self, reward = 0):
-		if not self.pg_model_is_train:
+	def update_transition(self, state_, reward = 0):
+		if not self.is_train:
 			return
 
-		if not self.pg_model_waiting:
+		if not self.history_waiting:
 			raise Exception("the network is NOT waiting for a transition")
 
-		self.pg_model_waiting = False
+		self.history_waiting = False
 		pg_model = get_MJPolicyGradient(self.pg_model_path)
 		pg_model.store_transition(self.pg_model_history["state"], self.pg_model_history["action"], reward, self.pg_model_history["action_filter"])
+
+	def clear_history(self):
+		self.history_waiting = False
+		self.pg_model_history = {
+			"state": None,
+			"action": None,
+			"action_filter": None
+		}
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
 		self.begin_decision()
@@ -92,8 +95,8 @@ class PGGenerator(MoveGenerator):
 		pg_model = get_MJPolicyGradient(self.pg_model_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.pg_model_waiting:
-			self.update_transition(REWARD_NON_TERMINAL)
+		if self.history_waiting:
+			self.update_transition(None, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -102,10 +105,10 @@ class PGGenerator(MoveGenerator):
 		
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
-			self.__update_history(state, action, action_filter)
-			self.update_transition(REWARD_INVALID_DECISION)
+			self.update_history(state, action, action_filter)
+			self.update_transition(None, REWARD_INVALID_DECISION)
 
-		self.__update_history(state, action, action_filter)
+		self.update_history(state, action, action_filter)
 
 		self.end_decision()
 		
@@ -150,8 +153,8 @@ class PGGenerator(MoveGenerator):
 		pg_model = get_MJPolicyGradient(self.pg_model_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.pg_model_waiting:
-			self.update_transition(REWARD_NON_TERMINAL)
+		if self.history_waiting:
+			self.update_transition(None, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -160,10 +163,10 @@ class PGGenerator(MoveGenerator):
 		
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
-			self.__update_history(state, action, action_filter)
-			self.update_transition(REWARD_INVALID_DECISION)
+			self.update_history(state, action, action_filter)
+			self.update_transition(None, REWARD_INVALID_DECISION)
 
-		self.__update_history(state, action, action_filter)
+		self.update_history(state, action, action_filter)
 
 		self.end_decision()
 
@@ -190,8 +193,8 @@ class PGGenerator(MoveGenerator):
 		pg_model = get_MJPolicyGradient(self.pg_model_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.pg_model_waiting:
-			self.update_transition(REWARD_NON_TERMINAL)
+		if self.history_waiting:
+			self.update_transition(None, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
@@ -200,10 +203,10 @@ class PGGenerator(MoveGenerator):
 		
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
-			self.__update_history(state, action, action_filter)
-			self.update_transition(REWARD_INVALID_DECISION)
+			self.update_history(state, action, action_filter)
+			self.update_transition(None, REWARD_INVALID_DECISION)
 			
-		self.__update_history(state, action, action_filter)
+		self.update_history(state, action, action_filter)
 
 		self.end_decision()
 		if action == decisions_.index("no_action"):
@@ -217,8 +220,8 @@ class PGGenerator(MoveGenerator):
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		self.begin_decision()
-		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition(REWARD_VICTORY)
+		if self.is_train and self.history_waiting:
+			self.update_transition(None, REWARD_VICTORY)
 
 		fixed_hand, hand = player.fixed_hand, player.hand
 		if self.display_step:
@@ -247,8 +250,8 @@ class PGGenerator(MoveGenerator):
 		fixed_hand, hand = player.fixed_hand, player.hand
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.pg_model_is_train and self.pg_model_waiting:
-			self.update_transition(REWARD_NON_TERMINAL)
+		if self.is_train and self.history_waiting:
+			self.update_transition(None, REWARD_NON_TERMINAL)
 
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
@@ -266,10 +269,10 @@ class PGGenerator(MoveGenerator):
 		
 		if action not in valid_actions:
 			action = random.choice(valid_actions)
-			self.__update_history(state, action, action_filter)
-			self.update_transition(REWARD_INVALID_DECISION)
+			self.update_history(state, action, action_filter)
+			self.update_transition(None, REWARD_INVALID_DECISION)
 
-		self.__update_history(state, action, action_filter)
+		self.update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
 		self.print_msg("%s [%s] chooses to drop %s. [%.2f]"%(self.player_name, display_name, drop_tile.symbol, value))
 		self.end_decision(True)

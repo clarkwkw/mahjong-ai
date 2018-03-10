@@ -170,7 +170,7 @@ class MJPolicyGradient:
 				discounted_ep_rs /= std
 			return discounted_ep_rs
 
-
+		loss = None
 		# discount and normalize episode reward
 		discounted_ep_rs_norm = discount_and_norm_rewards()
 

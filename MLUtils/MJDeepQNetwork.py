@@ -191,7 +191,7 @@ class MJDeepQNetwork:
 	def learn(self, display_cost = True):
 		if self.__learn_step_counter % self.__replace_target_iter == 0:
 			self.__sess.run(self.__target_replace_op)
-
+		cost = None
 		sample_index = np.random.choice(min(self.__memory_size, self.__memory_counter), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
 		with self.__graph.as_default() as g:
@@ -210,6 +210,7 @@ class MJDeepQNetwork:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, cost))
 
 		self.__learn_step_counter += 1
+		return cost
 
 	def save(self, save_dir):
 		paras_dict = {

@@ -38,6 +38,10 @@ class Player(object):
 	def name(self):
 		return self.__name
 
+	@property 
+	def move_generator(self):
+		return self.__move_generator
+
 	def degenerate(self):
 		return DegeneratedPlayer.DegeneratedPlayer(self)
 
