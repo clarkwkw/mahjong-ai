@@ -9,8 +9,8 @@ from . import utils
 
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
-test_game_size = 50
-test_game_freq = 100
+test_game_size = 100
+test_game_freq = 5000
 freq_shuffle_players = 8
 trainer_conf = ["heuristics", "heuristics", "heuristics"]
 
