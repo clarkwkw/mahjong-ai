@@ -70,10 +70,10 @@ class ModelTrainer(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		is_kong = self.__model.decide_kong(player, new_tile, kong_tile, location, src, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_kong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		self.__model.update_history(state, action, action_filter)
 
-		is_kong = self.__model.decide_kong(player, new_tile, kong_tile, location, src, neighbors, game)
 		if is_kong == h_is_kong:
 			self.__pending_reward = REWARD_SAME
 		else:
@@ -91,10 +91,10 @@ class ModelTrainer(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		is_pong = self.__model.decide_pong(player, new_tile, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_pong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		self.__model.update_history(state, action, action_filter)
 	
-		is_pong = self.__model.decide_pong(player, new_tile, neighbors, game)
 		if h_is_pong == is_pong:
 			self.__pending_reward = REWARD_SAME
 		else:
@@ -126,10 +126,9 @@ class ModelTrainer(MoveGenerator):
 		action_filter[valid_actions] = 1
 
 		h_drop_tile = self.__hmodel.decide_drop_tile(player, new_tile, neighbors, game)
+		drop_tile = self.__model.decide_drop_tile(player, new_tile, neighbors, game)
 		action = Tile.convert_tile_index(drop_tile)
 		self.__model.update_history(state, action, action_filter)
-
-		drop_tile = self.__model.decide_drop_tile(player, new_tile, neighbors, game)
 
 		if drop_tile == h_drop_tile:
 			self.__pending_reward = REWARD_SAME
