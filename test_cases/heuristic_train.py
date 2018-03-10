@@ -109,6 +109,7 @@ def test(args):
 	players.append(deep_player)
 
 	game, shuffled_players, last_saved = None, None, -1
+	signal.signal(signal.SIGINT, signal_handler)
 	for i in range(args.n_episodes):
 		if EXIT_FLAG:
 			break
