@@ -22,13 +22,12 @@ def dnn_encode_state(player, neighbors):
 		p = players[i]
 		for _, _, tiles in p.fixed_hand:
 			for tile in tiles:
-				state[1 + i, Tile.convert_tile_index(tile), :] += 1
+				state[1 + 2*i, Tile.convert_tile_index(tile), :] += 1
 
 		for tile in p.get_discarded_tiles():
-			state[2 + i, Tile.convert_tile_index(tile), :] += 1
-
+			state[2 + 2*i, Tile.convert_tile_index(tile), :] += 1
 	return state
-
+	
 def get_input_list(title, options):
 	i = 0
 	options_str = ""
