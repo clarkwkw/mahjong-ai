@@ -48,10 +48,10 @@ class ModelTrainer(MoveGenerator):
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		is_chow, choice = self.__model.decide_chow(player, new_tile, choices, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_chow else 34 + decisions_.index("%s_chow"%new_tile.suit)
 		self.__model.update_history(state, action, action_filter)
 
-		is_chow, choice = self.__model.decide_chow(player, new_tile, choices, neighbors, game)
 		if is_chow == h_is_chow:
 			self.__pending_reward = REWARD_SAME
 		else:
