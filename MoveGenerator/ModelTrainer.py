@@ -59,7 +59,7 @@ class ModelTrainer(MoveGenerator):
 			self.__pending_reward = REWARD_DIFF
 		self.end_decision()
 
-		return h_is_chow, h_choice
+		return is_chow, choice
 
 	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
 		self.begin_decision()
