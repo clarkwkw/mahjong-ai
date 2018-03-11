@@ -3,6 +3,32 @@ import Tile
 import numpy as np
 import collections
 
+'''
+Encoding:
+0: player->hand,
+1: player->fixed_hand
+2: player->disposed_tiles
+
+3+2i: neighbor[i]->fixed_hand
+3+2i+1: neighbor[i]->disposed_tiles
+'''
+def dnn_encode_state(player, neighbors):
+	state = np.zeros((9, 34, 1))
+	for tile in player.hand:
+		state[0, Tile.convert_tile_index(tile), :] += 1
+
+	players = [player] + list(neighbors)
+	for i in range(len(players)):
+		p = players[i]
+		for _, _, tiles in p.fixed_hand:
+			for tile in tiles:
+				state[1 + i, Tile.convert_tile_index(tile), :] += 1
+
+		for tile in p.get_discarded_tiles():
+			state[2 + i, Tile.convert_tile_index(tile), :] += 1
+
+	return state
+
 def get_input_list(title, options):
 	i = 0
 	options_str = ""

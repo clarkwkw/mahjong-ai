@@ -2,10 +2,11 @@ import random
 import Tile
 import numpy as np
 
+rand_record_opts = ["all", "once", None]
 class Game(object):
 	def __init__(self, players, rand_record = None, **rand_record_constraints):
-		if not (rand_record in ["all", "once", None]):
-			raise Exception("rand_record must be one of %s"%rand_record)
+		if rand_record not in rand_record_opts:
+			raise Exception("rand_record must be one of %s, got %s"%(rand_record_opts, rand_record))
 		self.__players = players
 		self.__deck = None
 		self.__started = False
@@ -44,13 +45,11 @@ class Game(object):
 			return None, None
 
 		combined_record = {}
-		n_records = 0
 
 		for key, matrices in self.__record.items():
 			combined_record[key] = np.stack(matrices, axis = 0)
-			n_records = len(matrices)
 
-		return combined_record, n_records
+		return combined_record, self.__mem_count
 
 	def start_game(self):
 		if self.__started:
@@ -73,7 +72,7 @@ class Game(object):
 			self.__freeze_state_init()
 		
 		while len(self.__deck) > 0:
-			if self.__rand_record == "all" or (self.__rand_record == "once" and len(self.__deck) == save_round):
+			if self.__rand_record == "all" or (self.__rand_record == "once" and len(self.__deck) == save_round and self.__mem_count == 0):
 				self.__freeze_state()
 
 			cur_player = self.__players[cur_player_id]

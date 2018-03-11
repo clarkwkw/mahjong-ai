@@ -6,6 +6,7 @@ test_cases = [
 	"handpredictor_cont",
 	"handpredictor_d", 
 	"handpredictor_test",
+	"heuristic_train",
 	"mjdeepq", 
 	"mjpg",
 	"rule_base_mcts",

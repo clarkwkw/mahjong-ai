@@ -1,4 +1,3 @@
-from .AbstractDNN import AbstractDNN
 from . import utils
 import tensorflow as tf
 import random
@@ -20,6 +19,7 @@ def get_MJDeepQNetwork(path, **kwargs):
 		try:
 			loaded_models[path] = MJDeepQNetwork.load(path)
 		except Exception as e:
+			print(e)
 			loaded_models[path] = MJDeepQNetwork(**kwargs)
 	return loaded_models[path]
 
@@ -28,9 +28,11 @@ def get_MJDeepQNetwork(path, **kwargs):
 # https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/5_Deep_Q_Network/DQN_modified.py
 
 class MJDeepQNetwork:
-	def __init__(self, from_save = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, dropout_rate = 0.1, replace_target_iter = 300, memory_size = 500, batch_size = 100):
+	def __init__(self, from_save = None, is_deep = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, dropout_rate = 0.1, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
+		self.__is_deep = False
+		
 		if gpu_usage_w_limit:
 			self.__config.gpu_options.allow_growth = True
 			self.__config.gpu_options.per_process_gpu_memory_fraction = 0.5
@@ -43,8 +45,9 @@ class MJDeepQNetwork:
 				self.__replace_target_iter = replace_target_iter
 				self.__batch_size = batch_size
 				self.__learn_step_counter = 0
+				self.__is_deep = is_deep
 
-				self.__build_graph(learning_rate, reward_decay, dropout_rate)
+				self.__build_graph(is_deep, learning_rate, reward_decay, dropout_rate)
 				self.__sess.run(tf.global_variables_initializer())
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
@@ -71,27 +74,53 @@ class MJDeepQNetwork:
 
 		tf.reset_default_graph()
 
-	def __build_graph(self, learning_rate, reward_decay, dropout_rate):
-		def make_connection(inputs, is_train, dropout_rate):
-			# 3*34*8
-			conv_fh_1 = tf.layers.conv2d(inputs = inputs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-			# 1*32*8
-			conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
-			conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
+	def __build_graph(self, is_deep, learning_rate, reward_decay, dropout_rate):
+		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+
+		def make_connection(state, action_filter, c_name):
+			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
+			state = tf.reshape(state, [-1, 9*34])
+			weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
+
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+
+			weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+
+			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
+
+		def make_deep_connection(state, action_filter, c_name):
+			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
+			# 1*27*1
+			hand_negated = tf.multiply(state[:, 0:1, :, :], tf.constant(-1.0))
+			chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
+			chows = tf.multiply(hand_negated, tf.constant(-1.0))
 			
-			# 1*34*8
-			conv_discard = tf.layers.conv2d(inputs = inputs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
-			conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
+			tile_used = tf.reduce_sum(state[:, 1:, :, :], axis = 1, keep_dims = True)
 
-			raw_hfh_flat = tf.reshape(inputs[:, 0:2, :, :], [-1, 2*34])
+			input_all = tf.concat([state[:, 0:2, :, :], chows, tile_used], axis = 1)
+			input_flat = tf.reshape(input_all, [-1, 4*34])
 
-			flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
-			dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = is_train)
+			weight_1 = tf.get_variable("weight_1", [4*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
 
-			dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-			return tf.layers.dense(inputs = dense, units = n_actions)
+			weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
+			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
+		
+		if is_deep is None:
+			raise Exception("is_deep cannot be None")
+		connect = make_connection if not is_deep else make_deep_connection
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
 		self.__r = tf.placeholder(tf.float32, [None, ], name = "r")
@@ -100,12 +129,10 @@ class MJDeepQNetwork:
 		self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
 		
 		with tf.variable_scope("eval_net"):
-			self.__q_eval = make_connection(self.__s, self.__is_train, dropout_rate)
-			self.__q_eval = self.__q_eval + self.__a_filter
+			self.__q_eval = connect(self.__s, self.__a_filter, "eval_net_params")
 
 		with tf.variable_scope("target_net"):
-			self.__q_next = make_connection(self.__s_, self.__is_train, dropout_rate)
-			self.__q_next = self.__q_next + self.__a_filter
+			self.__q_next = connect(self.__s_, self.__a_filter, "target_net_params")
 
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
@@ -115,8 +142,8 @@ class MJDeepQNetwork:
 		self.__loss = tf.reduce_mean(tf.squared_difference(self.__q_target, self.__q_eval_wrt_a), name = "TD_error")
 		self.__train__op = tf.train.RMSPropOptimizer(learning_rate).minimize(self.__loss)
 
-		eval_net_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='eval_net')
-		target_net_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='target_net')
+		eval_net_params = tf.get_collection("eval_net_params")
+		target_net_params = tf.get_collection("target_net_params")
 		self.__target_replace_op = [tf.assign(t, e) for t, e in zip(target_net_params, eval_net_params)]
 
 		tf.add_to_collection("q_eval", self.__q_eval)
@@ -131,16 +158,16 @@ class MJDeepQNetwork:
 
 	def store_transition(self, state, action, reward, state_, action_filter = None):
 		if action_filter is None:
-			action_filter = np.zeros(n_actions)
+			action_filter = np.full(n_actions, 1)
 
 		transition = np.hstack((state.reshape((sample_n_inputs)), [action, reward], state_.reshape((sample_n_inputs)), action_filter))
 		index = self.__memory_counter % self.__memory_size
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
 
-	def choose_action(self, state, action_filter = None, eps_greedy = True, return_value = False):
+	def choose_action(self, state, action_filter = None, eps_greedy = True, return_value = False, strict_filter = False):
 		if action_filter is None:
-			action_filter = np.zeros(n_actions)
+			action_filter = np.full(n_actions, 1)
 
 		if np.random.uniform() < self.__epsilon or not eps_greedy:
 			inputs = state[np.newaxis, :]
@@ -150,7 +177,11 @@ class MJDeepQNetwork:
 				actions_value = self.__sess.run(self.__q_eval, feed_dict = {self.__s: inputs, self.__a_filter: action_filter, self.__is_train: False})
 			
 			tf.reset_default_graph()
-			action = np.argmax(actions_value)
+			if strict_filter:
+				valid_actions = np.where(action_filter[0, :] > 0)[0]
+				action = valid_actions[np.argmax(actions_value[0, valid_actions])]
+			else:
+				action = np.argmax(actions_value)
 			value = actions_value[0, action]
 		else:
 			action = random.choice(np.arange(n_actions)[action_filter >= 0])
@@ -165,7 +196,7 @@ class MJDeepQNetwork:
 	def learn(self, display_cost = True):
 		if self.__learn_step_counter % self.__replace_target_iter == 0:
 			self.__sess.run(self.__target_replace_op)
-
+		cost = None
 		sample_index = np.random.choice(min(self.__memory_size, self.__memory_counter), size = self.__batch_size)
 		batch_memory = self.__memory[sample_index, :]
 		with self.__graph.as_default() as g:
@@ -184,6 +215,7 @@ class MJDeepQNetwork:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, cost))
 
 		self.__learn_step_counter += 1
+		return cost
 
 	def save(self, save_dir):
 		paras_dict = {
@@ -191,7 +223,8 @@ class MJDeepQNetwork:
 			"__memory_size": self.__memory_size,
 			"__replace_target_iter": self.__replace_target_iter,
 			"__batch_size": self.__batch_size,
-			"__learn_step_counter": self.__learn_step_counter
+			"__learn_step_counter": self.__learn_step_counter,
+			"__is_deep": self.__is_deep
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

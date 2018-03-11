@@ -19,13 +19,15 @@ def get_MJPolicyGradient(path, **kwargs):
 		try:
 			loaded_models[path] = MJPolicyGradient.load(path)
 		except Exception as e:
+			print(e)
 			loaded_models[path] = MJPolicyGradient(**kwargs)
 	return loaded_models[path]
 
 class MJPolicyGradient:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95, dropout_rate = 0.1):
-		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], []
-
+	def __init__(self, from_save = None, is_deep = None, learning_rate = 0.01, reward_decay = 0.95):
+		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
+		self.__is_deep = False
+		
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		if gpu_usage_w_limit:
@@ -35,10 +37,11 @@ class MJPolicyGradient:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				self.__build_graph(learning_rate, dropout_rate)
+				self.__build_graph(is_deep, learning_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
+				self.__is_deep = is_deep
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
@@ -48,42 +51,65 @@ class MJPolicyGradient:
 
 				saver = tf.train.import_meta_graph(from_save.rstrip("/") + "/" + save_file_name + ".meta")
 				saver.restore(self.__sess, from_save.rstrip("/") + "/" + save_file_name)
-				self.__obs = g.get_tensor_by_name("observations:0")
-				self.__acts = g.get_tensor_by_name("actions_num:0")
-				self.__vt = g.get_tensor_by_name("actions_value:0")
-				self.__is_train = g.get_tensor_by_name("is_train:0")
+				self.__obs = g.get_tensor_by_name("inputs/observations:0")
+				self.__acts = g.get_tensor_by_name("inputs/actions_num:0")
+				self.__vt = g.get_tensor_by_name("inputs/actions_value:0")
+				self.__a_filter = g.get_tensor_by_name("inputs/actions_filter:0")
 
 				self.__all_act_prob = tf.get_collection("all_act_prob")[0]
 				self.__loss = tf.get_collection("loss")[0]
-				self.__train__op = tf.get_collection("train_op")[0]
+				self.__train_op = tf.get_collection("train_op")[0]
 
-	def __build_graph(self, learning_rate, dropout_rate):
+	def __build_graph(self, is_deep, learning_rate):
+		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
+		collects = [tf.GraphKeys.GLOBAL_VARIABLES]
+
 		with tf.name_scope('inputs'):
 			self.__obs = tf.placeholder(tf.float32, [None] + sample_shape, name = "observations")
 			self.__acts = tf.placeholder(tf.int32, [None, ], name = "actions_num")
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
-			self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
+			self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "actions_filter")
 
-		# 3*34*8
-		conv_fh_1 = tf.layers.conv2d(inputs = self.__obs[:, 2:5, :, :], filters = 8, kernel_size = [1, 3], padding = "same", activation = tf.nn.relu)
-		# 1*32*8
-		conv_fh_2 = tf.layers.max_pooling2d(inputs = conv_fh_1, pool_size = [3, 3], strides = 1, padding = "valid")
-		conv_fh_flat = tf.reshape(conv_fh_2, [-1, 32*8])
-		
-		# 1*34*8
-		conv_discard = tf.layers.conv2d(inputs = self.__obs[:, 5:, :, :], filters = 8, kernel_size = [4, 1], padding = "valid", activation = tf.nn.relu)
-		conv_discard_flat = tf.reshape(conv_discard, [-1, 34*8])
+		if not is_deep:
+			state = tf.reshape(self.__obs, [-1, 9*34])
+			weight_1 = tf.get_variable("weight_1", [9*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
 
-		raw_hfh_flat = tf.reshape(self.__obs[:, 0:2, :, :], [-1, 2*34])
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+		else:
+			state = self.__obs
+			hand_negated = tf.multiply(state[:, 0:1, :, :], tf.constant(-1.0))
+			chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
+			chows = tf.multiply(hand_negated, tf.constant(-1.0))
+			
+			tile_used = tf.reduce_sum(state[:, 1:, :, :], axis = 1, keep_dims = True)
 
-		flat = tf.concat([raw_hfh_flat, conv_fh_flat, conv_discard_flat], axis = 1)
-		dropout = tf.layers.dropout(inputs = flat, rate = dropout_rate, training = self.__is_train)
+			input_all = tf.concat([state[:, 0:2, :, :], chows, tile_used], axis = 1)
+			input_flat = tf.reshape(input_all, [-1, 4*34])
 
-		dense = tf.layers.dense(inputs = dropout, units = 2048, activation = tf.nn.relu)
+			weight_1 = tf.get_variable("weight_1", [4*34, 3072], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3072], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
 
-		result = tf.layers.dense(inputs = dense, units = n_actions)
+			weight_2 = tf.get_variable("weight_2", [3072, 1024], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1024], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-		self.__all_act_prob = tf.nn.softmax(result, name='act_prob')  # use softmax to convert to probability
+		weight_3 = tf.get_variable("weight_3", [1024, n_actions], initializer = w_init, collections = collects)
+		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+
+		action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
+		action_bias_1 = tf.get_variable("action_bias_1", [n_actions], initializer = w_init, collections = collects)
+		action_dense_1 = tf.sigmoid(tf.matmul(self.__a_filter, action_weight_1) + action_bias_1)
+
+		action_weight_2 = tf.get_variable("action_weight_2", [n_actions, n_actions], initializer = w_init, collections = collects)
+
+		result = tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(action_dense_1, action_weight_2)
+
+		self.__all_act_prob = tf.nn.softmax(result)
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
@@ -101,30 +127,27 @@ class MJPolicyGradient:
 	def learn_step_counter(self):
 		return self.__learn_step_counter
 
-	def choose_action(self, observation, action_filter = None, return_value = False):
+	def choose_action(self, observation, action_filter = None, return_value = False, strict_filter = False):
 
 		if action_filter is None:
 			action_filter = np.full(n_actions, 1.0)
 
-		n_actions_avail = np.sum(action_filter > 0)
 		prob_weights = self.__sess.run(
 			self.__all_act_prob, 
 			feed_dict = {
 				self.__obs: observation[np.newaxis, :],
-				self.__is_train: False
+				self.__a_filter: action_filter[np.newaxis, :]
 			})
-
-		prob_weights = np.multiply(prob_weights, action_filter)
-		overall = prob_weights.sum(axis = 1)
-
-		zero_prob_entries = np.where(overall < 1e-6)[0]
-		if zero_prob_entries.shape[0] > 0:
-			action_indices = np.where(action_filter > 0)[0]
-			prob_weights[zero_prob_entries, action_indices] = 1.0/n_actions_avail
-			overall = prob_weights.sum(axis = 1)
-		
-		prob_weights /= overall[:, np.newaxis]
-		action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
+		if strict_filter:
+			valid_actions = np.where(action_filter > 0)[0]
+			prob_weights_reduced = prob_weights.ravel()[valid_actions]
+			if prob_weights_reduced.sum() < 1e-5:
+				prob_weights_reduced = np.full(prob_weights_reduced.shape[0], 1.0/prob_weights_reduced.shape[0])
+			else:
+				prob_weights_reduced = prob_weights_reduced / prob_weights_reduced.sum()
+			action = np.random.choice(valid_actions.tolist(), p = prob_weights_reduced)
+		else:
+			action = np.random.choice(range(prob_weights.shape[1]), p = prob_weights.ravel())  # select action w.r.t the actions prob
 		value = prob_weights[:, action]
 
 		if return_value:
@@ -132,10 +155,11 @@ class MJPolicyGradient:
 
 		return action
 
-	def store_transition(self, state, action, reward):
+	def store_transition(self, state, action, reward, a_filter):
 		self.__ep_obs.append(state)
 		self.__ep_as.append(action)
 		self.__ep_rs.append(reward)
+		self.__ep_a_filter.append(a_filter)
 
 	def learn(self, display_cost = True):
 		def discount_and_norm_rewards():
@@ -154,7 +178,7 @@ class MJPolicyGradient:
 				discounted_ep_rs /= std
 			return discounted_ep_rs
 
-
+		loss = None
 		# discount and normalize episode reward
 		discounted_ep_rs_norm = discount_and_norm_rewards()
 
@@ -165,11 +189,12 @@ class MJPolicyGradient:
 				self.__obs: np.stack(self.__ep_obs, axis = 0),
 				self.__acts: np.array(self.__ep_as),
 				self.__vt: discounted_ep_rs_norm,
-				self.__is_train: True
+				self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
 			}
 		)
 
-		self.__ep_obs, self.__ep_as, self.__ep_rs = [], [], [] 
+		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
+		 
 		if display_cost:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, loss))
 		self.__learn_step_counter += 1
@@ -179,7 +204,8 @@ class MJPolicyGradient:
 	def save(self, save_dir):
 		paras_dict = {
 			"__reward_decay": self.__reward_decay,
-			"__learn_step_counter": self.__learn_step_counter
+			"__learn_step_counter": self.__learn_step_counter,
+			"__is_deep": self.__is_deep
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

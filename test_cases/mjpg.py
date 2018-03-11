@@ -10,19 +10,20 @@ from . import utils
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
-freq_model_save = 10000
+freq_model_save = None
 game_record_size = 100
 game_record_count = 0
 
 game_record = np.zeros((game_record_size, 4, 2))
 
 pg_model_paras = {
+	"is_deep": True,
 	"learning_rate": 1e-3,
-	"reward_decay": 0.9
+	"reward_decay": 0.99
 }
 
 pg_model_dir = "pg_model_test"
-trainer_conf = ["policy_gradient", "policy_gradient", "policy_gradient"]
+trainer_conf = ["random", "random", "random"]
 trainer_models = {
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -41,7 +42,14 @@ trainer_models = {
 		"parameters":{
 			"display_step": False,
 			"pg_model_path": pg_model_dir,
-			"is_train": False
+			"is_train": False,
+			"skip_history": False
+		}
+	},
+	"random": {
+		"class": MoveGenerator.RandomGenerator,
+		"parameters":{
+			"display_step": False
 		}
 	}
 }
@@ -70,7 +78,12 @@ def test(args):
 			if response != "y":
 				exit(-1)
 
-		args.model_dir = pg_model_dir if args.model_dir is None else args.model_dir
+		if args.model_dir is None:
+			args.model_dir = pg_model_dir
+		else:
+			trainer_models["policy_gradient"]["parameters"]["pg_model_path"] = args.model_dir
+			
+		freq_model_save = args.n_episodes//10
 	
 	elif args.action in ["test", "play"]:
 		if args.model_dir is None:
@@ -88,7 +101,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	pg_player = Player.Player(MoveGenerator.PGGenerator, player_name = names[i], pg_model_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
+	pg_player = Player.Player(MoveGenerator.PGGenerator, player_name = names[i], pg_model_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(pg_player)
 
 	if args.action != "play":
@@ -123,15 +136,15 @@ def test(args):
 																							game_record[:, 2, 0].mean()* 100, game_record[:, 2, 1].mean()* 100, 
 																							game_record[:, 3, 0].mean()* 100, game_record[:, 3, 1].mean()* 100))
 		'''
-		if (i+1) % freq_model_save == 0:
+		if args.action == "train" and args.save_name is not None and (i+1) % freq_model_save == 0:
 			last_saved = i
-			path = args.save_name + "_%d"%(i + 1)
+			path = args.save_name.rstrip("/") + "_%d"%(i + 1)
 			utils.makesure_dir_exists(path)
 			model.save(path)
 		'''
 
 	if args.action == "train" and args.save_name is not None:
 		if last_saved < args.n_episodes - 1:
-			path = args.save_name + "_%d"%args.n_episodes
+			path = args.save_name.rstrip("/") + "_%d"%args.n_episodes
 			utils.makesure_dir_exists(path)
 			model.save(path)
