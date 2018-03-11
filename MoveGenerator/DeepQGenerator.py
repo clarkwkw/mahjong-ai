@@ -30,11 +30,12 @@ n_decisions = 42
 decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
 
 class DeepQGenerator(MoveGenerator):
-	def __init__(self, player_name, q_network_path, is_train, display_tgboard = False, display_step = False):
+	def __init__(self, player_name, q_network_path, is_train, skip_history = False, display_tgboard = False, display_step = False):
 		super(DeepQGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
 		self.display_step = display_step
 		self.q_network_path = q_network_path
 		self.is_train = is_train
+		self.skip_history = skip_history
 		self.clear_history()
 
 	def print_msg(self, msg):
@@ -98,15 +99,17 @@ class DeepQGenerator(MoveGenerator):
 		q_network = get_MJDeepQNetwork(self.q_network_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.history_waiting:
+		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+		
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 		while True:
-			if action is not None:
+			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
@@ -114,13 +117,12 @@ class DeepQGenerator(MoveGenerator):
 			
 			if action in valid_actions:
 				break
-			elif self.is_train:
+			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
-			else:
-				raise Exception("Invalid action when not training")
 
-		self.update_history(state, action, action_filter)
+		if not self.skip_history:
+			self.update_history(state, action, action_filter)
 
 		self.end_decision()
 		
@@ -165,15 +167,18 @@ class DeepQGenerator(MoveGenerator):
 		q_network = get_MJDeepQNetwork(self.q_network_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.history_waiting:
+		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+		
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			
 		while True:
-			if action is not None:
+			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
@@ -184,10 +189,9 @@ class DeepQGenerator(MoveGenerator):
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
-			else:
-				raise Exception("Invalid action when not training")
 
-		self.update_history(state, action, action_filter)
+		if not self.skip_history:
+			self.update_history(state, action, action_filter)
 
 		self.end_decision()
 
@@ -214,15 +218,18 @@ class DeepQGenerator(MoveGenerator):
 		q_network = get_MJDeepQNetwork(self.q_network_path)
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.history_waiting:
+		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+		
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			
 		while True:
-			if action is not None:
+			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
@@ -233,10 +240,9 @@ class DeepQGenerator(MoveGenerator):
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
-			else:
-				raise Exception("Invalid action when not training")
 
-		self.update_history(state, action, action_filter)
+		if not self.skip_history:
+			self.update_history(state, action, action_filter)
 
 		self.end_decision()
 		if action == decisions_.index("no_action"):
@@ -250,7 +256,7 @@ class DeepQGenerator(MoveGenerator):
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		self.begin_decision()
-		if self.is_train and self.history_waiting:
+		if not self.skip_history and self.history_waiting:
 			self.update_transition("terminal", REWARD_VICTORY)
 
 		fixed_hand, hand = player.fixed_hand, player.hand
@@ -280,7 +286,7 @@ class DeepQGenerator(MoveGenerator):
 		fixed_hand, hand = player.fixed_hand, player.hand
 		state = utils.dnn_encode_state(player, neighbors)
 
-		if self.is_train and self.history_waiting:
+		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
 
 		if self.display_step:
@@ -296,8 +302,10 @@ class DeepQGenerator(MoveGenerator):
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+		action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			
 		while True:
-			if action is not None:
+			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION)
 			
@@ -308,10 +316,9 @@ class DeepQGenerator(MoveGenerator):
 			elif not self.is_train:
 				action = random.choice(valid_actions)
 				break
-			else:
-				raise Exception("Invalid action when not training")
-
-		self.update_history(state, action, action_filter)
+		
+		if not self.skip_history:
+			self.update_history(state, action, action_filter)
 		drop_tile = Tile.convert_tile_index(action)
 		self.print_msg("%s [%s] chooses to drop %s. [%.2f]"%(self.player_name, display_name, drop_tile.symbol, value))
 		self.end_decision(True)

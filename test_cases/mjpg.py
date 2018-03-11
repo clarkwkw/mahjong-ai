@@ -42,7 +42,8 @@ trainer_models = {
 		"parameters":{
 			"display_step": False,
 			"pg_model_path": pg_model_dir,
-			"is_train": False
+			"is_train": False,
+			"skip_history": False
 		}
 	},
 	"random": {
@@ -100,7 +101,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	pg_player = Player.Player(MoveGenerator.PGGenerator, player_name = names[i], pg_model_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
+	pg_player = Player.Player(MoveGenerator.PGGenerator, player_name = names[i], pg_model_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(pg_player)
 
 	if args.action != "play":

@@ -42,7 +42,8 @@ _models = {
 		"parameters":{
 			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
 			"is_train": False,
-			"display_step": False
+			"display_step": False,
+			"skip_history": False 
 		}
 	},
 	"policy_gradient":{
@@ -50,7 +51,8 @@ _models = {
 		"parameters":{
 			"pg_model_path": "resources/models/balance_reward/flat_mjpg_rand",
 			"is_train": False,
-			"display_step": False
+			"display_step": False,
+			"skip_history": False 
 		}
 	},
 	"rand":{

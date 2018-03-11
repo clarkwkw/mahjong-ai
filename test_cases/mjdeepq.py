@@ -48,7 +48,8 @@ trainer_models = {
 		"parameters": {
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
-			"is_train": False
+			"is_train": False,
+			"skip_history": False
 		}
 	},
 	"random": {
@@ -106,7 +107,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, is_train = args.action == "train", display_step = args.action == "play")
+	deepq_player = Player.Player(MoveGenerator.DeepQGenerator, player_name = names[i], q_network_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(deepq_player)
 
 	if args.action != "play":

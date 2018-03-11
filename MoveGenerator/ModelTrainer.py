@@ -13,7 +13,7 @@ decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "b
 class ModelTrainer(MoveGenerator):
 	def __init__(self, player_name, model, **kwargs):
 		super(ModelTrainer, self).__init__(player_name, display_tgboard = False)
-		self.__model = model(player_name = player_name, is_train = True, **kwargs)
+		self.__model = model(player_name = player_name, is_train = True, skip_history = True, **kwargs)
 		self.__hmodel = RuleBasedAINaive("test", display_step = False)
 		self.__is_train = True
 		self.__pending_reward = 0
@@ -58,7 +58,8 @@ class ModelTrainer(MoveGenerator):
 		else:
 			self.__pending_reward = REWARD_DIFF
 		self.end_decision()
-		return is_chow, choice
+
+		return h_is_chow, h_choice
 
 	def decide_kong(self, player, new_tile, kong_tile, location, src, neighbors, game):
 		self.begin_decision()
