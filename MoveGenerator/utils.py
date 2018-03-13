@@ -27,6 +27,29 @@ def dnn_encode_state(player, neighbors):
 		for tile in p.get_discarded_tiles():
 			state[2 + 2*i, Tile.convert_tile_index(tile), :] += 1
 	return state
+
+def extended_dnn_encode_state(player, neighbors, new_tile = None, cpk_tile = None):
+	state = np.zeros((10, 34, 1))
+	for tile in player.hand:
+		state[0, Tile.convert_tile_index(tile), :] += 1
+
+	if new_tile is not None:
+		state[0, Tile.convert_tile_index(new_tile), :] += 1
+
+	if cpk_tile is not None:
+		state[9, Tile.convert_tile_index(cpk_tile), :] += 1
+
+	players = [player] + list(neighbors)
+	for i in range(len(players)):
+		p = players[i]
+		for _, _, tiles in p.fixed_hand:
+			for tile in tiles:
+				state[1 + 2*i, Tile.convert_tile_index(tile), :] += 1
+
+		for tile in p.get_discarded_tiles():
+			state[2 + 2*i, Tile.convert_tile_index(tile), :] += 1
+
+	return state
 	
 def get_input_list(title, options):
 	i = 0

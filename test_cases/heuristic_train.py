@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient
+from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient, get_MJEDeepQNetwork
 import Player, Game
 import MoveGenerator
 from . import utils
@@ -17,6 +17,18 @@ trainer_conf = ["heuristics", "heuristics", "heuristics"]
 deep_model_paras = {
 	"deepq": {
 		"getter": get_MJDeepQNetwork,
+		"parameters": {
+			"is_deep": True,
+			"learning_rate": 1e-3,
+			"reward_decay": 0.9, 
+			"e_greedy": 0.8,
+			"replace_target_iter": 300, 
+			"memory_size": 1000, 
+			"batch_size": 300
+		}
+	},
+	"edeepq": {
+		"getter": get_MJEDeepQNetwork,
 		"parameters": {
 			"is_deep": True,
 			"learning_rate": 1e-3,
@@ -42,6 +54,14 @@ generator_paras = {
 		"class": MoveGenerator.ModelTrainer,
 		"parameters": {
 			"model": MoveGenerator.DeepQGenerator,
+			"display_step": False,
+			"q_network_path": "heuristic_trainer"
+		}
+	},
+	"edeepq":{
+		"class": MoveGenerator.ModelETrainer,
+		"parameters": {
+			"model": MoveGenerator.DeepQEGenerator,
 			"display_step": False,
 			"q_network_path": "heuristic_trainer"
 		}

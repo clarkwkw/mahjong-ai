@@ -118,7 +118,7 @@ class PGGenerator(MoveGenerator):
 
 		self.end_decision()
 		
-		if action == decisions_.index("no_action"):
+		if action == 34 + decisions_.index("no_action"):
 			self.print_msg("%s chooses not to Chow %s [%.2f]."%(self.player_name, new_tile.symbol, value))
 			return False, None
 		else:
@@ -181,7 +181,7 @@ class PGGenerator(MoveGenerator):
 
 		self.end_decision()
 
-		if action == decisions_.index("no_action"):
+		if action == 34 + decisions_.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Kong %s%s%s%s [%.2f]."%(self.player_name, display_name, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, kong_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_KONG")%(self.player_name, kong_tile.get_display_name(game.lang_code, is_short = False)))
@@ -225,7 +225,7 @@ class PGGenerator(MoveGenerator):
 			self.update_history(state, action, action_filter)
 
 		self.end_decision()
-		if action == decisions_.index("no_action"):
+		if action == 34 + decisions_.index("no_action"):
 			self.print_msg("%s [%s] chooses to form a Pong %s%s%s. [%.2f]"%(self.player_name, display_name, new_tile.symbol, new_tile.symbol, new_tile.symbol, value))
 			if game.lang_code is not None:
 				game.add_notification(get_text(game.lang_code, "NOTI_CHOOSE_PONG")%(self.player_name, new_tile.get_display_name(game.lang_code, is_short = False)))

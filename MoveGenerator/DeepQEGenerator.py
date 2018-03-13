@@ -4,10 +4,10 @@ import random
 import numpy as np
 import Tile
 from TGLanguage import get_tile_name, get_text
-from MLUtils import get_MJDeepQNetwork
+from MLUtils import get_MJEDeepQNetwork
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 
-display_name = "DeepQ"
+display_name = "DeepQE"
 
 '''
 Policy Gradient model:
@@ -26,12 +26,12 @@ REWARD_LOSE = 0
 REWARD_INVALID_DECISION = -1
 REWARD_NON_TERMINAL = 0
 
-n_decisions = 42
-decisions_ = ["dots_chow", "dots_pong", "characters_chow", "characters_pong", "bamboo_chow", "bamboo_pong", "honor_pong", "no_action"]
+decisions_ = ["dots_chow_-1", "dots_chow_0", "dots_chow_1", "dots_pong", "characters_chow_-1", "characters_chow_0", "characters_chow_1", "characters_pong", "bamboo_chow_-1", "bamboo_chow_0", "bamboo_chow_1", "bamboo_pong", "honor_pong", "no_action"]
+n_decisions = 34 + len(decisions_)
 
-class DeepQGenerator(MoveGenerator):
+class DeepQEGenerator(MoveGenerator):
 	def __init__(self, player_name, q_network_path, is_train, skip_history = False, display_tgboard = False, display_step = False):
-		super(DeepQGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
+		super(DeepQEGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
 		self.display_step = display_step
 		self.q_network_path = q_network_path
 		self.is_train = is_train
@@ -75,7 +75,7 @@ class DeepQGenerator(MoveGenerator):
 			state_ = self.q_network_history["state"]
 
 		self.history_waiting = False
-		q_network = get_MJDeepQNetwork(self.q_network_path)
+		q_network = get_MJEDeepQNetwork(self.q_network_path)
 		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"])
 
 	def clear_history(self):
@@ -96,13 +96,15 @@ class DeepQGenerator(MoveGenerator):
 		
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = utils.dnn_encode_state(player, neighbors)
+		q_network = get_MJEDeepQNetwork(self.q_network_path)
+		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
 
-		valid_actions = [34 + decisions_.index("%s_chow"%new_tile.suit), 34 + decisions_.index("no_action")]
+		valid_actions = [34 + decisions_.index("no_action")]
+		for choice in choices:
+			valid_actions.append(34 + decisions_.index("%s_chow_%d"%(new_tile.suit, choice)))
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
@@ -131,7 +133,7 @@ class DeepQGenerator(MoveGenerator):
 		else:
 			chow_tiles_tgstrs = []
 			chow_tiles_str = ""
-			choice = random.choice(choices)
+			choice = int(decisions_[action - 34].split("_")[2])
 			for i in range(choice - 1, choice + 2):
 				neighbor_tile = new_tile.generate_neighbor_tile(i)
 				chow_tiles_str += neighbor_tile.symbol
@@ -163,8 +165,8 @@ class DeepQGenerator(MoveGenerator):
 		else:
 			location = "hand"
 
-		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = utils.dnn_encode_state(player, neighbors)
+		q_network = get_MJEDeepQNetwork(self.q_network_path)
+		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = kong_tile)
 
 		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
@@ -212,8 +214,8 @@ class DeepQGenerator(MoveGenerator):
 
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_MJDeepQNetwork(self.q_network_path)
-		state = utils.dnn_encode_state(player, neighbors)
+		q_network = get_MJEDeepQNetwork(self.q_network_path)
+		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
@@ -279,7 +281,7 @@ class DeepQGenerator(MoveGenerator):
 		self.begin_decision()
 
 		fixed_hand, hand = player.fixed_hand, player.hand
-		state = utils.dnn_encode_state(player, neighbors)
+		state = utils.extended_dnn_encode_state(player, neighbors, new_tile = new_tile)
 
 		if not self.skip_history and self.history_waiting:
 			self.update_transition(state, REWARD_NON_TERMINAL)
@@ -287,7 +289,7 @@ class DeepQGenerator(MoveGenerator):
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
-		q_network = get_MJDeepQNetwork(self.q_network_path)
+		q_network = get_MJEDeepQNetwork(self.q_network_path)
 		
 		valid_actions = []
 		tiles = player.hand if new_tile is None else player.hand + [new_tile]
@@ -297,6 +299,7 @@ class DeepQGenerator(MoveGenerator):
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+		
 		while True:
 			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
