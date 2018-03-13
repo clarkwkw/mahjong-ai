@@ -111,7 +111,7 @@ class ModelETrainer(MoveGenerator):
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
 		self.begin_decision()
 		if self.__is_train and self.__model.history_waiting:
-				state = utils.dnn_encode_state(player, neighbors)
+				state = utils.extended_dnn_encode_state(player, neighbors, new_tile = new_tile)
 				self.__model.update_transition(state, self.__pending_reward)
 		self.end_decision()
 		return True
