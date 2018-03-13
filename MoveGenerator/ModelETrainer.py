@@ -78,7 +78,7 @@ class ModelETrainer(MoveGenerator):
 		if self.__is_train:
 			self.__model.update_history(state, action, action_filter)
 
-		if is_kong == h_is_kong:
+		if is_kong == h_is_kong and choice == h_choice:
 			self.__pending_reward = REWARD_SAME
 		else:
 			self.__pending_reward = REWARD_DIFF

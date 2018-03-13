@@ -181,7 +181,6 @@ class MJPolicyGradient:
 		loss = None
 		# discount and normalize episode reward
 		discounted_ep_rs_norm = discount_and_norm_rewards()
-
 		# train on episode
 		_, loss = self.__sess.run(
 			[self.__train_op, self.__loss], 
