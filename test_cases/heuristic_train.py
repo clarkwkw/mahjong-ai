@@ -111,10 +111,11 @@ def test(args):
 
 	if args.save_name is None:
 		response = input("You have not entered save_name, are you sure? [y/n] ").lower()
-		args.model_dir = "heuristic_trainer"
 		if response != "y":
 			exit(-1)
 
+	if args.model_dir is None:
+		args.model_dir = "heuristic_trainer"
 
 	model = deep_model_paras[args.model]["getter"](args.model_dir, **deep_model_paras[args.model]["parameters"])
 
