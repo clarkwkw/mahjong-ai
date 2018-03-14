@@ -145,7 +145,7 @@ def test(args):
 			game = Game.Game(shuffled_players)
 
 		winner, losers, penalty = game.start_game()
-		loss_record[i%test_game_freq] = model.learn(display_cost = False)
+		loss_record[i%test_game_freq] = model.learn(display_cost = (i+1)%test_game_freq == 0)
 
 		if (i+1)%test_game_freq == 0:
 
