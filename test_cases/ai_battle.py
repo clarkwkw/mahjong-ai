@@ -37,6 +37,15 @@ _models = {
 			"mcts_max_iter": 1000
 		}
 	},
+	"mjedeepq":{
+		"class": MoveGenerator.DeepQEGenerator,
+		"parameters":{
+			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
+			"is_train": False,
+			"display_step": False,
+			"skip_history": False 
+		}
+	},
 	"mjdeepq":{
 		"class": MoveGenerator.DeepQGenerator,
 		"parameters":{
