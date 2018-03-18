@@ -63,6 +63,7 @@ class MJEDeepQNetwork:
 				self.__r = g.get_tensor_by_name("r:0")
 				self.__a = g.get_tensor_by_name("a:0")
 				self.__a_filter = g.get_tensor_by_name("a_filter:0")
+				self.__a_filter_ = g.get_tensor_by_name("a_filter_:0")
 				self.__is_train = g.get_tensor_by_name("is_train:0")
 				self.__q_eval = tf.get_collection("q_eval")[0]
 				self.__loss = tf.get_collection("loss")[0]
@@ -70,7 +71,7 @@ class MJEDeepQNetwork:
 				self.__target_replace_op = tf.get_collection("target_replace_op")
 
 			self.__memory_counter = 0
-			self.__memory = np.zeros((self.__memory_size, sample_n_inputs * 2 + 2 + n_actions))
+			self.__memory = np.zeros((self.__memory_size, sample_n_inputs * 2 + 2 + 2*n_actions))
 
 		tf.reset_default_graph()
 
@@ -126,13 +127,14 @@ class MJEDeepQNetwork:
 		self.__r = tf.placeholder(tf.float32, [None, ], name = "r")
 		self.__a = tf.placeholder(tf.int32, [None, ], name = "a")
 		self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter")
+		self.__a_filter_ = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter_")
 		self.__is_train = tf.placeholder(tf.bool, [], name = "is_train") 
 		
 		with tf.variable_scope("eval_net"):
 			self.__q_eval = connect(self.__s, self.__a_filter, "eval_net_params")
 
 		with tf.variable_scope("target_net"):
-			self.__q_next = connect(self.__s_, self.__a_filter, "target_net_params")
+			self.__q_next = connect(self.__s_, self.__a_filter_, "target_net_params")
 
 		self.__q_target = tf.stop_gradient(self.__r + reward_decay * tf.reduce_max(self.__q_next, axis = 1))
 		
@@ -156,11 +158,14 @@ class MJEDeepQNetwork:
 	def learn_step_counter(self):
 		return self.__learn_step_counter
 
-	def store_transition(self, state, action, reward, state_, action_filter = None):
+	def store_transition(self, state, action, reward, state_, action_filter = None, action_filter_ = None):
 		if action_filter is None:
 			action_filter = np.full(n_actions, 1)
 
-		transition = np.hstack((state.reshape((sample_n_inputs)), [action, reward], state_.reshape((sample_n_inputs)), action_filter))
+		if action_filter_ is None:
+			action_filter_ = np.full(n_actions, 1)
+
+		transition = np.hstack((state.reshape((sample_n_inputs)), [action, reward], state_.reshape((sample_n_inputs)), action_filter, action_filter_))
 		index = self.__memory_counter % self.__memory_size
 		self.__memory[index, :] = transition
 		self.__memory_counter += 1
@@ -207,7 +212,8 @@ class MJEDeepQNetwork:
 					self.__a: batch_memory[:, sample_n_inputs],
 					self.__r: batch_memory[:, sample_n_inputs + 1],
 					self.__s_: batch_memory[:, (sample_n_inputs + 2):(sample_n_inputs*2 + 2)].reshape([-1] + sample_shape),
-					self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):],
+					self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):(sample_n_inputs*2 + 2 + n_actions)],
+					self.__a_filter_: batch_memory[:, (sample_n_inputs*2 + 2 + n_actions):],
 					self.__is_train: True
 				})
 		tf.reset_default_graph()

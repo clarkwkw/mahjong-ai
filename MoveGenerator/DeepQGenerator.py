@@ -64,7 +64,7 @@ class DeepQGenerator(MoveGenerator):
 		self.q_network_history["action"] = action
 		self.q_network_history["action_filter"] = action_filter
 
-	def update_transition(self, state_, reward = 0):
+	def update_transition(self, state_, reward = 0, action_filter_ = None):
 		if not self.is_train:
 			return
 

@@ -64,7 +64,7 @@ class DeepQEGenerator(MoveGenerator):
 		self.q_network_history["action"] = action
 		self.q_network_history["action_filter"] = action_filter
 
-	def update_transition(self, state_, reward = 0):
+	def update_transition(self, state_, reward = 0, action_filter_ = None):
 		if not self.is_train:
 			return
 
@@ -73,10 +73,11 @@ class DeepQEGenerator(MoveGenerator):
 
 		if type(state_) == str and state_ == "terminal":
 			state_ = self.q_network_history["state"]
+			action_filter_ = self.q_network_history["action_filter"]
 
 		self.history_waiting = False
 		q_network = get_MJEDeepQNetwork(self.q_network_path)
-		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"])
+		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"], action_filter_)
 
 	def clear_history(self):
 		self.history_waiting = False
@@ -99,20 +100,20 @@ class DeepQEGenerator(MoveGenerator):
 		q_network = get_MJEDeepQNetwork(self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
-		if not self.skip_history and self.history_waiting:
-			self.update_transition(state, REWARD_NON_TERMINAL)
-
 		valid_actions = [34 + decisions_.index("no_action")]
 		for choice in choices:
 			valid_actions.append(34 + decisions_.index("%s_chow_%d"%(new_tile.suit, choice)))
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+
+		if not self.skip_history and self.history_waiting:
+			self.update_transition(state, REWARD_NON_TERMINAL, action_filter)
 		
 		while True:
 			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
-				self.update_transition(state, REWARD_INVALID_DECISION)
+				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
 			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
@@ -168,18 +169,18 @@ class DeepQEGenerator(MoveGenerator):
 		q_network = get_MJEDeepQNetwork(self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = kong_tile)
 
-		if not self.skip_history and self.history_waiting:
-			self.update_transition(state, REWARD_NON_TERMINAL)
-
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+
+		if not self.skip_history and self.history_waiting:
+			self.update_transition(state, REWARD_NON_TERMINAL, action_filter)
 		
 		while True:
 			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
-				self.update_transition(state, REWARD_INVALID_DECISION)
+				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
 			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
@@ -217,18 +218,18 @@ class DeepQEGenerator(MoveGenerator):
 		q_network = get_MJEDeepQNetwork(self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
-		if not self.skip_history and self.history_waiting:
-			self.update_transition(state, REWARD_NON_TERMINAL)
-
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+
+		if not self.skip_history and self.history_waiting:
+			self.update_transition(state, REWARD_NON_TERMINAL, action_filter)
 		
 		while True:
 			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
-				self.update_transition(state, REWARD_INVALID_DECISION)
+				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
 			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
@@ -283,9 +284,6 @@ class DeepQEGenerator(MoveGenerator):
 		fixed_hand, hand = player.fixed_hand, player.hand
 		state = utils.extended_dnn_encode_state(player, neighbors, new_tile = new_tile)
 
-		if not self.skip_history and self.history_waiting:
-			self.update_transition(state, REWARD_NON_TERMINAL)
-
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
@@ -299,11 +297,14 @@ class DeepQEGenerator(MoveGenerator):
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 		action = None
+
+		if not self.skip_history and self.history_waiting:
+			self.update_transition(state, REWARD_NON_TERMINAL, action_filter)
 		
 		while True:
 			if action is not None and not self.skip_history:
 				self.update_history(state, action, action_filter)
-				self.update_transition(state, REWARD_INVALID_DECISION)
+				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
 			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
 			
