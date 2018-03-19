@@ -40,8 +40,6 @@ class ModelETrainer(MoveGenerator):
 		self.begin_decision()
 		
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
-		if self.__model.history_waiting:
-			self.__model.update_transition(state, self.__pending_reward)
 
 		h_is_chow, h_choice = self.__hmodel.decide_chow(player, new_tile, choices, neighbors, game)
 		valid_actions = [34 + decisions_.index("no_action")]
@@ -49,6 +47,10 @@ class ModelETrainer(MoveGenerator):
 			valid_actions.append(34 + decisions_.index("%s_chow_%d"%(new_tile.suit, choice)))
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		
+		if self.__model.history_waiting:
+			self.__model.update_transition(state, self.__pending_reward, action_filter)
+
 		is_chow, choice = self.__model.decide_chow(player, new_tile, choices, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_chow else 34 + decisions_.index("%s_chow_%d"%(new_tile.suit, choice))
 		if self.__is_train:
@@ -66,13 +68,14 @@ class ModelETrainer(MoveGenerator):
 		self.begin_decision()
 		
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
-		if self.__model.history_waiting:
-			self.__model.update_transition(state, self.__pending_reward)
 
 		h_is_kong = self.__hmodel.decide_kong(player, new_tile, kong_tile, location, src, neighbors, game)
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		if self.__model.history_waiting:
+			self.__model.update_transition(state, self.__pending_reward, action_filter)
+
 		is_kong = self.__model.decide_kong(player, new_tile, kong_tile, location, src, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_kong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		if self.__is_train:
@@ -88,13 +91,14 @@ class ModelETrainer(MoveGenerator):
 	def decide_pong(self, player, new_tile, neighbors, game):
 		self.begin_decision()
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
-		if self.__model.history_waiting:
-			self.__model.update_transition(state, self.__pending_reward)
-
+		
 		h_is_pong = self.__hmodel.decide_pong(player, new_tile, neighbors, game)
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
+		if self.__model.history_waiting:
+			self.__model.update_transition(state, self.__pending_reward, action_filter)
+
 		is_pong = self.__model.decide_pong(player, new_tile, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_pong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		if self.__is_train:
@@ -120,8 +124,6 @@ class ModelETrainer(MoveGenerator):
 		self.begin_decision()
 		
 		state = utils.extended_dnn_encode_state(player, neighbors, new_tile = new_tile)
-		if self.__model.history_waiting:
-			self.__model.update_transition(state, self.__pending_reward)
 		valid_actions = []
 		tiles = player.hand if new_tile is None else player.hand + [new_tile]
 		for tile in tiles:
@@ -130,6 +132,9 @@ class ModelETrainer(MoveGenerator):
 		action_filter = np.zeros(n_decisions)
 		action_filter[valid_actions] = 1
 
+		if self.__model.history_waiting:
+			self.__model.update_transition(state, self.__pending_reward, action_filter)
+		
 		h_drop_tile = self.__hmodel.decide_drop_tile(player, new_tile, neighbors, game)
 		drop_tile = self.__model.decide_drop_tile(player, new_tile, neighbors, game)
 		action = Tile.convert_tile_index(drop_tile)
