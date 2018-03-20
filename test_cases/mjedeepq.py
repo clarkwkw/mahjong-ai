@@ -2,12 +2,13 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJEDeepQNetwork
+from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR
 import Player, Game
 import MoveGenerator
 from . import utils
 
 EXIT_FLAG = False
+is_pr = True
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
 freq_model_save = None
@@ -46,6 +47,7 @@ trainer_models = {
 	"deepq": {
 		"class": MoveGenerator.DeepQEGenerator,
 		"parameters": {
+			"is_pr": is_pr,
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
 			"is_train": False,
@@ -59,6 +61,8 @@ trainer_models = {
 		}
 	}
 }
+
+get_network = get_MJEDeepQNetworkPR if is_pr else get_MJEDeepQNetwork
 
 def signal_handler(signal, frame):
 	global EXIT_FLAG
@@ -95,7 +99,7 @@ def test(args):
 		if args.model_dir is None:
 			raise Exception("model_dir must be given to test/play")
 
-	model = get_MJEDeepQNetwork(args.model_dir, **deep_q_model_paras)
+	model = get_network(args.model_dir, **deep_q_model_paras)
 
 	players = []
 	i = 0
@@ -107,7 +111,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator, player_name = names[i], q_network_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
+	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator, player_name = names[i], q_network_path = args.model_dir, is_pr = is_pr, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(deepq_player)
 
 	if args.action != "play":

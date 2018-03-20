@@ -20,10 +20,10 @@ character_chow, character_pong, dots_chow, dots_pong, bamboo_chow, bamboo_pong, 
 = 42
 '''
 
-REWARD_VICTORY = 300
+REWARD_VICTORY = 100
 REWARD_DRAW = 0
-REWARD_LOSE = 0
-REWARD_INVALID_DECISION = -1
+REWARD_LOSE = -100
+REWARD_INVALID_DECISION = -5
 REWARD_NON_TERMINAL = 0
 
 n_decisions = 42
