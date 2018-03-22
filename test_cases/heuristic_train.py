@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient, get_MJEDeepQNetwork, get_MJEDeepQNetworkPR
+from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient, get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD
 import Player, Game
 import MoveGenerator
 from . import utils
@@ -13,9 +13,14 @@ test_game_size = 100
 test_game_freq = 5000
 freq_shuffle_players = 8
 trainer_conf = ["heuristics", "heuristics", "heuristics"]
-is_pr = True
+network_type = "pr"
 
-edeepq_getter = get_MJEDeepQNetworkPR if is_pr else get_MJEDeepQNetwork
+edeepq_getter_map = {
+	"vanilla": get_MJEDeepQNetwork,
+	"pr": get_MJEDeepQNetworkPR,
+	"prd": get_MJEDeepQNetworkPRD
+}
+edeepq_getter = edeepq_getter_map[network_type]
 deep_model_paras = {
 	"deepq": {
 		"getter": get_MJDeepQNetwork,
@@ -63,7 +68,7 @@ generator_paras = {
 	"edeepq":{
 		"class": MoveGenerator.ModelETrainer,
 		"parameters": {
-			"is_pr": is_pr,
+			"network_type": network_type,
 			"model": MoveGenerator.DeepQEGenerator,
 			"display_step": False,
 			"q_network_path": "heuristic_trainer"

@@ -2,13 +2,13 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR
+from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD
 import Player, Game
 import MoveGenerator
 from . import utils
 
 EXIT_FLAG = False
-is_pr = True
+network_type = "pr"
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
 freq_model_save = None
@@ -47,7 +47,7 @@ trainer_models = {
 	"deepq": {
 		"class": MoveGenerator.DeepQEGenerator,
 		"parameters": {
-			"is_pr": is_pr,
+			"network_type": network_type,
 			"display_step": False,
 			"q_network_path": deep_q_model_dir,
 			"is_train": False,
@@ -61,8 +61,12 @@ trainer_models = {
 		}
 	}
 }
-
-get_network = get_MJEDeepQNetworkPR if is_pr else get_MJEDeepQNetwork
+edeepq_getter_map = {
+	"vanilla": get_MJEDeepQNetwork,
+	"pr": get_MJEDeepQNetworkPR,
+	"prd": get_MJEDeepQNetworkPRD
+}
+get_network = edeepq_getter_map[network_type]
 
 def signal_handler(signal, frame):
 	global EXIT_FLAG
@@ -111,7 +115,7 @@ def test(args):
 		players.append(player)
 		i += 1
 
-	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator, player_name = names[i], q_network_path = args.model_dir, is_pr = is_pr, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
+	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator, player_name = names[i], q_network_path = args.model_dir, network_type = network_type, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(deepq_player)
 
 	if args.action != "play":

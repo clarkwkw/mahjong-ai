@@ -14,17 +14,17 @@ loaded_models = {
 n_actions = 48
 sample_shape = [10, 34, 1]
 sample_n_inputs = 10 * 34 * 1
-def get_MJEDeepQNetworkPR(path, **kwargs):
+def get_MJEDeepQNetworkPRD(path, **kwargs):
 	if path not in loaded_models:
 		try:
-			loaded_models[path] = MJEDeepQNetworkPR.load(path)
+			loaded_models[path] = MJEDeepQNetworkPRD.load(path)
 		except Exception as e:
 			print(e)
-			loaded_models[path] = MJEDeepQNetworkPR(**kwargs)
+			loaded_models[path] = MJEDeepQNetworkPRD(**kwargs)
 	return loaded_models[path]
 
 
-class MJEDeepQNetworkPR:
+class MJEDeepQNetworkPRD:
 	def __init__(self, from_save = None, is_deep = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
@@ -90,7 +90,19 @@ class MJEDeepQNetworkPR:
 			weight_3 = tf.get_variable("weight_3", [1280, n_actions], initializer = w_init, collections = collects)
 			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
 
-			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
+			weight_value = tf.get_variable("weight_value", [640, 1], initializer = w_init, collections = collects)
+			bias_value = tf.get_variable("bias_value", [1], initializer = b_init, collections = collects)
+			value = tf.matmul(layer_3, weight_value) + bias_value
+
+			weight_adv = tf.get_variable("weight_adv", [640, n_actions], initializer = w_init, collections = collects)
+			bias_adv = tf.get_variable("bias_adv", [n_actions], initializer = b_init, collections = collects)
+			weight_illegal = tf.get_variable("weight_illegal", [1], initializer = b_init, collections = collects)
+			adv_t = tf.matmul(layer_3, weight_adv) + bias_adv
+			adv = tf.matmul(adv_t, action_filter) + (1 - action_filter)*weight_illegal
+
+			out = value + (adv - tf.reduce_mean(adv, axis = 1, keep_dims = True))
+
+			return out
 
 		def make_deep_connection(state, action_filter, c_name):
 			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
@@ -106,16 +118,29 @@ class MJEDeepQNetworkPR:
 
 			weight_1 = tf.get_variable("weight_1", [5*34, 3840], initializer = w_init, collections = collects)
 			bias_1 = tf.get_variable("bias_1", [3840], initializer = b_init, collections = collects)
-			layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
+			layer_1 = tf.nn.relu(tf.matmul(input_flat, weight_1) + bias_1)
 
 			weight_2 = tf.get_variable("weight_2", [3840, 1280], initializer = w_init, collections = collects)
 			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
-			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+			layer_2 = tf.nn.relu(tf.matmul(layer_1, weight_2) + bias_2)
 
-			weight_3 = tf.get_variable("weight_3", [1280, n_actions], initializer = w_init, collections = collects)
-			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+			weight_3 = tf.get_variable("weight_3", [1280, 640], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [640], initializer = b_init, collections = collects)
+			layer_3 = tf.nn.relu(tf.matmul(layer_2, weight_3) + bias_3)
 
-			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
+			weight_value = tf.get_variable("weight_value", [640, 1], initializer = w_init, collections = collects)
+			bias_value = tf.get_variable("bias_value", [1], initializer = b_init, collections = collects)
+			value = tf.matmul(layer_3, weight_value) + bias_value
+
+			weight_adv = tf.get_variable("weight_adv", [640, n_actions], initializer = w_init, collections = collects)
+			bias_adv = tf.get_variable("bias_adv", [n_actions], initializer = b_init, collections = collects)
+			weight_illegal = tf.get_variable("weight_illegal", [1], initializer = b_init, collections = collects)
+			adv_t = tf.matmul(layer_3, weight_adv) + bias_adv
+			adv = tf.multiply(adv_t, action_filter) + tf.multiply(1 - action_filter, weight_illegal)
+
+			out = value + (adv - tf.reduce_mean(adv, axis = 1, keep_dims = True))
+
+			return out
 		
 		if is_deep is None:
 			raise Exception("is_deep cannot be None")

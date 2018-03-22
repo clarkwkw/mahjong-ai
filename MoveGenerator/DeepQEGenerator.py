@@ -4,7 +4,7 @@ import random
 import numpy as np
 import Tile
 from TGLanguage import get_tile_name, get_text
-from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR
+from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 
 display_name = "DeepQE"
@@ -29,17 +29,18 @@ REWARD_NON_TERMINAL = 0
 decisions_ = ["dots_chow_-1", "dots_chow_0", "dots_chow_1", "dots_pong", "characters_chow_-1", "characters_chow_0", "characters_chow_1", "characters_pong", "bamboo_chow_-1", "bamboo_chow_0", "bamboo_chow_1", "bamboo_pong", "honor_pong", "no_action"]
 n_decisions = 34 + len(decisions_)
 get_network = {
-	False: get_MJEDeepQNetwork,
-	True: get_MJEDeepQNetworkPR
+	"vanilla": get_MJEDeepQNetwork,
+	"pr": get_MJEDeepQNetworkPR,
+	"prd": get_MJEDeepQNetworkPRD
 }
 
 class DeepQEGenerator(MoveGenerator):
-	def __init__(self, player_name, q_network_path, is_train, is_pr = False, skip_history = False, display_tgboard = False, display_step = False):
+	def __init__(self, player_name, q_network_path, is_train, network_type = "vanilla", skip_history = False, display_tgboard = False, display_step = False):
 		super(DeepQEGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
 		self.display_step = display_step
 		self.q_network_path = q_network_path
 		self.is_train = is_train
-		self.is_pr = is_pr
+		self.network_type = network_type
 		self.skip_history = skip_history
 		self.clear_history()
 
@@ -81,7 +82,7 @@ class DeepQEGenerator(MoveGenerator):
 			action_filter_ = self.q_network_history["action_filter"]
 
 		self.history_waiting = False
-		q_network = get_network[self.is_pr](self.q_network_path)
+		q_network = get_network[self.network_type](self.q_network_path)
 		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"], action_filter_)
 
 	def clear_history(self):
@@ -102,7 +103,7 @@ class DeepQEGenerator(MoveGenerator):
 		
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_network[self.is_pr](self.q_network_path)
+		q_network = get_network[self.network_type](self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		valid_actions = [34 + decisions_.index("no_action")]
@@ -171,7 +172,7 @@ class DeepQEGenerator(MoveGenerator):
 		else:
 			location = "hand"
 
-		q_network = get_network[self.is_pr](self.q_network_path)
+		q_network = get_network[self.network_type](self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = kong_tile)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
@@ -220,7 +221,7 @@ class DeepQEGenerator(MoveGenerator):
 
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_network[self.is_pr](self.q_network_path)
+		q_network = get_network[self.network_type](self.q_network_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
@@ -292,7 +293,7 @@ class DeepQEGenerator(MoveGenerator):
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
-		q_network = get_network[self.is_pr](self.q_network_path)
+		q_network = get_network[self.network_type](self.q_network_path)
 		
 		valid_actions = []
 		tiles = player.hand if new_tile is None else player.hand + [new_tile]
