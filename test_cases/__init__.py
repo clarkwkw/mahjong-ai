@@ -10,6 +10,7 @@ test_cases = [
 	"mjdeepq",
 	"mjedeepq", 
 	"mjpg",
+	"mjpgf",
 	"rule_base_mcts",
 	"rule_base_naive", 
 	"rule_base_q",

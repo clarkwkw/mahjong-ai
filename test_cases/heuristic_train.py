@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 import random
 import signal
-from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient, get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD
+from MLUtils import get_MJDeepQNetwork, get_MJPolicyGradient, get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD, get_MJPGFitted
 import Player, Game
 import MoveGenerator
 from . import utils
@@ -53,6 +53,13 @@ deep_model_paras = {
 			"learning_rate": 1e-3,
 			"reward_decay": 0.99
 		}
+	},
+	"pg_fitted": {
+		"getter": get_MJPGFitted,
+		"parameters": {
+			"learning_rate": 1e-3,
+			"reward_decay": 0.99
+		}
 	}
 }
 
@@ -81,6 +88,14 @@ generator_paras = {
 			"display_step": False,
 			"pg_model_path": "heuristic_trainer"
 		}
+	},
+	"pg_fitted":{
+		"class": MoveGenerator.ModelETrainer,
+			"parameters": {
+				"model": MoveGenerator.PGFGenerator,
+				"display_step": False,
+				"pg_model_path": "heuristic_trainer"
+			}
 	},
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -153,7 +168,10 @@ def test(args):
 			game = Game.Game(shuffled_players)
 
 		winner, losers, penalty = game.start_game()
-		loss_record[i%test_game_freq] = model.learn(display_cost = (i+1)%test_game_freq == 0)
+		if args.model != "pg_fitted":
+			loss_record[i%test_game_freq] = model.learn(display_cost = (i+1)%test_game_freq == 0)
+		else:
+			loss_record[i%test_game_freq] = model.learn(supervised = True, display_cost = (i+1)%test_game_freq == 0)
 
 		if (i+1)%test_game_freq == 0:
 

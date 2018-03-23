@@ -7,4 +7,5 @@ from .MJEDeepQNetwork import MJEDeepQNetwork, get_MJEDeepQNetwork
 from .MJEDeepQNetworkPR import MJEDeepQNetworkPR, get_MJEDeepQNetworkPR
 from .MJEDeepQNetworkPRD import MJEDeepQNetworkPRD, get_MJEDeepQNetworkPRD
 from .MJPolicyGradient import get_MJPolicyGradient, MJPolicyGradient
+from .MJPGFitted import get_MJPGFitted, MJPGFitted
 from .PolicyGradient import PolicyGradient

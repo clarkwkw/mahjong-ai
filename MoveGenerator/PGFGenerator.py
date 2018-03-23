@@ -4,21 +4,10 @@ import random
 import numpy as np
 import Tile
 from TGLanguage import get_tile_name, get_text
-from MLUtils import get_MJEDeepQNetwork, get_MJEDeepQNetworkPR, get_MJEDeepQNetworkPRD
+from MLUtils import get_MJPGFitted
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
 
-display_name = "DeepQE"
-
-'''
-Policy Gradient model:
-state:
-see utils.py
-
-actions:
-discarding any tile 34
-character_chow, character_pong, dots_chow, dots_pong, bamboo_chow, bamboo_pong, honor_pong, no_action
-= 42
-'''
+display_name = "PGF"
 
 REWARD_VICTORY = 100
 REWARD_DRAW = 0
@@ -28,19 +17,13 @@ REWARD_NON_TERMINAL = 0
 
 decisions_ = ["dots_chow_-1", "dots_chow_0", "dots_chow_1", "dots_pong", "characters_chow_-1", "characters_chow_0", "characters_chow_1", "characters_pong", "bamboo_chow_-1", "bamboo_chow_0", "bamboo_chow_1", "bamboo_pong", "honor_pong", "no_action"]
 n_decisions = 34 + len(decisions_)
-get_network = {
-	"vanilla": get_MJEDeepQNetwork,
-	"pr": get_MJEDeepQNetworkPR,
-	"prd": get_MJEDeepQNetworkPRD
-}
 
-class DeepQEGenerator(MoveGenerator):
-	def __init__(self, player_name, q_network_path, is_train, network_type = "vanilla", skip_history = False, display_tgboard = False, display_step = False):
-		super(DeepQEGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
+class PGFGenerator(MoveGenerator):
+	def __init__(self, player_name, pg_model_path, is_train, skip_history = False, display_tgboard = False, display_step = False):
+		super(PGFGenerator, self).__init__(player_name, display_tgboard = display_tgboard)
 		self.display_step = display_step
-		self.q_network_path = q_network_path
+		self.pg_model_path = pg_model_path
 		self.is_train = is_train
-		self.network_type = network_type
 		self.skip_history = skip_history
 		self.clear_history()
 
@@ -66,9 +49,10 @@ class DeepQEGenerator(MoveGenerator):
 			raise Exception("the network is waiting for a transition")
 
 		self.history_waiting = True
-		self.q_network_history["state"] = state
-		self.q_network_history["action"] = action
-		self.q_network_history["action_filter"] = action_filter
+		self.pg_model_history["state"] = state
+		self.pg_model_history["action"] = action
+		self.pg_model_history["action_filter"] = action_filter
+		self.pg_model_history["heuristics_action"] = heuristics_action
 
 	def update_transition(self, state_, reward = 0, action_filter_ = None):
 		if not self.is_train:
@@ -77,20 +61,17 @@ class DeepQEGenerator(MoveGenerator):
 		if not self.history_waiting:
 			raise Exception("the network is NOT waiting for a transition")
 
-		if type(state_) == str and state_ == "terminal":
-			state_ = self.q_network_history["state"]
-			action_filter_ = self.q_network_history["action_filter"]
-
 		self.history_waiting = False
-		q_network = get_network[self.network_type](self.q_network_path)
-		q_network.store_transition(self.q_network_history["state"], self.q_network_history["action"], reward, state_, self.q_network_history["action_filter"], action_filter_)
+		pg_model = get_MJPGFitted(self.pg_model_path)
+		pg_model.store_transition(self.pg_model_history["state"], self.pg_model_history["action"], reward, self.pg_model_history["action_filter"], self.pg_model_history["heuristics_action"])
 
 	def clear_history(self):
 		self.history_waiting = False
-		self.q_network_history = {
+		self.pg_model_history = {
 			"state": None,
 			"action": None,
-			"action_filter" : None
+			"action_filter" : None,
+			"heuristics_action": None
 		}
 
 	def decide_chow(self, player, new_tile, choices, neighbors, game):
@@ -103,7 +84,7 @@ class DeepQEGenerator(MoveGenerator):
 		
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_network[self.network_type](self.q_network_path)
+		pg_model = get_MJPGFitted(self.pg_model_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		valid_actions = [34 + decisions_.index("no_action")]
@@ -121,7 +102,7 @@ class DeepQEGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = True)
 			
 			if action in valid_actions:
 				break
@@ -172,7 +153,7 @@ class DeepQEGenerator(MoveGenerator):
 		else:
 			location = "hand"
 
-		q_network = get_network[self.network_type](self.q_network_path)
+		pg_model = get_MJPGFitted(self.pg_model_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = kong_tile)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
@@ -188,7 +169,7 @@ class DeepQEGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = True)
 			
 			if action in valid_actions:
 				break
@@ -221,7 +202,7 @@ class DeepQEGenerator(MoveGenerator):
 
 		self.print_msg("Someone just discarded a %s."%new_tile.symbol)
 
-		q_network = get_network[self.network_type](self.q_network_path)
+		pg_model = get_MJPGFitted(self.pg_model_path)
 		state = utils.extended_dnn_encode_state(player, neighbors, cpk_tile = new_tile)
 
 		valid_actions = [34 + decisions_.index("%s_pong"%new_tile.suit), 34 + decisions_.index("no_action")]
@@ -237,7 +218,7 @@ class DeepQEGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = True)
 			
 			if action in valid_actions:
 				break
@@ -293,7 +274,7 @@ class DeepQEGenerator(MoveGenerator):
 		if self.display_step:
 			self.print_game_board(fixed_hand, hand, neighbors, game, new_tile)
 
-		q_network = get_network[self.network_type](self.q_network_path)
+		pg_model = get_MJPGFitted(self.pg_model_path)
 		
 		valid_actions = []
 		tiles = player.hand if new_tile is None else player.hand + [new_tile]
@@ -312,7 +293,7 @@ class DeepQEGenerator(MoveGenerator):
 				self.update_history(state, action, action_filter)
 				self.update_transition(state, REWARD_INVALID_DECISION, action_filter)
 			
-			action, value = q_network.choose_action(state, action_filter = action_filter, eps_greedy = self.is_train, return_value = True, strict_filter = not self.is_train)
+			action, value = pg_model.choose_action(state, action_filter = action_filter, return_value = True, strict_filter = True)
 			
 			if action in valid_actions:
 				break

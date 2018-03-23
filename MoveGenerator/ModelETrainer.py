@@ -53,8 +53,9 @@ class ModelETrainer(MoveGenerator):
 
 		is_chow, choice = self.__model.decide_chow(player, new_tile, choices, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_chow else 34 + decisions_.index("%s_chow_%d"%(new_tile.suit, choice))
+		h_action = 34 + decisions_.index("no_action") if not h_is_chow else 34 + decisions_.index("%s_chow_%d"%(new_tile.suit, h_choice))
 		if self.__is_train:
-			self.__model.update_history(state, action, action_filter)
+			self.__model.update_history(state, action, action_filter, heuristics_action = h_action)
 
 		if is_chow == h_is_chow and choice == h_choice:
 			self.__pending_reward = REWARD_SAME
@@ -78,8 +79,9 @@ class ModelETrainer(MoveGenerator):
 
 		is_kong = self.__model.decide_kong(player, new_tile, kong_tile, location, src, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_kong else 34 + decisions_.index("%s_pong"%new_tile.suit)
+		h_action = 34 + decisions_.index("no_action") if not h_is_kong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		if self.__is_train:
-			self.__model.update_history(state, action, action_filter)
+			self.__model.update_history(state, action, action_filter, heuristics_action = h_action)
 
 		if is_kong == h_is_kong:
 			self.__pending_reward = REWARD_SAME
@@ -101,8 +103,9 @@ class ModelETrainer(MoveGenerator):
 
 		is_pong = self.__model.decide_pong(player, new_tile, neighbors, game)
 		action = 34 + decisions_.index("no_action") if not is_pong else 34 + decisions_.index("%s_pong"%new_tile.suit)
+		h_action = 34 + decisions_.index("no_action") if not h_is_pong else 34 + decisions_.index("%s_pong"%new_tile.suit)
 		if self.__is_train:
-			self.__model.update_history(state, action, action_filter)
+			self.__model.update_history(state, action, action_filter, heuristics_action = h_action)
 	
 		if h_is_pong == is_pong:
 			self.__pending_reward = REWARD_SAME
@@ -138,8 +141,9 @@ class ModelETrainer(MoveGenerator):
 		h_drop_tile = self.__hmodel.decide_drop_tile(player, new_tile, neighbors, game)
 		drop_tile = self.__model.decide_drop_tile(player, new_tile, neighbors, game)
 		action = Tile.convert_tile_index(drop_tile)
+		h_action = Tile.convert_tile_index(h_drop_tile)
 		if self.__is_train:
-			self.__model.update_history(state, action, action_filter)
+			self.__model.update_history(state, action, action_filter, heuristics_action = h_action)
 
 		if drop_tile == h_drop_tile:
 			self.__pending_reward = REWARD_SAME

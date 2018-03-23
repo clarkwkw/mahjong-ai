@@ -10,6 +10,7 @@ from .Rule_based_ai_q import RuleBasedAIQ
 from .DeepQGenerator import DeepQGenerator
 from .DeepQEGenerator import DeepQEGenerator
 from .PGGenerator import PGGenerator
+from .PGFGenerator import PGFGenerator
 from .RandomGenerator import RandomGenerator
 
 __models_map = {
