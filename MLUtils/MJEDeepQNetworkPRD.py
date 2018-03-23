@@ -124,18 +124,14 @@ class MJEDeepQNetworkPRD:
 			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
 			layer_2 = tf.nn.relu(tf.matmul(layer_1, weight_2) + bias_2)
 
-			weight_3 = tf.get_variable("weight_3", [1280, 640], initializer = w_init, collections = collects)
-			bias_3 = tf.get_variable("bias_3", [640], initializer = b_init, collections = collects)
-			layer_3 = tf.nn.relu(tf.matmul(layer_2, weight_3) + bias_3)
-
-			weight_value = tf.get_variable("weight_value", [640, 1], initializer = w_init, collections = collects)
+			weight_value = tf.get_variable("weight_value", [1280, 1], initializer = w_init, collections = collects)
 			bias_value = tf.get_variable("bias_value", [1], initializer = b_init, collections = collects)
-			value = tf.matmul(layer_3, weight_value) + bias_value
+			value = tf.matmul(layer_2, weight_value) + bias_value
 
-			weight_adv = tf.get_variable("weight_adv", [640, n_actions], initializer = w_init, collections = collects)
+			weight_adv = tf.get_variable("weight_adv", [1280, n_actions], initializer = w_init, collections = collects)
 			bias_adv = tf.get_variable("bias_adv", [n_actions], initializer = b_init, collections = collects)
 			weight_illegal = tf.get_variable("weight_illegal", [1], initializer = b_init, collections = collects)
-			adv_t = tf.matmul(layer_3, weight_adv) + bias_adv
+			adv_t = tf.matmul(layer_2, weight_adv) + bias_adv
 			adv = tf.multiply(adv_t, action_filter) + tf.multiply(1 - action_filter, weight_illegal)
 
 			out = value + (adv - tf.reduce_mean(adv, axis = 1, keep_dims = True))
