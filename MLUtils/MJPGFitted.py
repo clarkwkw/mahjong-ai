@@ -24,9 +24,8 @@ def get_MJPGFitted(path, **kwargs):
 	return loaded_models[path]
 
 class MJPGFitted:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95):
+	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95, sl_memory_size = 800, sl_batch_size = 200):
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
-		self.__ep_ha = []
 		
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
@@ -41,6 +40,8 @@ class MJPGFitted:
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
+				self.__sl_memory_size = sl_memory_size
+				self.__sl_batch_size = sl_batch_size
 			else:
 				with open(from_save.rstrip("/") + "/" + parameters_file_name, "r") as f:
 					paras_dict = json.load(f)
@@ -56,10 +57,14 @@ class MJPGFitted:
 				self.__a_filter = g.get_tensor_by_name("inputs/actions_filter:0")
 
 				self.__all_act_prob = tf.get_collection("all_act_prob")[0]
+				self.__neg_log_prob = tf.get_collection("neg_log_prob")[0]
 				self.__loss = tf.get_collection("loss")[0]
 				self.__sl_loss = tf.get_collection("sl_loss")[0]
 				self.__train_op = tf.get_collection("train_op")[0]
 				self.__sl_train_op = tf.get_collection("sl_train_op")[0]
+
+		self.__sl_memory_counter = 0
+		self.__sl_memory = np.zeros((self.__sl_memory_size, sample_n_inputs + n_actions + 1))
 
 	def __build_graph(self, learning_rate):
 		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
@@ -99,15 +104,16 @@ class MJPGFitted:
 
 		with tf.name_scope('loss'):
 			# to maximize total reward (log_p * R) is to minimize -(log_p * R), and the tf only have minimize(loss)
-			neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = result, labels = self.__acts)   # this is negative log of chosen action
-			self.__loss = tf.reduce_mean(neg_log_prob * self.__vt)  # reward guided loss
-			self.__sl_loss = tf.reduce_mean(neg_log_prob)
+			self.__neg_log_prob = tf.nn.sparse_softmax_cross_entropy_with_logits(logits = result, labels = self.__acts)   # this is negative log of chosen action
+			self.__loss = tf.reduce_mean(self.__neg_log_prob * self.__vt)  # reward guided loss
+			self.__sl_loss = tf.reduce_mean(self.__neg_log_prob)
 
 		with tf.name_scope('train'):
 			self.__train_op = tf.train.AdamOptimizer(learning_rate).minimize(self.__loss)
 			self.__sl_train_op = tf.train.AdamOptimizer(learning_rate).minimize(self.__sl_loss)
 
 		tf.add_to_collection("all_act_prob", self.__all_act_prob)
+		tf.add_to_collection("neg_log_prob", self.__neg_log_prob)
 		tf.add_to_collection("loss", self.__loss)
 		tf.add_to_collection("sl_loss", self.__sl_loss)
 		tf.add_to_collection("train_op", self.__train_op)
@@ -150,7 +156,11 @@ class MJPGFitted:
 		self.__ep_as.append(action)
 		self.__ep_rs.append(reward)
 		self.__ep_a_filter.append(a_filter)
-		self.__ep_ha.append(heuristics_action)
+		if heuristics_action is not None:
+			transition = np.hstack((state.reshape((sample_n_inputs)), a_filter, [heuristics_action]))
+			index = self.__sl_memory_counter % self.__sl_memory_size
+			self.__sl_memory[index, :] = transition
+			self.__sl_memory_counter += 1
 
 	def learn(self, supervised = False, display_cost = True):
 		def discount_and_norm_rewards():
@@ -184,16 +194,18 @@ class MJPGFitted:
 				}
 			)
 		else:
+			sample_index = np.random.choice(min(self.__sl_memory_size, self.__sl_memory_counter), size = self.__sl_batch_size)
+			batch_memory = self.__sl_memory[sample_index, :]
 			_, loss = self.__sess.run(
 				[self.__sl_train_op, self.__sl_loss], 
 				feed_dict={
-					self.__obs: np.stack(self.__ep_obs, axis = 0),
-					self.__acts: np.array(self.__ep_ha),
-					self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
+					self.__obs: batch_memory[:, 0:sample_n_inputs].reshape([-1] + sample_shape),
+					self.__acts: batch_memory[:, sample_n_inputs+n_actions],
+					self.__a_filter: batch_memory[:, sample_n_inputs:(sample_n_inputs+n_actions)]
 				}
 			)
 
-		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter, self.__ep_ha = [], [], [], [], []
+		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
 		 
 		if display_cost:
 			print("#%4d: %.4f"%(self.__learn_step_counter + 1, loss))
@@ -204,7 +216,9 @@ class MJPGFitted:
 	def save(self, save_dir):
 		paras_dict = {
 			"__reward_decay": self.__reward_decay,
-			"__learn_step_counter": self.__learn_step_counter
+			"__learn_step_counter": self.__learn_step_counter,
+			"__sl_memory_size": self.__sl_memory_size,
+			"__sl_batch_size": self.__sl_batch_size
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

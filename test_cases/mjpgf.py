@@ -18,7 +18,9 @@ game_record = np.zeros((game_record_size, 4, 2))
 
 pg_model_paras = {
 	"learning_rate": 1e-3,
-	"reward_decay": 0.99
+	"reward_decay": 0.99,
+	"sl_memory_size": 800,
+	"sl_batch_size": 200
 }
 pg_model_path = "test"
 

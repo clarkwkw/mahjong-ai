@@ -58,7 +58,9 @@ deep_model_paras = {
 		"getter": get_MJPGFitted,
 		"parameters": {
 			"learning_rate": 1e-3,
-			"reward_decay": 0.99
+			"reward_decay": 0.99,
+			"sl_memory_size": 800,
+			"sl_batch_size": 200
 		}
 	}
 }
