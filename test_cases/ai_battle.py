@@ -41,6 +41,27 @@ _models = {
 		"class": MoveGenerator.DeepQEGenerator,
 		"parameters":{
 			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
+			"network_type": "vanilla",
+			"is_train": False,
+			"display_step": False,
+			"skip_history": False 
+		}
+	},
+	"mjedeepqpr":{
+		"class": MoveGenerator.DeepQEGenerator,
+		"parameters":{
+			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
+			"network_type": "pr",
+			"is_train": False,
+			"display_step": False,
+			"skip_history": False 
+		}
+	},
+	"mjedeepqprd":{
+		"class": MoveGenerator.DeepQEGenerator,
+		"parameters":{
+			"q_network_path": "resources/models/balance_reward/flat_mjdeepq_rand",
+			"network_type": "prd",
 			"is_train": False,
 			"display_step": False,
 			"skip_history": False 
