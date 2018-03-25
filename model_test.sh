@@ -11,11 +11,11 @@ H_MODELS=("heuristics2" "heuristics3")
 H_MODELS_SHORT=("h2" "h3")
 PYVER="3"
 
-'''
+:'
 H_MODELS=("heuristics1" "heuristics2" "heuristics3")
 H_MODELS_SHORT=("h1" "h2" "h3")
 eval "python${PYVER} test.py ai_battle ${MODEL} rand rand rand > ${MODEL_SHORT}_vs_3r.txt"
-'''
+'
 
 for ((i=0; i<${#H_MODELS[@]}; i++));
 	do
