@@ -29,7 +29,7 @@ _models = {
 			 "s_chow": 2,
 			 "s_pong": 6,
 			 "s_future": 1,
-			 "s_explore": 0.4,
+			 "s_explore": 0.35,
 			 "s_neighbor_suit": 0,
 			 "s_mixed_suit": 0
 		}
@@ -41,7 +41,7 @@ _models = {
 			 "s_chow": 2,
 			 "s_pong": 6,
 			 "s_future": 1,
-			 "s_explore": 0.8,
+			 "s_explore": 0.7,
 			 "s_neighbor_suit": 0,
 			 "s_mixed_suit": 0
 		}
