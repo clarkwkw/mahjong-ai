@@ -22,6 +22,30 @@ _models = {
 			 "s_mixed_suit": 0
 		}
 	},
+	"heuristics2": {
+		"class": MoveGenerator.RuleBasedAINaive,
+		"parameters":{
+			 "display_step": False,
+			 "s_chow": 2,
+			 "s_pong": 6,
+			 "s_future": 1,
+			 "s_explore": 0.15,
+			 "s_neighbor_suit": 0,
+			 "s_mixed_suit": 0
+		}
+	},
+	"heuristics3": {
+		"class": MoveGenerator.RuleBasedAINaive,
+		"parameters":{
+			 "display_step": False,
+			 "s_chow": 2,
+			 "s_pong": 6,
+			 "s_future": 1,
+			 "s_explore": 0.3,
+			 "s_neighbor_suit": 0,
+			 "s_mixed_suit": 0
+		}
+	},
 	"mctspy":{
 		"class": MoveGenerator.RuleBasedAINaiveMCTSPy,
 		"parameters":{
