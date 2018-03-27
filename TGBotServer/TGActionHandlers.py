@@ -144,6 +144,8 @@ def continue_game(userid, username, callback_data, bot, update):
 	tg_user = _create_user_if_not_exist(userid, username)
 	if (not tg_user.game_started) or (game_id != tg_user.game_id):
 		bot.send_message(tg_user.tg_userid, TGLanguage.get_text(tg_user.lang, "MSG_BLACKHOLE"), timeout = get_tgmsg_timeout())
+	elif tg_user.last_game_message_id != update.callback_query.inline_message_id:
+		return
 	else:
 		response = tg_user.restore_game_response()
 		tg_game = tg_user.restore_game()
@@ -189,7 +191,7 @@ def continue_game(userid, username, callback_data, bot, update):
 
 				winning_score = get_winning_score(penalty, len(losers) > 1)
 				losing_score = winning_score if len(losers) == 1 else winning_score/3
-				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score), timeout = get_tgmsg_timeout())
+				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score, tg_game.winning_items), timeout = get_tgmsg_timeout())
 				if winner.tg_userid == tg_user.tg_userid:
 					tg_user.end_game(winning_score)
 				elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
