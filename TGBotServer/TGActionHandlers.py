@@ -72,7 +72,7 @@ def new_game(bot, update):
 		tg_players = []
 		opponent_types = []
 		for ai_model in ai_models:
-			name = random.sample(ai_model["names"], 1)
+			name = random.choice(ai_model["names"])
 			tg_players.append(TGPlayer(MoveGenerator.get_model_by_id(ai_model["generator_id"]), name, **ai_model["kwargs"]))
 			opponent_types.append(ai_model["model_id"])
 
