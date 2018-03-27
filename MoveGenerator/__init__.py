@@ -16,7 +16,8 @@ from .RandomGenerator import RandomGenerator
 __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,
 	"RuleBasedAINaiveMCTSCpp": RuleBasedAINaiveMCTSCpp,
-	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy
+	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy,
+	"DeepQ": DeepQGenerator
 }
 
 def get_model_by_id(model_id):

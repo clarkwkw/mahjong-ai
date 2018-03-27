@@ -1,6 +1,6 @@
 from .TGUser import TGUser
 from Player import TGPlayer
-from .utils import pick_opponent_model, get_tg_inline_keyboard, get_winning_score, get_tgmsg_timeout
+from .utils import pick_opponent_models, get_tg_inline_keyboard, get_winning_score, get_tgmsg_timeout
 from .TGResponsePromise import TGResponsePromise
 from .TGSettingHandlers import settings_router
 import MoveGenerator
@@ -29,7 +29,7 @@ def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, los
 	msg += TGLanguage.get_text(tg_user.lang, "GAME_LOSER")+":\n"
 	for loser in losers:
 		msg += "%s -%d\n"%(loser.name, losing_score)
-	msg += "\n%s\n:"%TGLanguage.get_text(tg_user.lang, "GAME_SCORING_ITEMS")
+	msg += "\n%s:\n"%TGLanguage.get_text(tg_user.lang, "GAME_SCORING_ITEMS")
 	for item in items:
 		msg += item + "\n"
 	msg += "\n-- %s --"%TGLanguage.get_text(tg_user.lang, "GAME_END")
@@ -68,12 +68,14 @@ def new_game(bot, update):
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_STARTED"), timeout = get_tgmsg_timeout())
 			return
 
-		ai_model = pick_opponent_model()
-		ai_names = random.sample(ai_model["names"], 3)
+		ai_models = pick_opponent_models()
 		tg_players = []
-		for name in ai_names:
-			tg_players.append(TGPlayer(MoveGenerator.get_model_by_id(ai_model["id"]), name, **ai_model["kwargs"]))
-		
+		opponent_types = []
+		for ai_model in ai_models:
+			name = random.sample(ai_model["names"], 1)
+			tg_players.append(TGPlayer(MoveGenerator.get_model_by_id(ai_model["generator_id"]), name, **ai_model["kwargs"]))
+			opponent_types.append(ai_model["model_id"])
+
 		tg_players.append(TGPlayer(MoveGenerator.TGHuman, tg_user))
 		random.shuffle(tg_players)
 
@@ -85,7 +87,7 @@ def new_game(bot, update):
 		tg_game.push_notification()
 
 		if isinstance(response, TGResponsePromise):
-			tg_user.update_game(tg_game, response, [ai_model["id"], ai_model["id"], ai_model["id"]])
+			tg_user.update_game(tg_game, response, opponent_types)
 			retry_count = 0
 			while True:
 				try:
