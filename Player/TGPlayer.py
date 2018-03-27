@@ -24,7 +24,9 @@ class TGPlayer(Player):
 
 	def change_lang_code(self, new_lang):
 		self.__lang_code = new_lang
-		self._Player__move_generator.change_lang_code(new_lang)
+		
+		if "change_lang_code" in dir(self._Player__move_generator):
+			self._Player__move_generator.change_lang_code(new_lang)
 
 	def new_turn(self, new_tile, neighbors, game, response = None):
 		dispose_tile = None
