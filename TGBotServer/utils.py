@@ -5,10 +5,9 @@ try:
 	from pymongo.errors import ConnectionFailure
 	from pymongo import MongoClient
 	from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Bot
+	from telegram.error import TimedOut, TelegramError
 except ImportError:
 	print("Unresolved dependencies: Telegram/MongoDB")
-
-import math
 
 __initialized = False
 _mongo_client = None
@@ -57,7 +56,12 @@ def get_tgmsg_timeout():
 	return _tgmsg_timeout
 
 def send_tg_message(tg_user_id, message):
-	_tg_bot.send_message(tg_user_id, message)
+	while True:
+		try:
+			_tg_bot.send_message(tg_user_id, message)
+			break
+		except TimedOut:
+			pass
 
 # Server setup
 def load_settings(force_quit_on_err = False):
