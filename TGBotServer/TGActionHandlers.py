@@ -19,7 +19,7 @@ def _create_user_if_not_exist(tg_userid, username = ""):
 		tg_user.save()
 	return tg_user
 
-def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, losing_score):
+def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, losing_score, items):
 	if winner is None:
 		return TGLanguage.get_text(tg_user.lang, "GAME_END_DRAW") + "\n" + "-- %s --"%TGLanguage.get_text(tg_user.lang, "GAME_END")
 
@@ -29,6 +29,9 @@ def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, los
 	msg += TGLanguage.get_text(tg_user.lang, "GAME_LOSER")+":\n"
 	for loser in losers:
 		msg += "%s -%d\n"%(loser.name, losing_score)
+	msg += "\n%s\n:"%TGLanguage.get_text(tg_user.lang, "GAME_SCORING_ITEMS")
+	for item in items:
+		msg += item + "\n"
 	msg += "\n-- %s --"%TGLanguage.get_text(tg_user.lang, "GAME_END")
 
 	return msg

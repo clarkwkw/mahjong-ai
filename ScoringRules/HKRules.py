@@ -1,9 +1,10 @@
 import Tile
+from TGLanguage import get_text
 
 def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src, game):
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
 	if grouped_hands is None:
-		return None, None
+		return None, None, None
 	
 	parameters = {
 		"fixed_hand": fixed_hand,
@@ -13,25 +14,28 @@ def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src
 		"game": game
 	}
 
-	max_hand, max_score = None, float("-inf")
+	max_hand, max_score, max_items = None, float("-inf"), []
 	for grouped_hand in grouped_hands:
 		parameters["grouped_hand"] = grouped_hand
-		score = 0
+		total_score, items = 0, []
 		for score_func in __score_funcs:
-			score += score_func(**parameters)
-			if score >= __score_upper_limit:
-				break
+			score, item = score_func(**parameters)
+			total_score += score
+			if item is not None:
+				items.append(item + " [%d]"%score)
 
-		if score > max_score:
-			max_score = score
+		if total_score > max_score:
+			max_score = total_score
 			max_hand = grouped_hand
+			max_items = items
 
 			if max_score >= __score_upper_limit:
 				break
-	if max_score < __score_lower_limit:
-		return None, None
 
-	return max_hand, min(max_score, __score_upper_limit)
+	if max_score < __score_lower_limit:
+		return None, None, None
+
+	return max_hand, min(max_score, __score_upper_limit), items
 
 def validate_hand(fixed_hand, hand, additional_tile):
 	new_hand = list(hand)
@@ -130,32 +134,32 @@ def score_game_wind(fixed_hand, grouped_hand, game, **kwargs):
 		game_wind_tile = Tile.Tile("honor", game.game_wind)
 		for _, _, tiles in fixed_hand:
 			if tiles[0] == game_wind_tile:
-				return 1
+				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%(game_wind_tile.get_display_name(game.lang_code))
 
 		for _, tiles in grouped_hand:
 			if tiles[0] == game_wind_tile:
-				return 1
+				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%(game_wind_tile.get_display_name(game.lang_code))
 
-	return 0
+	return 0, None
 
-def score_drawn_tile(additional_tile_src, **kwargs):
+def score_drawn_tile(additional_tile_src, game, **kwargs):
 	if additional_tile_src == "drawn":
-		return 1
+		return 1, get_text(game.lang_code, "HKRULE_DRAWN_TILE")
 
-	return 0
+	return 0, None
 
-def score_all_chows(fixed_hand, grouped_hand, **kwargs):
+def score_all_chows(fixed_hand, grouped_hand, game, **kwargs):
 	for meld_type, _, _ in fixed_hand:
 		if meld_type != "chow":
-			return 0
+			return 0, None
 
 	for meld_type, _ in grouped_hand:
 		if meld_type != "chow" and meld_type != "pair":
-			return 0
+			return 0, None
 
-	return 1
+	return 1, get_text(game.lang_code, "HKRULE_ALL_CHOWS")
 
-def score_honor_tiles(fixed_hand, grouped_hand, **kwargs):
+def score_honor_tiles(fixed_hand, grouped_hand, game, **kwargs):
 	matched_count = 0
 	pair_involved = False
 
@@ -176,44 +180,45 @@ def score_honor_tiles(fixed_hand, grouped_hand, **kwargs):
 
 	if matched_count == 3:
 		if not pair_involved:
-			return __score_upper_limit
+			return __score_upper_limit, get_text(game.lang_code, "HKRULE_RGW_LARGE")
 
-		return 5
+		return 5, get_text(game.lang_code, "HKRULE_RGW_SMALL")
 
-	return matched_count - pair_involved
+	return matched_count - pair_involved, get_text(game.lang_code, "HKRULE_RGW_NORMAL") if matched_count - pair_involved > 0 else None
 
-def score_ones_nines(fixed_hand, grouped_hand, **kwargs):
+def score_ones_nines(fixed_hand, grouped_hand, game, **kwargs):
 	honor_involved = False
 
 	for meld_type, _, tiles in fixed_hand:
 		if meld_type == "chow":
-			return 0
+			return 0, None
 
 		if tiles[0].value != 1 and tiles[0].value != 9:
 			if tiles[0].suit != "honor":
-				return 0
+				return 0, None
 			honor_involved = True
 
 	for meld_type, tiles in grouped_hand:
 		if meld_type == "chow":
-			return 0
+			return 0, None
 			
 		if tiles[0].value != 1 and tiles[0].value != 9:
 			if tiles[0].suit != "honor":
-				return 0
+				return 0, None
 			honor_involved = True
 
 	if honor_involved:
-		return 1
-	return __score_upper_limit
+		return 1, get_text(game.lang_code, "HKRULE_ONENINE_SMALL")
+
+	return __score_upper_limit, get_text(game.lang_code, "HKRULE_ONENINE_LARGE")
 
 def score_drawn_last_tile(additional_tile_src, game, **kwargs):
 	if game is not None and additional_tile_src == "draw" and game.deck_size == 0:
-		return 1
+		return 1, get_text(game.lang_code, "HKRULE_DRAWN_LAST_TILE")
 
-	return 0
+	return 0, None
 
-def score_one_suit(fixed_hand, grouped_hand, **kwargs):
+def score_one_suit(fixed_hand, grouped_hand, game, **kwargs):
 	non_honor_suit = None
 	honor_involved = False
 
@@ -226,7 +231,7 @@ def score_one_suit(fixed_hand, grouped_hand, **kwargs):
 			non_honor_suit = tiles[0].suit
 			
 		if tiles[0].suit != non_honor_suit:
-			return 0
+			return 0, None
 
 	for _, tiles in grouped_hand:
 		if tiles[0].suit == "honor":
@@ -237,24 +242,25 @@ def score_one_suit(fixed_hand, grouped_hand, **kwargs):
 			non_honor_suit = tiles[0].suit
 			
 		if tiles[0].suit != non_honor_suit:
-			return 0
+			return 0, None
+
 	if honor_involved:
-		return 3
+		return 3, get_text(game.lang_code, "HKRULE_ONE_SUIT_WITH_HONOR")
 
-	return 7
+	return 7, get_text(game.lang_code, "HKRULE_ONE_SUIT")
 
-def score_all_pongs(fixed_hand, grouped_hand, **kwargs):
+def score_all_pongs(fixed_hand, grouped_hand, game, **kwargs):
 	for meld_type, _, _ in fixed_hand:
 		if meld_type == "chow":
-			return 0
+			return 0, None
 
 	for meld_type, _ in grouped_hand:
 		if meld_type == "chow":
-			return 0
+			return 0, None
 
-	return 3
+	return 3, get_text(game.lang_code, "HKRULE_ALL_PONGS")
 
-def score_four_winds(fixed_hand, grouped_hand, **kwargs):
+def score_four_winds(fixed_hand, grouped_hand, game, **kwargs):
 	match_count = 0
 	for _, _, tiles in fixed_hand:
 		if tiles[0].suit == "honor":
@@ -271,86 +277,85 @@ def score_four_winds(fixed_hand, grouped_hand, **kwargs):
 			match_count += tiles[0] == Tile.tile_map["honor"]["north"]
 
 	if match_count == 4:
-		return __score_upper_limit
+		return __score_upper_limit, get_text(game.lang_code, "HKRULE_FOUR_WINDS")
 
-	return 0
+	return 0, None
 
-def score_pure_honor_suit(fixed_hand, grouped_hand, **kwargs):
+def score_pure_honor_suit(fixed_hand, grouped_hand, game, **kwargs):
 	for _, _, tiles in fixed_hand:
 		if tiles[0].suit != "honor":
-			return 0
+			return 0, None
 
 	for _, tiles in grouped_hand:
 		if tiles[0].suit != "honor":
-			return 0
+			return 0, None
 	
-	return __score_upper_limit
+	return __score_upper_limit, get_text(game.lang_code, "HKRULE_PURE_HONOR_SUIT")
 
-def score_secret_all_pongs_with_draw(fixed_hand, grouped_hand, additional_tile_src, **kwargs):
+def score_secret_all_pongs_with_draw(fixed_hand, grouped_hand, additional_tile_src, game, **kwargs):
 	if additional_tile_src != "draw":
-		return 0
+		return 0, None
 
 	for meld_type, is_secret, _ in fixed_hand:
-		if not is_secret or meld_type == "chow":
-			return 0
+		return 0, None
 
 	for meld_type, _ in grouped_hand:
 		if meld_type == "chow":
-			return 0
+			return 0, None
 
-	return __score_upper_limit
+	return __score_upper_limit, get_text(game.lang_code, "HKRULE_ALL_PONGS_WITH_DRAW")
 
-def score_pure_one_to_nine(fixed_hand, grouped_hand, **kwargs):
+def score_pure_one_to_nine(fixed_hand, grouped_hand, game, **kwargs):
 	suit = None
 	record = [-1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 	target = [-1, 3, 1, 1, 1, 1, 1, 1, 1, 3]
 	for _, is_secret, tiles in fixed_hand:
 		if not is_secret or tiles[0].suit == "honor":
-			return 0
+			return 0, None
 
 		if suit is None:
 			suit = tiles[0].suit
 
 		for tile in tiles:
 			if tile.suit != suit:
-				return 0
+				return 0, None
 			record[tile.value] += 1
 
 	for meld_type, tiles in grouped_hand:
 		if tiles[0].suit == "honor":
-			return 0
+			return 0, None
 
 		if suit is None:
 			suit = tiles[0].suit
 
 		for tile in tiles:
 			if tile.suit != suit:
-				return 0
+				return 0, None
 
 			record[tile.value] += 1
 
 	diff = 0
 	for i in range(len(target)):
 		if record[i] < target[i]:
-			return 0
+			return 0, None
 
-		diff += target[i] - record[i]
+		diff += record[i] - target[i]
 
 	if diff != 1:
-		return 0
+		return 0, None
 
-	return __score_upper_limit
+	return __score_upper_limit, get_text(game.lang_code, "HKRULE_PURE_ONE_TO_NINE")
 
-def score_four_kongs(fixed_hand, **kwargs):
+def score_four_kongs(fixed_hand, game, **kwargs):
 	count = 0
 	for meld_type, _, _ in fixed_hand:
 		if meld_type == "kong":
 			count += 1
 
 	if count >= 4:
-		return __score_upper_limit
+		return __score_upper_limit, get_text(game.lang_code, "HKRULE_FOUR_KONGS")
 
-	return 0
+	return 0, None
 
 def get_score_upper_limit():
 	return __score_upper_limit

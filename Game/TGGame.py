@@ -9,6 +9,7 @@ class TGGame(Game):
 		self.__tg_notification_queues = []
 		self.__lang_code = None
 		self.__extra_tile = None
+		self.__winning_items = None
 		for player in players:
 			if player.lang_code is not None:
 				self.__lang_code = player.lang_code
@@ -16,6 +17,10 @@ class TGGame(Game):
 	@property
 	def lang_code(self):
 		return self.__lang_code
+
+	@property 
+	def winning_items(self):
+		return list(self.__winning_items)
 
 	def get_game_end_image(self, lang_code, tg_userid):
 		center_player = None
@@ -31,6 +36,9 @@ class TGGame(Game):
 			self.__tg_userids.extend(userids)
 		else:
 			self.__tg_userids.append(userids)
+
+	def register_winning_items(self, items):
+		self.__winning_items = items
 
 	def change_lang_code(self, new_lang):
 		self.__lang_code = new_lang

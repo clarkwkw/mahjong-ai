@@ -5,7 +5,7 @@ from TGBotServer import TGResponsePromise
 
 def test(args):
 	player_names = [
-		("Amy", MoveGenerator.TGHuman, {}), 
+		("Amy", MoveGenerator.TGHuman, {"lang_code": "CH"}), 
 		("Billy", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
 		("Clark", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0}), 
 		("Doe", MoveGenerator.RuleBasedAINaive, {"display_step": False, "s_chow": 2, "s_pong": 6, "s_future": 1.5, "s_neighbor_suit": 0, "s_explore": 0, "s_mixed_suit": 0})
@@ -13,7 +13,7 @@ def test(args):
 	players = []
 	game = None
 	for player_name, move_generator_class, parameter in player_names:
-		players.append(Player.TGPlayer(move_generator_class, player_name, "123", **parameter))
+		players.append(Player.TGPlayer(move_generator_class, player_name, **parameter))
 
 
 	game = Game.TGGame(players)
@@ -48,3 +48,5 @@ def test(args):
 		print("Winner: %s"%winner.name)
 		print("Loser(s): %s"%(', '.join([player.name for player in losers])))
 		print("Penalty: %d"%penalty)
+		for item in game.winning_items:
+			print(item)

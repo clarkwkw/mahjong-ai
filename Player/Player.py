@@ -186,7 +186,7 @@ class Player(object):
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game):
-		grouped_hand, score = ScoringRules.HKRules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, game)
+		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self.__fixed_hand, self.__hand, new_tile, tile_src, game)
 		if grouped_hand is not None:
 			is_wants_to = self.__move_generator.decide_win(self, grouped_hand, new_tile, tile_src, score, neighbors, game)
 			return True, is_wants_to, score
