@@ -28,7 +28,7 @@ def get_mongo_collection(collect_name):
 	return _mongo_client["Mahjong-ai"][collect_name]
 
 def pick_opponent_models():
-	choices = np.random.choice(len(ai_models), size = 3, replace = False, p = _ai_models_dist)
+	choices = np.random.choice(len(_ai_models), size = 3, replace = False, p = _ai_models_dist)
 	models = []
 	for choice in choices:
 		models.append(_ai_models[choice])
