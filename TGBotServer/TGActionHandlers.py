@@ -144,8 +144,8 @@ def continue_game(userid, username, callback_data, bot, update):
 	tg_user = _create_user_if_not_exist(userid, username)
 	if (not tg_user.game_started) or (game_id != tg_user.game_id):
 		bot.send_message(tg_user.tg_userid, TGLanguage.get_text(tg_user.lang, "MSG_BLACKHOLE"), timeout = get_tgmsg_timeout())
-	elif tg_user.last_game_message_id != update.callback_query.inline_message_id:
-		return
+	elif tg_user.last_game_message_id != update.callback_query.message.message_id:
+		return 
 	else:
 		response = tg_user.restore_game_response()
 		tg_game = tg_user.restore_game()
