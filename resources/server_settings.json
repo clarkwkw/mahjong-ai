@@ -7,7 +7,7 @@
 		{
 			"model_id": "Heuristics1",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 1,
+			"weight": 0.25,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
@@ -22,7 +22,7 @@
 		{
 			"model_id": "Heuristics2",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 1,
+			"weight": 0.25,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
@@ -37,7 +37,7 @@
 		{
 			"model_id": "Heuristics3",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 1,
+			"weight": 0.25,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
