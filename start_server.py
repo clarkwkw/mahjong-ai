@@ -21,7 +21,7 @@ updater.start_polling()
 updater.idle()
 '''
 updater.start_webhook(
-	listen = '127.0.0.1', 
+	listen = '0.0.0.0', 
 	port = 443,
 	url_path = "tgbot-update", 
 	cert = "resources/server-cert.pem", 
