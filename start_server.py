@@ -24,8 +24,8 @@ updater.start_webhook(
 	listen = '127.0.0.1', 
 	port = 80,
 	url_path = "tgbot-update", 
-	cert = "resources/server-cert.perm", 
-	key = "resources/server-cert.key", 
+	cert = "resources/server-cert.pem", 
+	key = "resources/server-private.key", 
 	bootstrap_retries = 5,
 	webhook_url = 'https://35.231.60.130:80/tgbot-update'
 )
