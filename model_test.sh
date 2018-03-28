@@ -7,15 +7,11 @@ fi
 
 MODEL=$1
 MODEL_SHORT=$2
-H_MODELS=("heuristics2" "heuristics3")
-H_MODELS_SHORT=("h2" "h3")
-PYVER="3"
-
-<<COMMENT
 H_MODELS=("heuristics1" "heuristics2" "heuristics3")
 H_MODELS_SHORT=("h1" "h2" "h3")
+PYVER="3"
+
 eval "python${PYVER} test.py ai_battle ${MODEL} rand rand rand > ${MODEL_SHORT}_vs_3r.txt"
-COMMENT
 
 for ((i=0; i<${#H_MODELS[@]}; i++));
 	do
@@ -30,3 +26,5 @@ for ((i=0; i<${#H_MODELS[@]}; i++));
 		eval "python${PYVER} test.py ai_battle ${MODEL} ${opponents[0]} ${opponents[1]} ${opponents[2]} > ${MODEL_SHORT}_vs_${rand_count}r_${j}${H_MODELS_SHORT[i]}.txt"
 	done
 done
+
+eval "python${PYVER} test.py ai_battle ${MODEL} ${H_MODELS[0]} ${H_MODELS[1} ${H_MODELS[2]} > ${MODEL_SHORT}_vs_mixed.txt"
