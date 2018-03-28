@@ -134,11 +134,11 @@ def score_game_wind(fixed_hand, grouped_hand, game, **kwargs):
 		game_wind_tile = Tile.Tile("honor", game.game_wind)
 		for _, _, tiles in fixed_hand:
 			if tiles[0] == game_wind_tile:
-				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%(game_wind_tile.get_display_name(game.lang_code))
+				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%game_wind_tile.get_display_name(game.lang_code)
 
 		for _, tiles in grouped_hand:
 			if tiles[0] == game_wind_tile:
-				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%(game_wind_tile.get_display_name(game.lang_code))
+				return 1, get_text(game.lang_code, "HKRULE_GAME_WIND")%game_wind_tile.get_display_name(game.lang_code)
 
 	return 0, None
 

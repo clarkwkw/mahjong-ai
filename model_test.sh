@@ -7,8 +7,8 @@ fi
 
 MODEL=$1
 MODEL_SHORT=$2
-H_MODELS=("heuristics1" "heuristics2" "heuristics3")
-H_MODELS_SHORT=("h1" "h2" "h3")
+H_MODELS=("heuristics" "heuristics2" "heuristics3")
+H_MODELS_SHORT=("h" "h2" "h3")
 PYVER="3"
 
 eval "python${PYVER} test.py ai_battle ${MODEL} rand rand rand > ${MODEL_SHORT}_vs_3r.txt"
