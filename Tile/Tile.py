@@ -24,7 +24,7 @@ class Tile:
 	def value(self):
 		return self.__value
 
-	def get_display_name(self, lang_code = "EN", is_short = True):
+	def get_display_name(self, lang_code, is_short = True):
 		return get_tile_name(lang_code, self.__suit, str(self.__value), is_short)
 
 	def __hash__(self):
