@@ -20,12 +20,13 @@ updater.dispatcher.add_handler(CallbackQueryHandler(INLINE_REPLY_HANDLER))
 updater.start_polling()
 updater.idle()
 '''
+server_address, server_port = TGBotServer.get_tg_server_info()
 updater.start_webhook(
 	listen = '0.0.0.0', 
-	port = 443,
+	port = server_port,
 	url_path = TGBotServer.get_tg_bot_token(), 
 	cert = "resources/server-cert.pem", 
 	key = "resources/server-private.key", 
 	bootstrap_retries = 5,
-	webhook_url = 'https://35.231.60.130:443/%s'%TGBotServer.get_tg_bot_token()
+	webhook_url = 'https://%s:%d/%s'%(server_address, server_port, TGBotServer.get_tg_bot_token())
 )
