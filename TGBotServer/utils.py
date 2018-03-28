@@ -20,6 +20,7 @@ _scoring_scheme = None
 _tg_bot_token = None
 _tg_bot = None
 _tgmsg_timeout = 0
+_tg_server_address, _tg_server_port = "", 443
 
 def get_mongo_time_str(time):
 	return time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -55,6 +56,9 @@ def get_tg_bot_token():
 		load_settings()
 	return _tg_bot_token
 
+def get_tg_server_info():
+	return _tg_server_address, _tg_server_port
+
 def get_tgmsg_timeout():
 	return _tgmsg_timeout
 
@@ -68,7 +72,7 @@ def send_tg_message(tg_user_id, message):
 
 # Server setup
 def load_settings(force_quit_on_err = False):
-	global _ai_models, _ai_models_dist, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized, _tg_bot, _tgmsg_timeout
+	global _ai_models, _ai_models_dist, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized, _tg_bot, _tgmsg_timeout, _tg_server_address, _tg_server_port
 	if __initialized:
 		return
 	with open("resources/server_settings.json", "r") as f:
@@ -92,6 +96,7 @@ def load_settings(force_quit_on_err = False):
 			if force_quit_on_err:
 				exit(-1)
 
+		_tg_server_address, _tg_server_port = server_settings["tg_server_address"], server_settings["tg_server_port"]
 		_scoring_scheme = server_settings["scoring_scheme"]
 		_tg_bot_token = server_settings["tg_bot_token"]
 		__initialized = True

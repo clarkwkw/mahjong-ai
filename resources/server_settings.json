@@ -3,6 +3,8 @@
 	"mongo_username": "mahjong-ai",
 	"mongo_password": "mahjong-ai",
 	"tg_bot_token": "",
+	"tg_server_address": "",
+	"tg_server_port": 443,
 	"ai_models":[
 		{
 			"model_id": "Heuristics1",
