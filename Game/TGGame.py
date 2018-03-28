@@ -20,7 +20,7 @@ class TGGame(Game):
 
 	@property 
 	def winning_items(self):
-		return list(self.__winning_items)
+		return None if self.__winning_items is None else list(self.__winning_items)
 
 	def get_game_end_image(self, lang_code, tg_userid):
 		center_player = None
