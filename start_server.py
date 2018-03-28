@@ -23,9 +23,9 @@ updater.idle()
 updater.start_webhook(
 	listen = '0.0.0.0', 
 	port = 443,
-	url_path = "tgbot-update", 
+	url_path = TGBotServer.get_tg_bot_token(), 
 	cert = "resources/server-cert.pem", 
 	key = "resources/server-private.key", 
 	bootstrap_retries = 5,
-	webhook_url = 'https://35.231.60.130:443/tgbot-update'
+	webhook_url = 'https://35.231.60.130:443/%s'%TGBotServer.get_tg_bot_token()
 )
