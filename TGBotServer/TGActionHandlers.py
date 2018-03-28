@@ -176,24 +176,24 @@ def continue_game(userid, username, callback_data, bot, update):
 			tg_user.save()
 
 		else:
-
 			winner, losers, penalty = new_response
-			if winner is not None:
-				retry_count = 0
-				while True:
-					try:
-						bot.send_photo(tg_user.tg_userid, tg_game.get_game_end_image(tg_user.lang, tg_user.tg_userid).bufferedReader)
-						break
-					except TimedOut:
-						print("Photo sent timeout")
-						break
-					except TelegramError:
-						retry_count += 1
-						print("Invalid server response, retrying.. %d"%retry_count)
+			retry_count = 0
+			winning_score = 0 if winner is None else get_winning_score(penalty, len(losers) > 1)
+			losing_score = 0 if winner is None else winning_score if len(losers) == 1 else winning_score/3
+			while True:
+				try:
+					bot.send_photo(tg_user.tg_userid, tg_game.get_game_end_image(tg_user.lang, tg_user.tg_userid).bufferedReader)
+					break
+				except TimedOut:
+					print("Photo sent timeout")
+					break
+				except TelegramError:
+					retry_count += 1
+					print("Invalid server response, retrying.. %d"%retry_count)
+					
+			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score, tg_game.winning_items), timeout = get_tgmsg_timeout())
 
-				winning_score = get_winning_score(penalty, len(losers) > 1)
-				losing_score = winning_score if len(losers) == 1 else winning_score/3
-				bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score, tg_game.winning_items), timeout = get_tgmsg_timeout())
+			if winner is not None:
 				if winner.tg_userid == tg_user.tg_userid:
 					tg_user.end_game(winning_score)
 				elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
