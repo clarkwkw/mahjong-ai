@@ -16,5 +16,16 @@ updater = Updater(token = TGBotServer.get_tg_bot_token())
 for command, handler in HANDLERS.items():
 	updater.dispatcher.add_handler(CommandHandler(command, handler))
 updater.dispatcher.add_handler(CallbackQueryHandler(INLINE_REPLY_HANDLER))
+'''
 updater.start_polling()
 updater.idle()
+'''
+updater.start_webhook(
+	listen = '127.0.0.1', 
+	port = 80,
+	url_path = "tgbot-update", 
+	cert = "resources/server-cert.perm", 
+	key = "resources/server-cert.key", 
+	bootstrap_retries = 5,
+	webhook_url = 'https://35.231.60.130:80/tgbot-update'
+)
