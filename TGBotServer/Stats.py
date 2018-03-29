@@ -25,7 +25,7 @@ def update_stats(winner, losers, players, winning_score):
 	model_objs = {}
 
 	if winner is not None:
-		for player in [winner] + losers:
+		for player in [winner] + list(losers):
 			if player.model_id == "human":
 				human_involved = True
 				break
