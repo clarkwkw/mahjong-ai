@@ -40,7 +40,21 @@ def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, los
 def start(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
-		update.message.reply_text("%s, %s"%(TGLanguage.get_text(tg_user.lang, "MSG_GREET"), update.effective_user.first_name), timeout = get_tgmsg_timeout())
+		update.message.reply_text(TGLanguage.get_text(tg_user.lang, "MSG_GREET")%update.effective_user.first_name, timeout = get_tgmsg_timeout())
+	except:
+		print(traceback.format_exc())
+
+def faq(bot, update):
+	try:
+		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
+		update.message.reply_text(TGLanguage.get_text(tg_user.lang, "MSG_FAQ"), timeout = get_tgmsg_timeout())
+	except:
+		print(traceback.format_exc())
+
+def instructions(bot, update):
+	try:
+		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
+		update.message.reply_text(TGLanguage.get_text(tg_user.lang, "MSG_INSTRUCTIONS"), timeout = get_tgmsg_timeout())
 	except:
 		print(traceback.format_exc())
 

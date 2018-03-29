@@ -6,7 +6,9 @@ HANDLERS = {
 	"new_game": TGBotServer.TGActionHandlers.new_game,
 	"abort_game": TGBotServer.TGActionHandlers.abort_game,
 	"my_statistics": TGBotServer.TGActionHandlers.my_statistics,
-	"settings": TGBotServer.TGSettingHandlers.show_settings
+	"settings": TGBotServer.TGSettingHandlers.show_settings,
+	"faq": TGBotServer.TGActionHandlers.faq,
+	"instructions": TGBotServer.TGActionHandlers.instructions
 }
 
 INLINE_REPLY_HANDLER = TGBotServer.TGActionHandlers.inline_reply_handler
