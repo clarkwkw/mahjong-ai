@@ -101,7 +101,7 @@ _models = {
 		}
 	},
 	"pg_fitted":{
-		"class": MoveGenerator.PGGenerator,
+		"class": MoveGenerator.PGFGenerator,
 		"parameters":{
 			"pg_model_path": "resources/models/balance_reward/flat_mjpg_rand",
 			"is_train": False,
@@ -110,7 +110,7 @@ _models = {
 		}
 	},
 	"policy_gradient":{
-		"class": MoveGenerator.PGFGenerator,
+		"class": MoveGenerator.PGGenerator,
 		"parameters":{
 			"pg_model_path": "resources/models/balance_reward/flat_mjpg_rand",
 			"is_train": False,
