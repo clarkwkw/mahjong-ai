@@ -3,6 +3,7 @@ from Player import TGPlayer
 from .utils import pick_opponent_models, get_tg_inline_keyboard, get_winning_score, get_tgmsg_timeout
 from .TGResponsePromise import TGResponsePromise
 from .TGSettingHandlers import settings_router
+from .Stats import update_stats
 import MoveGenerator
 import random
 import traceback
@@ -177,6 +178,7 @@ def continue_game(userid, username, callback_data, bot, update):
 
 		else:
 			winner, losers, penalty = new_response
+			winner_id, loser_ids = "", []
 			retry_count = 0
 			winning_score = 0 if winner is None else get_winning_score(penalty, len(losers) > 1)
 			losing_score = 0 if winner is None else winning_score if len(losers) == 1 else winning_score/3
@@ -194,12 +196,15 @@ def continue_game(userid, username, callback_data, bot, update):
 			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score, tg_game.winning_items), timeout = get_tgmsg_timeout())
 
 			if winner is not None:
+				winner_id = winner.model_id
+				loser_ids = [loser.model_id for loser in losers]
 				if winner.tg_userid == tg_user.tg_userid:
-					tg_user.end_game(winning_score)
+					tg_user.end_game(winning_score, winner = winner_id, losers = loser_ids)
 				elif tg_user.tg_userid in [loser.tg_userid for loser in losers]:
-					tg_user.end_game(-1*losing_score)
+					tg_user.end_game(-1*losing_score, winner = winner_id, losers = loser_ids)
 				else:
-					tg_user.end_game(0)
+					tg_user.end_game(0, winner = winner_id, losers = loser_ids)
 			else:
 				tg_user.end_game(0)
+			update_stats(winner, losers, winning_score)
 			tg_user.save()

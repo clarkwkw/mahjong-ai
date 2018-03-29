@@ -38,6 +38,8 @@ class TGUser:
 			"start_date": "",
 			"end_date": "",
 			"opponents_type": [],
+			"winner": "",
+			"losers": [],
 			"score": 		
 		}
 		'''
@@ -129,7 +131,7 @@ class TGUser:
 		else:
 			raise Exception("Cannot find a started game")
 
-	def end_game(self, score = None):
+	def end_game(self, score = None, winner = "", losers = []):
 		if self.__game is None:
 			raise Exception("Cannot find a started game")
 
@@ -140,7 +142,9 @@ class TGUser:
 				"start_date": self.__game["start_date"],
 				"end_date": utils.get_mongo_time_str(datetime.datetime.now()),
 				"opponents_type": self.__game["opponents_type"],
-				"score": score
+				"score": score,
+				"winner": winner,
+				"losers": losers
 			}
 			self.__match_history.append(match_record)
 			self.__statistics["game_completed"] += 1

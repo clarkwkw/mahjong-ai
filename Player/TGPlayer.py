@@ -4,7 +4,8 @@ from TGBotServer import TGResponsePromise
 from .Player import Player
 
 class TGPlayer(Player):
-	def __init__(self, move_generator_class, tg_user, **kwargs):
+	def __init__(self, move_generator_class, tg_user, model_id, **kwargs):
+		self.__model_id = model_id
 		if type(tg_user) is str:
 			super(TGPlayer, self).__init__(move_generator_class, tg_user, **kwargs)
 			self.__tg_userid = None
@@ -21,6 +22,10 @@ class TGPlayer(Player):
 	@property
 	def lang_code(self):
 		return self.__lang_code
+
+	@property 
+	def model_id(self):
+		return self.__model_id
 
 	def change_lang_code(self, new_lang):
 		self.__lang_code = new_lang
