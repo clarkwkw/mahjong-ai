@@ -22,7 +22,8 @@ def init_mongo_collect():
 def update_stats(winner, losers, winning_score):
 	if winner is None:
 		return
-
+		
+	init_mongo_collect()
 	human_involved = False
 	model_objs = {}
 	for player in [winner] + losers:
