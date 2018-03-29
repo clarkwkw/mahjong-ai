@@ -71,6 +71,10 @@ class TGUser:
 		return self.__tg_userid
 
 	@property 
+	def game_cur_opponents(self):
+		return None if self.__game is None else self.__game["opponents_type"]
+
+	@property 
 	def game_started(self):
 		return self.__game is not None
 

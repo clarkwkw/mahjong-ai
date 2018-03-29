@@ -206,5 +206,5 @@ def continue_game(userid, username, callback_data, bot, update):
 					tg_user.end_game(0, winner = winner_id, losers = loser_ids)
 			else:
 				tg_user.end_game(0)
-			update_stats(winner, losers, winning_score)
+			update_stats(winner, losers, tg_user.game_cur_opponents + ["human"], winning_score)
 			tg_user.save()
