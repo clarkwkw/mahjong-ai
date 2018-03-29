@@ -19,7 +19,7 @@ def init_mongo_collect():
 	}
 '''
 
-def update_stats(winner, losers, players, winning_score):
+def update_stats(winner, losers, model_ids, winning_score):
 	init_mongo_collect()
 	human_involved = False
 	model_objs = {}
@@ -30,17 +30,17 @@ def update_stats(winner, losers, players, winning_score):
 				human_involved = True
 				break
 
-	for player in players:
-		model_objs[player.model_id] = mongo_collect.find_one({"model_id": player.model_id})
-		if model_objs[player.model_id] is None:
-			model_objs[player.model_id] = {
-				"model_id": player.model_id,
+	for model_id in model_ids:
+		model_objs[model_id] = mongo_collect.find_one({"model_id": model_id})
+		if model_objs[model_id] is None:
+			model_objs[model_id] = {
+				"model_id": model_id,
 				"games_completed": 0,
 				"games_resolved_human": 0,
 				"games_won_over_human": 0,
 				"games_losed_to_human": 0,
 			}
-		model_objs[player.model_id]["games_completed"] += 1
+		model_objs[model_id]["games_completed"] += 1
 
 	if human_involved:
 		for player in [winner] + list(losers):
