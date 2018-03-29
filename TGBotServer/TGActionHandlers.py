@@ -202,7 +202,7 @@ def continue_game(userid, username, callback_data, bot, update):
 					break
 				except TimedOut:
 					print("Photo sent timeout")
-					break
+					retry_count += 1
 				except TelegramError:
 					retry_count += 1
 					print("Invalid server response, retrying.. %d"%retry_count)

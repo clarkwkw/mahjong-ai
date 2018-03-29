@@ -208,9 +208,9 @@ def score_ones_nines(fixed_hand, grouped_hand, game = None, **kwargs):
 			honor_involved = True
 
 	if honor_involved:
-		return 1, None if game is None else get_text(game.lang_code, "HKRULE_ONENINE_SMALL")
+		return 1, None if game is None else get_text(game.lang_code, "HKRULE_ONE_NINE_SMALL")
 
-	return __score_upper_limit, None if game is None else get_text(game.lang_code, "HKRULE_ONENINE_LARGE")
+	return __score_upper_limit, None if game is None else get_text(game.lang_code, "HKRULE_ONE_NINE_LARGE")
 
 def score_drawn_last_tile(additional_tile_src, game = None, **kwargs):
 	if game is not None and additional_tile_src == "draw" and game.deck_size == 0:
