@@ -27,4 +27,4 @@ for ((i=0; i<${#H_MODELS[@]}; i++));
 	done
 done
 
-eval "python${PYVER} test.py ai_battle ${MODEL} ${H_MODELS[0]} ${H_MODELS[1} ${H_MODELS[2]} > ${MODEL_SHORT}_vs_mixed.txt"
+eval "python${PYVER} test.py ai_battle ${MODEL} ${H_MODELS[0]} ${H_MODELS[1]} ${H_MODELS[2]} > ${MODEL_SHORT}_vs_mixed.txt"
