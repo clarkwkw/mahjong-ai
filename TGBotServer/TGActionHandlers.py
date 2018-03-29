@@ -194,7 +194,7 @@ def continue_game(userid, username, callback_data, bot, update):
 					print("Invalid server response, retrying.. %d"%retry_count)
 
 			bot.send_message(tg_user.tg_userid, _generate_game_end_message(tg_user, winner, losers, penalty, winning_score, losing_score, tg_game.winning_items), timeout = get_tgmsg_timeout())
-
+			update_stats(winner, losers, tg_user.game_cur_opponents + ["human"], winning_score)
 			if winner is not None:
 				winner_id = winner.model_id
 				loser_ids = [loser.model_id for loser in losers]
@@ -206,5 +206,4 @@ def continue_game(userid, username, callback_data, bot, update):
 					tg_user.end_game(0, winner = winner_id, losers = loser_ids)
 			else:
 				tg_user.end_game(0)
-			update_stats(winner, losers, tg_user.game_cur_opponents + ["human"], winning_score)
 			tg_user.save()

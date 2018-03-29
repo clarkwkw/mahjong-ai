@@ -62,5 +62,20 @@ class Validate_hand_test(unittest.TestCase):
 		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, north)
 		self.assertEqual(len(grouped_hands), 1)
 
+	def test_one_to_nine(self):
+		character_1 = Tile.Tile("characters", 1)
+		character_2 = Tile.Tile("characters", 2)
+		character_3 = Tile.Tile("characters", 3)
+		character_4 = Tile.Tile("characters", 4)
+		character_5 = Tile.Tile("characters", 5)
+		character_6 = Tile.Tile("characters", 6)
+		character_7 = Tile.Tile("characters", 7)
+		character_8 = Tile.Tile("characters", 8)
+		character_9 = Tile.Tile("characters", 9)
+		west = Tile.Tile("honor", "west")
 
+		fixed_hand = [("pong", False, tuple([character_4, character_4, character_4]))]
+		hand = [character_1, character_2, character_3, character_5, character_6, character_7, character_8, character_9, west, west]
 
+		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, character_7)
+		self.assertEqual(len(grouped_hands), 1)
