@@ -43,7 +43,7 @@ def update_stats(winner, losers, players, winning_score):
 		model_objs[player.model_id]["games_completed"] += 1
 
 	if human_involved:
-		for player in [winner] + losers:
+		for player in [winner] + list(losers):
 			model_objs[player.model_id]["games_resolved_human"] += 1
 
 		if winner.model_id == "human":
