@@ -196,6 +196,7 @@ class TGPlayer(Player):
 		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
 		game.register_winning_items(items)
 		if grouped_hand is not None:
+			print("Detected possible victory configuration")
 			if response is not None:
 				self._Player__move_generator.inform_reply(response.reply)
 				
