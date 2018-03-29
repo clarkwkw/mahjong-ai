@@ -97,7 +97,7 @@ class TGPlayer(Player):
 				self._Player__move_generator.inform_reply(response.reply)
 			dispose_tile = self._Player__move_generator.decide_drop_tile(self, new_tile, neighbors, game)
 			response = None
-			
+
 			if isinstance(dispose_tile, TGResponsePromise):
 				dispose_tile.state_stack_push("new_turn_drop_tile")
 				return dispose_tile
@@ -199,6 +199,7 @@ class TGPlayer(Player):
 	def check_win(self, new_tile, tile_src, neighbors, game, response = None):
 		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
 		game.register_winning_items(items)
+		print("Checking victory configuration for %s [%s]"%(self.model_id, new_tile))
 		if grouped_hand is not None:
 			print("Detected possible victory configuration")
 			if response is not None:
