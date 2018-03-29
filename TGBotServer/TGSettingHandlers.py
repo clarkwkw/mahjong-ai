@@ -39,7 +39,7 @@ def inline_language(userid, username, callback_data, bot, update):
 		tg_user.save()
 		bot.send_message(tg_user.tg_userid, "Updated language settings: "+get_text(callback_data, "LANG_NAME"), timeout = get_tgmsg_timeout())
 		update.callback_query.edit_message_reply_markup(timeout = get_tgmsg_timeout())
-		bot.send_message(tg_user.tg_userid,TGLanguage.get_text(tg_user.lang, "MSG_GREET")%username, timeout = get_tgmsg_timeout())
+		bot.send_message(tg_user.tg_userid, get_text(tg_user.lang, "MSG_GREET")%username, timeout = get_tgmsg_timeout())
 
 SETTINGS_DIRECTORY = {
 	"lang": {
