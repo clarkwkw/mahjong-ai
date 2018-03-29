@@ -44,6 +44,7 @@ class TGPlayer(Player):
 
 				is_able, is_wants_to, score = self.check_win(new_tile, "draw", neighbors, game, response = response)
 				
+				response = None
 				if isinstance(is_wants_to, TGResponsePromise):
 					is_wants_to.state_stack_push("new_turn_check_winning")
 					return is_wants_to
@@ -55,7 +56,8 @@ class TGPlayer(Player):
 				substate = None
 
 				is_able, is_wants_to, location = self.check_new_tile_kong(new_tile, search_hand = "both", src = "draw", neighbors = neighbors, game = game, response = response)
-			
+				
+				response = None
 				if is_able:
 					if isinstance(is_wants_to, TGResponsePromise):
 						is_wants_to.state_stack_push("new_turn_check_new_tile_kong")
@@ -87,12 +89,14 @@ class TGPlayer(Player):
 							self._Player__hand.append(new_tile)
 							self._Player__hand = sorted(self._Player__hand)
 							return None, None, (tile, "hand", "existing")
+					response = None
 		
 		if substate is None or substate == "new_turn_drop_tile":
 			substate = None
 			if response is not None:
 				self._Player__move_generator.inform_reply(response.reply)
 			dispose_tile = self._Player__move_generator.decide_drop_tile(self, new_tile, neighbors, game)
+			response = None
 			
 			if isinstance(dispose_tile, TGResponsePromise):
 				dispose_tile.state_stack_push("new_turn_drop_tile")
