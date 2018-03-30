@@ -199,7 +199,13 @@ class TGPlayer(Player):
 	def check_win(self, new_tile, tile_src, neighbors, game, response = None):
 		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
 		game.register_winning_items(items)
-		print("Checking victory configuration for %s [%s]"%(self.model_id, new_tile))
+		fixed_hand_str = ""
+		hand_str = ",".join([str(tile) for tile in self._Player__hand])
+		for meld_type, _, tiles in self._Player__fixed_hand:
+			fixed_hand_str += ",".join([str(tile) for tile in tiles]) + " "
+		print("Checking victory configuration for %s"%self.model_id)
+		print("fixed: %s"%fixed_hand_str)
+		print("hand: %s [%s]"%(hand_str, new_tile))
 		if grouped_hand is not None:
 			print("Detected possible victory configuration")
 			if response is not None:
