@@ -145,6 +145,7 @@ def test(args):
 		generator_paras["deepq"]["parameters"]["q_network_path"] = args.model_dir
 		generator_paras["edeepq"]["parameters"]["q_network_path"] = args.model_dir
 		generator_paras["policy_gradient"]["parameters"]["pg_model_path"] = args.model_dir
+		generator_paras["pg_fitted"]["parameters"]["pg_model_path"] = args.model_dir
 
 	model = deep_model_paras[args.model]["getter"](args.model_dir, **deep_model_paras[args.model]["parameters"])
 
