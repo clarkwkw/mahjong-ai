@@ -17,7 +17,8 @@ __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,
 	"RuleBasedAINaiveMCTSCpp": RuleBasedAINaiveMCTSCpp,
 	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy,
-	"DeepQ": DeepQGenerator
+	"DeepQ": DeepQGenerator,
+	"PGF": PGFGenerator
 }
 
 def get_model_by_id(model_id):

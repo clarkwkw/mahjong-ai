@@ -9,7 +9,7 @@
 		{
 			"model_id": "Heuristics1",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 0.25,
+			"weight": 0.2,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
@@ -24,7 +24,7 @@
 		{
 			"model_id": "Heuristics2",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 0.25,
+			"weight": 0.2,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
@@ -39,7 +39,7 @@
 		{
 			"model_id": "Heuristics3",
 			"generator_id": "RuleBasedAINaive",
-			"weight": 0.25,
+			"weight": 0.2,
 			"kwargs":{
 				 "display_step": false,
 				 "s_chow": 2,
@@ -54,13 +54,24 @@
 		{
 			"model_id": "H_dq",
 			"generator_id": "DeepQ",
-			"weight": 0.25,
+			"weight": 0.2,
 			"kwargs":{
 				 "display_step": false,
 				 "q_network_path": "resources/models/h_deepq",
 				 "is_train": false
 			},
 			"names": ["Deeb"]
+		},
+		{
+			"model_id": "H_pgf",
+			"generator_id": "PGF",
+			"weight": 0.2,
+			"kwargs":{
+				 "display_step": false,
+				 "pg_model_path": "resources/models/h_pg_fitted",
+				 "is_train": false
+			},
+			"names": ["Paul"]
 		}
 	],
 	"tgmsg_timeout": 10,
