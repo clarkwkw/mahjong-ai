@@ -17,10 +17,12 @@ class Game(object):
 		self.__rand_record_constraints = rand_record_constraints
 		self.__freeze_state_init()
 
+	'''
 	def get_np(self, player, degenerated = True):
 		player_id = self.__players.index(player)
 		return self.__get_neighbor_players(player_id, degenerated)
-
+	'''
+	
 	def add_notification(self, msg):
 		pass
 
