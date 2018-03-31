@@ -40,7 +40,7 @@ def update_stats(winner, losers, model_ids, winning_score):
 	if winner is not None:
 		model_objs[winner.model_id]["games_won"] += 1
 		for loser in losers:
-			model_objs[winner.model_id]["games_losed"] += 1
+			model_objs[loser.model_id]["games_losed"] += 1
 
 	for model_id, obj in model_objs.items():
 		if "_id" in obj:
