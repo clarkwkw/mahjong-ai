@@ -7,6 +7,7 @@ def test(args):
 	unittest.TextTestRunner().run(suite)
 
 class Validate_hand_test(unittest.TestCase):
+	'''
 	def test_all_pongs(self):
 		character_1 = Tile.Tile("characters", 1)
 		bamboo_2 = Tile.Tile("bamboo", 2)
@@ -115,4 +116,23 @@ class Validate_hand_test(unittest.TestCase):
 		hand = [bamboo_2, bamboo_2, bamboo_2, bamboo_5, bamboo_6, bamboo_7, bamboo_8, bamboo_8, bamboo_9, bamboo_9]
 
 		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, bamboo_9)
+		self.assertEqual(len(grouped_hands), 1)
+	'''
+	def test_3(self):
+		bamboo_1 = Tile.Tile("bamboo", 1)
+		bamboo_2 = Tile.Tile("bamboo", 2)
+		bamboo_4 = Tile.Tile("bamboo", 4)
+		bamboo_5 = Tile.Tile("bamboo", 5)
+		bamboo_6 = Tile.Tile("bamboo", 6)
+		bamboo_8 = Tile.Tile("bamboo", 8)
+		bamboo_9 = Tile.Tile("bamboo", 9)
+
+		fixed_hand = [
+			("pong", False, tuple([bamboo_1, bamboo_1, bamboo_1])),
+			("pong", False, tuple([bamboo_9, bamboo_9, bamboo_9])),
+			("kong", False, tuple([bamboo_2, bamboo_2, bamboo_2, bamboo_2]))
+		]
+		hand = [bamboo_5, bamboo_6, bamboo_8, bamboo_8]
+
+		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, bamboo_4)
 		self.assertEqual(len(grouped_hands), 1)
