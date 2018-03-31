@@ -98,3 +98,21 @@ class Validate_hand_test(unittest.TestCase):
 
 		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, dots_1)
 		self.assertEqual(len(grouped_hands), 1)
+
+	def test_2(self):
+		bamboo_1 = Tile.Tile("bamboo", 1)
+		bamboo_2 = Tile.Tile("bamboo", 2)
+		bamboo_5 = Tile.Tile("bamboo", 5)
+		bamboo_6 = Tile.Tile("bamboo", 6)
+		bamboo_7 = Tile.Tile("bamboo", 7)
+		bamboo_8 = Tile.Tile("bamboo", 8)
+		bamboo_9 = Tile.Tile("bamboo", 9)
+		
+
+		fixed_hand = [
+			("pong", False, tuple([bamboo_1, bamboo_1, bamboo_1]))
+		]
+		hand = [bamboo_2, bamboo_2, bamboo_2, bamboo_5, bamboo_6, bamboo_7, bamboo_8, bamboo_8, bamboo_9, bamboo_9]
+
+		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, bamboo_9)
+		self.assertEqual(len(grouped_hands), 1)

@@ -35,7 +35,7 @@ def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src
 	if max_score < __score_lower_limit:
 		return None, None, None
 
-	return max_hand, min(max_score, __score_upper_limit), items
+	return max_hand, min(max_score, __score_upper_limit), max_items
 
 def validate_hand(fixed_hand, hand, additional_tile):
 	new_hand = list(hand)
