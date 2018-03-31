@@ -197,6 +197,11 @@ class TGPlayer(Player):
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game, response = None):
+		if self.model_id == "human":
+			grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, Tile.Tile("bamboo", 4), "steal", game)
+			print(grouped_hand)
+			print(score)
+
 		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
 		game.register_winning_items(items)
 		fixed_hand_str = ""
