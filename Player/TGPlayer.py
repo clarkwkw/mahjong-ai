@@ -204,10 +204,10 @@ class TGPlayer(Player):
 		for meld_type, _, tiles in self._Player__fixed_hand:
 			fixed_hand_str += ",".join([str(tile) for tile in tiles]) + " "
 		print("Checking victory configuration for %s"%self.model_id)
-		print("fixed: %s"%fixed_hand_str)
-		print("hand: %s [%s]"%(hand_str, new_tile))
+		print("\tfixed: %s"%fixed_hand_str)
+		print("\thand: %s [%s]"%(hand_str, new_tile))
 		if grouped_hand is not None:
-			print("Detected possible victory configuration")
+			print("\tDetected possible victory configuration!")
 			if response is not None:
 				self._Player__move_generator.inform_reply(response.reply)
 				

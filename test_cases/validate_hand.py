@@ -31,12 +31,12 @@ class Validate_hand_test(unittest.TestCase):
 	def test_mixed_suit(self):
 		east = Tile.Tile("honor", "east")
 		dots_1 = Tile.Tile("dots", 1)
-		dots_2 = Tile.Tile("dots", 1)
-		dots_3 = Tile.Tile("dots", 1)
-		dots_4 = Tile.Tile("dots", 1)
-		dots_5 = Tile.Tile("dots", 1)
-		dots_6 = Tile.Tile("dots", 1)
-		dots_8 = Tile.Tile("dots", 1)
+		dots_2 = Tile.Tile("dots", 2)
+		dots_3 = Tile.Tile("dots", 3)
+		dots_4 = Tile.Tile("dots", 4)
+		dots_5 = Tile.Tile("dots", 5)
+		dots_6 = Tile.Tile("dots", 6)
+		dots_8 = Tile.Tile("dots", 8)
 		white = Tile.Tile("honor", "white")
 		hand = [east, east, east, dots_1, dots_2, dots_3, dots_4, dots_5, dots_6, dots_8, dots_8, dots_8, white]
 		grouped_hands = ScoringRules.HKRules.validate_hand([], hand, white)
@@ -78,4 +78,23 @@ class Validate_hand_test(unittest.TestCase):
 		hand = [character_1, character_2, character_3, character_5, character_6, character_7, character_8, character_9, west, west]
 
 		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, character_7)
+		self.assertEqual(len(grouped_hands), 1)
+
+	def test_1(self):
+		white = Tile.Tile("honor", "white")
+		green = Tile.Tile("honor", "green")
+		east = Tile.Tile("honor", "east")
+		dots_1 = Tile.Tile("dots", 1)
+		dots_2 = Tile.Tile("dots", 2)
+		dots_3 = Tile.Tile("dots", 3)
+		dots_4 = Tile.Tile("dots", 4)
+
+		fixed_hand = [
+			("pong", False, tuple([white, white, white])), 
+			("pong", False, tuple([dots_4, dots_4, dots_4])),
+			("pong", False, tuple([east, east, east]))
+		]
+		hand = [dots_2, dots_3, green, green]
+
+		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, dots_1)
 		self.assertEqual(len(grouped_hands), 1)

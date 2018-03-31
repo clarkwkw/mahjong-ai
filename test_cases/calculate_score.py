@@ -111,3 +111,22 @@ class Calculate_score_test(unittest.TestCase):
 		hand = [character_1, character_2, character_3, character_5, character_6, character_7, character_8, character_9, west, west]
 
 		self.assertEqual(ScoringRules.HKRules.calculate_total_score(fixed_hand, hand, character_7, "draw", game = None)[1], 4)
+
+	def test_1(self):
+		white = Tile.Tile("honor", "white")
+		green = Tile.Tile("honor", "green")
+		east = Tile.Tile("honor", "east")
+		dots_1 = Tile.Tile("dots", 1)
+		dots_2 = Tile.Tile("dots", 2)
+		dots_3 = Tile.Tile("dots", 3)
+		dots_4 = Tile.Tile("dots", 4)
+
+		fixed_hand = [
+			("pong", False, tuple([white, white, white])), 
+			("pong", False, tuple([dots_4, dots_4, dots_4])),
+			("pong", False, tuple([east, east, east]))
+		]
+		hand = [dots_2, dots_3, green, green]
+
+		grouped_hands, score, items = ScoringRules.HKRules.calculate_total_score(fixed_hand, hand, dots_1, "steal", game = None)
+		self.assertEqual(score, 4)
