@@ -59,17 +59,16 @@ def validate_hand(fixed_hand, hand, additional_tile):
 
 	if pair_suit is None:
 		return None
-	print("pair_suit: %s"%pair_suit)
 
 	# Start searching with the pair
 	grouped_hands = []
 
 	for tile_val, count in tile_map[pair_suit].items():
 		if count >= 2:
+			print("\t%s-%s: %d"%(pair_suit, tile_val, count))
 			suit_map[pair_suit] -= 2
 			tile_map[pair_suit][tile_val] -= 2
 			result = __validate_helper(tile_map, suit_map, len(new_hand) - 2, [("pair", (Tile.Tile(pair_suit, tile_val), Tile.Tile(pair_suit, tile_val)))])
-			print(tile_val, count, result)
 			if len(result) > 0:
 				grouped_hands.extend(result)
 			suit_map[pair_suit] += 2
@@ -97,6 +96,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 			tile = Tile.Tile(suit, tile_val)
 			
 			if count >= 3:
+				print("\t\trchecking %s"%tile)
 				grouped_hand.append(("pong", (tile, tile, tile)))
 				tile_map[suit][tile_val] -= 3
 				suit_map[suit] -= 3

@@ -7,7 +7,6 @@ def test(args):
 	unittest.TextTestRunner().run(suite)
 
 class Validate_hand_test(unittest.TestCase):
-	'''
 	def test_all_pongs(self):
 		character_1 = Tile.Tile("characters", 1)
 		bamboo_2 = Tile.Tile("bamboo", 2)
@@ -117,7 +116,7 @@ class Validate_hand_test(unittest.TestCase):
 
 		grouped_hands = ScoringRules.HKRules.validate_hand(fixed_hand, hand, bamboo_9)
 		self.assertEqual(len(grouped_hands), 1)
-	'''
+
 	def test_3(self):
 		bamboo_1 = Tile.Tile("bamboo", 1)
 		bamboo_2 = Tile.Tile("bamboo", 2)
