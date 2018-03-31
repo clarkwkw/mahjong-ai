@@ -91,7 +91,8 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 		if suit_count == 0:
 			continue
 
-		for tile_val, count in tile_map[suit].items():
+		iter_items = sorted(list(tile_map[suit].items()), key = lambda x: x[1])
+		for tile_val, count in iter_items:
 			if count == 0:
 				continue
 			tile = Tile.Tile(suit, tile_val)
@@ -111,7 +112,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 				result.extend(tmp_result)
 			else:
 				print()
-				
+
 			if suit != "honor" and count >= 1 and int(tile_val) <= 7:
 				succeeding_tile_1 = Tile.Tile(suit, int(tile_val) + 1)
 				succeeding_tile_2 = Tile.Tile(suit, int(tile_val) + 2)
