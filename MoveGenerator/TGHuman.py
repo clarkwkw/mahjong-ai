@@ -126,7 +126,6 @@ class TGHuman(MoveGenerator):
 		return response
 
 	def decide_win(self, player, grouped_hand, new_tile, src, score, neighbors, game):
-		print("Asking to declare victory: %s"%new_tile)
 		if self.__reply is not None:
 			choice_chosen = self.__reply
 			self.__reply = None

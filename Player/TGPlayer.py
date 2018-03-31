@@ -197,21 +197,7 @@ class TGPlayer(Player):
 			return True, is_wants_to
 
 	def check_win(self, new_tile, tile_src, neighbors, game, response = None):
-		
-		if self.model_id == "human":
-			fixed_hand_str = ""
-			hand_str = ",".join([str(tile) for tile in self._Player__hand])
-			for meld_type, _, tiles in self._Player__fixed_hand:
-				fixed_hand_str += "(%s) "%meld_type + ",".join([str(tile) for tile in tiles]) + " "
-			print("Checking victory condition:")
-			print("\tFixed: %s"%fixed_hand_str)
-			print("\tHand: %s [%s by %s]"%(hand_str, new_tile, tile_src))
-			print("\tResponse: %s"%response)
-
 		grouped_hand, score, items = ScoringRules.HKRules.calculate_total_score(self._Player__fixed_hand, self._Player__hand, new_tile, tile_src, game)
-		if self.model_id == "human":
-			print("\tScore: %s"%score)
-
 		game.register_winning_items(items)
 		if grouped_hand is not None:
 			if response is not None:

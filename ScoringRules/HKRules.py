@@ -65,7 +65,6 @@ def validate_hand(fixed_hand, hand, additional_tile):
 
 	for tile_val, count in tile_map[pair_suit].items():
 		if count >= 2:
-			print("\t%s-%s: %d"%(pair_suit, tile_val, count))
 			suit_map[pair_suit] -= 2
 			tile_map[pair_suit][tile_val] -= 2
 			result = __validate_helper(tile_map, suit_map, len(new_hand) - 2, [("pair", (Tile.Tile(pair_suit, tile_val), Tile.Tile(pair_suit, tile_val)))])
@@ -86,7 +85,6 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 		return [list(grouped_hand)]
 
 	for suit in Tile.suit_order:
-		print("\t\trchecking suit %s.."%suit)
 		suit_count = suit_map[suit]
 		if suit_count == 0:
 			continue
@@ -97,9 +95,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 				continue
 			tile = Tile.Tile(suit, tile_val)
 			
-			print("\t\trchecking tile %s.."%tile, end = "")
 			if count >= 3:
-				print(">=3")
 				grouped_hand.append(("pong", (tile, tile, tile)))
 				tile_map[suit][tile_val] -= 3
 				suit_map[suit] -= 3
@@ -110,8 +106,6 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 				tile_map[suit][tile_val] += 3
 				suit_map[suit] += 3
 				result.extend(tmp_result)
-			else:
-				print()
 
 			if suit != "honor" and count >= 1 and int(tile_val) <= 7:
 				succeeding_tile_1 = Tile.Tile(suit, int(tile_val) + 1)
