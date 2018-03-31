@@ -91,7 +91,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 		if suit_count == 0:
 			continue
 
-		iter_items = sorted(list(tile_map[suit].items()), key = lambda x: x[1])
+		iter_items = sorted(list(tile_map[suit].items()), key = lambda x: x[0])
 		for tile_val, count in iter_items:
 			if count == 0:
 				continue
