@@ -22,14 +22,16 @@ class Game(object):
 		player_id = self.__players.index(player)
 		return self.__get_neighbor_players(player_id, degenerated)
 	'''
-	
+
 	def add_notification(self, msg):
 		pass
 
+	'''
 	@property
 	def players(self):
 		return self.__players
-
+	'''
+	
 	@property 
 	def disposed_tiles(self):
 		return list(self.__disposed_tiles)
