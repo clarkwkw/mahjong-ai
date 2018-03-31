@@ -86,6 +86,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 		return [list(grouped_hand)]
 
 	for suit in Tile.suit_order:
+		print("\t\trchecking suit %s.."%suit)
 		suit_count = suit_map[suit]
 		if suit_count == 0:
 			continue
@@ -95,8 +96,9 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 				continue
 			tile = Tile.Tile(suit, tile_val)
 			
+			print("\t\trchecking tile %s.."%tile, end = "")
 			if count >= 3:
-				print("\t\trchecking %s"%tile)
+				print(">=3")
 				grouped_hand.append(("pong", (tile, tile, tile)))
 				tile_map[suit][tile_val] -= 3
 				suit_map[suit] -= 3
@@ -107,7 +109,9 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 				tile_map[suit][tile_val] += 3
 				suit_map[suit] += 3
 				result.extend(tmp_result)
-
+			else:
+				print()
+				
 			if suit != "honor" and count >= 1 and int(tile_val) <= 7:
 				succeeding_tile_1 = Tile.Tile(suit, int(tile_val) + 1)
 				succeeding_tile_2 = Tile.Tile(suit, int(tile_val) + 2)
@@ -128,7 +132,7 @@ def __validate_helper(tile_map, suit_map, tile_count, grouped_hand = []):
 					tile_map[suit][str(succeeding_tile_2.value)] += 1
 					suit_map[suit] += 3
 					result.extend(tmp_result)
-
+			
 			return result
 
 def score_game_wind(fixed_hand, grouped_hand, game = None, **kwargs):
