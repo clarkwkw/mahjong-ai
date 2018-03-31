@@ -1,6 +1,7 @@
 import Tile
 from TGBotServer import TGResponsePromise, send_tg_message, generate_TG_end_board
 from .Game import Game
+import random
 
 class TGGame(Game):
 	def __init__(self, players):
@@ -80,7 +81,7 @@ class TGGame(Game):
 		new_tile, cur_player_id = None, 0
 		if state is None:
 			self._Game__deck = Tile.get_tiles(shuffle = True)
-			self._Game__game_wind = self._Game__next_game_wind()
+			self._Game__game_wind = ["east", "south", "west", "north"]
 			for player in self._Game__players:
 				hand = self._Game__deck[0:13]
 				self._Game__deck = self._Game__deck[13:len(self._Game__deck)]

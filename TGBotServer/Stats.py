@@ -42,7 +42,7 @@ def update_stats(winner, losers, model_ids, winning_score):
 		for loser in losers:
 			model_objs[winner.model_id]["games_losed"] += 1
 
-	for model_id, obj in model_objs:
+	for model_id, obj in model_objs.items():
 		if "_id" in obj:
 			mongo_collect.find_one_and_replace({"_id": obj["_id"]}, obj)
 		else:
