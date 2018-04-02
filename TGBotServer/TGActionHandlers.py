@@ -8,7 +8,7 @@ import MoveGenerator
 import random
 import traceback
 import TGLanguage
-from Threading import Lock
+from threading import Lock
 from telegram.ext.dispatcher import run_async
 try:
 	from telegram.error import TimedOut, TelegramError
