@@ -82,6 +82,7 @@ def abort_game(bot, update):
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if not tg_user.game_started:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_NOT_START"), timeout = get_tgmsg_timeout())
+			lock.release()
 			return
 		if tg_user.last_game_message_id is not None:
 			try:
@@ -117,6 +118,7 @@ def new_game(bot, update):
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_STARTED"), timeout = get_tgmsg_timeout())
+			lock.release()
 			return
 
 		ai_models = pick_opponent_models()
