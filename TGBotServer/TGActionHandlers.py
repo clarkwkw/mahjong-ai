@@ -8,7 +8,7 @@ import MoveGenerator
 import random
 import traceback
 import TGLanguage
-from multiprocessing import Lock
+from Threading import Lock
 from telegram.ext.dispatcher import run_async
 try:
 	from telegram.error import TimedOut, TelegramError
@@ -71,12 +71,13 @@ def abort_game(bot, update):
 	lock = None
 	global __user_lock_map, __user_lock_map_lock
 	try:
+		__user_lock_map_lock.acquire()
 		lock = __user_lock_map.get(update.effective_user.id, None)
 		if lock is None:
-			__user_lock_map_lock.acquire()
 			lock = Lock()
 			__user_lock_map[update.effective_user.id] = lock
-			__user_lock_map_lock.release()
+		__user_lock_map_lock.release()
+
 		lock.acquire()
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if not tg_user.game_started:
@@ -104,12 +105,14 @@ def new_game(bot, update):
 	try:
 		from Game import TGGame
 		global __user_lock_map, __user_lock_map_lock
+
+		__user_lock_map_lock.acquire()
 		lock = __user_lock_map.get(update.effective_user.id, None)
 		if lock is None:
-			__user_lock_map_lock.acquire()
 			lock = Lock()
 			__user_lock_map[update.effective_user.id] = lock
-			__user_lock_map_lock.release()
+		__user_lock_map_lock.release()
+
 		lock.acquire()
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:
@@ -182,14 +185,14 @@ def inline_reply_handler(bot, update):
 		callback_data = update.callback_query.data
 		cmd, data = callback_data.split("/", 1)
 		global __user_lock_map, __user_lock_map_lock
+		__user_lock_map_lock.acquire()
 		lock = __user_lock_map.get(update.effective_user.id, None)
 		if lock is None:
-			__user_lock_map_lock.acquire()
 			lock = Lock()
 			__user_lock_map[update.effective_user.id] = lock
-			__user_lock_map_lock.release()
-		lock.acquire()
+		__user_lock_map_lock.release()
 
+		lock.acquire()
 		if cmd == "continue_game":
 			try:
 				update.callback_query.edit_message_reply_markup(timeout = get_tgmsg_timeout())

@@ -2,7 +2,7 @@
 	"mongo_host": "localhost:27017",
 	"mongo_username": "mahjong-ai",
 	"mongo_password": "mahjong-ai",
-	"tg_bot_token": "",
+	"tg_bot_token": "390554981:AAFtvBavkJrArkoHEFeHQ3nZFccnPUDzA-k",
 	"tg_server_address": "",
 	"tg_server_port": 443,
 	"ai_models":[
