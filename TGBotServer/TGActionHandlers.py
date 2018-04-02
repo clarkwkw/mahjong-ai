@@ -9,8 +9,8 @@ import random
 import traceback
 import TGLanguage
 from threading import Lock
-from telegram.ext.dispatcher import run_async
 try:
+	from telegram.ext.dispatcher import run_async
 	from telegram.error import TimedOut, TelegramError
 except:
 	print("Unresolved dependencies: telegram")
