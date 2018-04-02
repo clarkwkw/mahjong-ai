@@ -14,9 +14,9 @@ try:
 	from telegram.error import TimedOut, TelegramError
 except:
 	print("Unresolved dependencies: telegram")
-	
+
 	def run_async(func):
-		def new_func(*args, **kwargs)
+		def new_func(*args, **kwargs):
 			return func(*args, **kwargs)
 		return new_func
 
