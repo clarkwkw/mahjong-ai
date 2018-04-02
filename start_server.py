@@ -32,3 +32,4 @@ updater.start_webhook(
 	bootstrap_retries = 5,
 	webhook_url = 'https://%s:%d/%s'%(server_address, server_port, TGBotServer.get_tg_bot_token())
 )
+updater.idle()

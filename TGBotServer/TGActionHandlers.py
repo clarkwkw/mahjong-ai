@@ -8,10 +8,15 @@ import MoveGenerator
 import random
 import traceback
 import TGLanguage
+from multiprocessing import Lock
+from telegram.ext.dispatcher import run_async
 try:
 	from telegram.error import TimedOut, TelegramError
 except:
 	print("Unresolved dependencies: telegram")
+
+__user_lock_map = {}
+__user_lock_map_lock = Lock()
 
 def _create_user_if_not_exist(tg_userid, username = ""):
 	tg_user = TGUser.load(tg_userid)
@@ -37,6 +42,7 @@ def _generate_game_end_message(tg_user, winner, losers, faan, winning_score, los
 
 	return msg
 
+@run_async
 def start(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
@@ -44,6 +50,7 @@ def start(bot, update):
 	except:
 		print(traceback.format_exc())
 
+@run_async
 def faq(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
@@ -51,6 +58,7 @@ def faq(bot, update):
 	except:
 		print(traceback.format_exc())
 
+@run_async
 def instructions(bot, update):
 	try:
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
@@ -58,8 +66,18 @@ def instructions(bot, update):
 	except:
 		print(traceback.format_exc())
 
+@run_async
 def abort_game(bot, update):
+	lock = None
+	global __user_lock_map, __user_lock_map_lock
 	try:
+		lock = __user_lock_map.get(update.effective_user.id, None)
+		if lock is None:
+			__user_lock_map_lock.acquire()
+			lock = Lock()
+			__user_lock_map[update.effective_user.id] = lock
+			__user_lock_map_lock.release()
+		lock.acquire()
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if not tg_user.game_started:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_NOT_START"), timeout = get_tgmsg_timeout())
@@ -71,13 +89,28 @@ def abort_game(bot, update):
 				pass
 		tg_user.end_game()
 		tg_user.save()
+		lock.release()
 		update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_ABORTED"), timeout = get_tgmsg_timeout())
 	except:
 		print(traceback.format_exc())
+		try:
+			lock.release()
+		except:
+			pass
 
+@run_async
 def new_game(bot, update):
+	lock = None
 	try:
 		from Game import TGGame
+		global __user_lock_map, __user_lock_map_lock
+		lock = __user_lock_map.get(update.effective_user.id, None)
+		if lock is None:
+			__user_lock_map_lock.acquire()
+			lock = Lock()
+			__user_lock_map[update.effective_user.id] = lock
+			__user_lock_map_lock.release()
+		lock.acquire()
 		tg_user = _create_user_if_not_exist(update.effective_user.id, update.effective_user.first_name)
 		if tg_user.game_started:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_STARTED"), timeout = get_tgmsg_timeout())
@@ -121,8 +154,13 @@ def new_game(bot, update):
 			tg_user.save()
 		else:
 			update.message.reply_text(TGLanguage.get_text(tg_user.lang, "GAME_END_FIRST_TURN"))
+		lock.release()
 	except:
 		print(traceback.format_exc())
+		try:
+			lock.release()
+		except:
+			pass
 
 def my_statistics(bot, update):
 	try:
@@ -137,10 +175,21 @@ def my_statistics(bot, update):
 	except:
 		print(traceback.format_exc())
 
+@run_async
 def inline_reply_handler(bot, update):
+	lock = None
 	try:
 		callback_data = update.callback_query.data
 		cmd, data = callback_data.split("/", 1)
+		global __user_lock_map, __user_lock_map_lock
+		lock = __user_lock_map.get(update.effective_user.id, None)
+		if lock is None:
+			__user_lock_map_lock.acquire()
+			lock = Lock()
+			__user_lock_map[update.effective_user.id] = lock
+			__user_lock_map_lock.release()
+		lock.acquire()
+
 		if cmd == "continue_game":
 			try:
 				update.callback_query.edit_message_reply_markup(timeout = get_tgmsg_timeout())
@@ -151,9 +200,13 @@ def inline_reply_handler(bot, update):
 			settings_router(update.callback_query.from_user.id, update.callback_query.from_user.first_name, data, bot, update)
 		else:
 			update.callback_query.answer("Hmm.. What are you doing??", timeout = get_tgmsg_timeout())
-
+		lock.release()
 	except:
 		print(traceback.format_exc())
+		try:
+			lock.release()
+		except:
+			pass
 
 def continue_game(userid, username, callback_data, bot, update):
 	game_id, reply = callback_data.split("/", 1)
