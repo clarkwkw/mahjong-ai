@@ -11,7 +11,6 @@ loaded_models = {
 	
 }
 
-n_actions = 48
 sample_shape = [10, 34, 1]
 sample_n_inputs = 10 * 34 * 1
 def get_MJPGFitted(path, **kwargs):
@@ -24,9 +23,10 @@ def get_MJPGFitted(path, **kwargs):
 	return loaded_models[path]
 
 class MJPGFitted:
-	def __init__(self, from_save = None, learning_rate = 0.01, reward_decay = 0.95, sl_memory_size = 800, sl_batch_size = 200):
+	def __init__(self, from_save = None, n_actions = 48, learning_rate = 0.01, reward_decay = 0.95, sl_memory_size = 800, sl_batch_size = 200):
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
-		
+		self.__n_actions = n_actions
+
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		if gpu_usage_w_limit:
@@ -64,7 +64,7 @@ class MJPGFitted:
 				self.__sl_train_op = tf.get_collection("sl_train_op")[0]
 
 		self.__sl_memory_counter = 0
-		self.__sl_memory = np.zeros((self.__sl_memory_size, sample_n_inputs + n_actions + 1))
+		self.__sl_memory = np.zeros((self.__sl_memory_size, sample_n_inputs + self.__n_actions + 1))
 
 	def __build_graph(self, learning_rate):
 		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
@@ -74,7 +74,7 @@ class MJPGFitted:
 			self.__obs = tf.placeholder(tf.float32, [None] + sample_shape, name = "observations")
 			self.__acts = tf.placeholder(tf.int32, [None, ], name = "actions_num")
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
-			self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "actions_filter")
+			self.__a_filter = tf.placeholder(tf.float32, [None, self.__n_actions], name = "actions_filter")
 
 		hand_negated = tf.multiply(self.__obs[:, 0:1, :, :], tf.constant(-1.0))
 		chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
@@ -93,10 +93,10 @@ class MJPGFitted:
 		bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
 		layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-		weight_3 = tf.get_variable("weight_3", [1280, n_actions], initializer = w_init, collections = collects)
-		bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+		weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
+		bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
 
-		action_weight_1 = tf.get_variable("action_weight_1", [n_actions, n_actions], initializer = w_init, collections = collects)
+		action_weight_1 = tf.get_variable("action_weight_1", [self.__n_actions, self.__n_actions], initializer = w_init, collections = collects)
 		
 		result = tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(self.__a_filter, action_weight_1)
 
@@ -124,9 +124,8 @@ class MJPGFitted:
 		return self.__learn_step_counter
 
 	def choose_action(self, observation, action_filter = None, return_value = False, strict_filter = False):
-
 		if action_filter is None:
-			action_filter = np.full(n_actions, 1.0)
+			action_filter = np.full(self.__n_actions, 1.0)
 
 		prob_weights = self.__sess.run(
 			self.__all_act_prob, 
@@ -200,8 +199,8 @@ class MJPGFitted:
 				[self.__sl_train_op, self.__sl_loss], 
 				feed_dict={
 					self.__obs: batch_memory[:, 0:sample_n_inputs].reshape([-1] + sample_shape),
-					self.__acts: batch_memory[:, sample_n_inputs+n_actions],
-					self.__a_filter: batch_memory[:, sample_n_inputs:(sample_n_inputs+n_actions)]
+					self.__acts: batch_memory[:, sample_n_inputs+self.__n_actions],
+					self.__a_filter: batch_memory[:, sample_n_inputs:(sample_n_inputs+self.__n_actions)]
 				}
 			)
 
@@ -218,7 +217,8 @@ class MJPGFitted:
 			"__reward_decay": self.__reward_decay,
 			"__learn_step_counter": self.__learn_step_counter,
 			"__sl_memory_size": self.__sl_memory_size,
-			"__sl_batch_size": self.__sl_batch_size
+			"__sl_batch_size": self.__sl_batch_size,
+			"__n_actions": self.__n_actions
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

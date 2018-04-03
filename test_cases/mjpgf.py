@@ -9,6 +9,7 @@ from . import utils
 
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
+model_flag = "pgfr"
 freq_shuffle_players = 8
 freq_model_save = None
 game_record_size = 100
@@ -20,11 +21,13 @@ pg_model_paras = {
 	"learning_rate": 1e-3,
 	"reward_decay": 0.99,
 	"sl_memory_size": 800,
-	"sl_batch_size": 200
+	"sl_batch_size": 200,
+	"n_actions": 48 if model_flag == "pgf" else 39
 }
+
 pg_model_path = "test"
 
-trainer_conf = ["random", "random", "random"]
+trainer_conf = [model_flag, model_flag, model_flag]
 
 trainer_models = {
 	"heuristics": {
@@ -43,7 +46,14 @@ trainer_models = {
 		"class": MoveGenerator.PGFGenerator,
 		"parameters": {
 			"display_step": False,
-			"pg_model_path": pg_model_path,
+			"is_train": False,
+			"skip_history": False
+		}
+	},
+	"pgfr": {
+		"class": MoveGenerator.PGFRGenerator,
+		"parameters": {
+			"display_step": False,
 			"is_train": False,
 			"skip_history": False
 		}
@@ -79,12 +89,12 @@ def test(args):
 			response = input("You have not entered save_name, are you sure? [y/n] ").lower()
 			if response != "y":
 				exit(-1)
-
+		
 		if args.model_dir is None:
 			args.model_dir = pg_model_path
 		else:
 			trainer_models["pgf"]["parameters"]["pg_model_path"] = args.model_dir
-			
+		
 		freq_model_save = args.n_episodes//10
 
 	elif args.action in ["test", "play"]:
@@ -99,11 +109,11 @@ def test(args):
 		if args.action == "play":
 			player = Player.Player(MoveGenerator.Human, player_name = names[i])
 		else:
-			player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"])
+			player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], pg_model_path = args.model_dir, **trainer_models[model_tag]["parameters"])
 		players.append(player)
 		i += 1
 
-	pg_player = Player.Player(MoveGenerator.PGFGenerator, player_name = names[i], pg_model_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
+	pg_player = Player.Player(MoveGenerator.PGFGenerator if model_flag == "pgf" else MoveGenerator.PGFRGenerator , player_name = names[i], pg_model_path = args.model_dir, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 	players.append(pg_player)
 
 	if args.action != "play":

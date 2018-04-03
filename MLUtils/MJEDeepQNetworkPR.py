@@ -11,7 +11,6 @@ loaded_models = {
 	
 }
 
-n_actions = 48
 sample_shape = [10, 34, 1]
 sample_n_inputs = 10 * 34 * 1
 def get_MJEDeepQNetworkPR(path, **kwargs):
@@ -25,10 +24,11 @@ def get_MJEDeepQNetworkPR(path, **kwargs):
 
 
 class MJEDeepQNetworkPR:
-	def __init__(self, from_save = None, is_deep = None, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
+	def __init__(self, from_save = None, is_deep = None, n_actions = 48, learning_rate = 1e-2, reward_decay = 0.9, e_greedy = 0.9, replace_target_iter = 300, memory_size = 500, batch_size = 100):
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
 		self.__is_deep = False
+		self.__n_actions = n_actions
 		
 		if gpu_usage_w_limit:
 			self.__config.gpu_options.allow_growth = True
@@ -87,8 +87,8 @@ class MJEDeepQNetworkPR:
 			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
 			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-			weight_3 = tf.get_variable("weight_3", [1280, n_actions], initializer = w_init, collections = collects)
-			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+			weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
 
 			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
 
@@ -112,8 +112,8 @@ class MJEDeepQNetworkPR:
 			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
 			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-			weight_3 = tf.get_variable("weight_3", [1280, n_actions], initializer = w_init, collections = collects)
-			bias_3 = tf.get_variable("bias_3", [n_actions], initializer = b_init, collections = collects)
+			weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
 
 			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
 		
@@ -122,10 +122,10 @@ class MJEDeepQNetworkPR:
 		connect = make_connection if not is_deep else make_deep_connection
 		self.__s = tf.placeholder(tf.float32, [None] + sample_shape, name = "s")
 		self.__s_ = tf.placeholder(tf.float32, [None] + sample_shape, name = "s_")
-		self.__a_filter = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter")
-		self.__a_filter_ = tf.placeholder(tf.float32, [None, n_actions], name = "a_filter_")
+		self.__a_filter = tf.placeholder(tf.float32, [None, self.__n_actions], name = "a_filter")
+		self.__a_filter_ = tf.placeholder(tf.float32, [None, self.__n_actions], name = "a_filter_")
 		self.__ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
-		self.__q_target = tf.placeholder(tf.float32, [None, n_actions], name='q_target')
+		self.__q_target = tf.placeholder(tf.float32, [None, self.__n_actions], name='q_target')
 		
 		with tf.variable_scope("eval_net"):
 			self.__q_eval = connect(self.__s, self.__a_filter, "eval_net_params")
@@ -151,17 +151,17 @@ class MJEDeepQNetworkPR:
 
 	def store_transition(self, state, action, reward, state_, action_filter = None, action_filter_ = None):
 		if action_filter is None:
-			action_filter = np.full(n_actions, 1)
+			action_filter = np.full(self.__n_actions, 1)
 
 		if action_filter_ is None:
-			action_filter_ = np.full(n_actions, 1)
+			action_filter_ = np.full(self.__n_actions, 1)
 
 		transition = np.hstack((state.reshape((sample_n_inputs)), [action, reward], state_.reshape((sample_n_inputs)), action_filter, action_filter_))
 		self.__memory.store(transition)
 
 	def choose_action(self, state, action_filter = None, eps_greedy = True, return_value = False, strict_filter = False):
 		if action_filter is None:
-			action_filter = np.full(n_actions, 1)
+			action_filter = np.full(self.__n_actions, 1)
 
 		if np.random.uniform() < self.__epsilon or not eps_greedy:
 			inputs = state[np.newaxis, :]
@@ -178,7 +178,7 @@ class MJEDeepQNetworkPR:
 				action = np.argmax(actions_value)
 			value = actions_value[0, action]
 		else:
-			action = random.choice(np.arange(n_actions)[action_filter >= 0])
+			action = random.choice(np.arange(self.__n_actions)[action_filter >= 0])
 			value = np.nan
 		
 		if return_value:
@@ -197,8 +197,8 @@ class MJEDeepQNetworkPR:
 					feed_dict = {
 						self.__s: batch_memory[:, :sample_n_inputs].reshape([-1] + sample_shape),
 						self.__s_: batch_memory[:, (sample_n_inputs + 2):(sample_n_inputs*2 + 2)].reshape([-1] + sample_shape),
-						self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):(sample_n_inputs*2 + 2 + n_actions)],
-						self.__a_filter_: batch_memory[:, (sample_n_inputs*2 + 2 + n_actions):],
+						self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):(sample_n_inputs*2 + 2 + self.__n_actions)],
+						self.__a_filter_: batch_memory[:, (sample_n_inputs*2 + 2 + self.__n_actions):],
 					})
 
 			q_target = q_eval.copy()
@@ -212,7 +212,7 @@ class MJEDeepQNetworkPR:
 					[self.__train__op, self.__abs_errors, self.__loss],
 					feed_dict = {
 						self.__s: batch_memory[:, :sample_n_inputs].reshape([-1] + sample_shape),
-						self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):(sample_n_inputs*2 + 2 + n_actions)],
+						self.__a_filter: batch_memory[:, (sample_n_inputs*2 + 2):(sample_n_inputs*2 + 2 + self.__n_actions)],
 						self.__q_target: q_target,
 						self.__ISWeights: ISWeights
 					})
@@ -234,7 +234,8 @@ class MJEDeepQNetworkPR:
 			"__reward_decay": self.__reward_decay,
 			"__batch_size": self.__batch_size,
 			"__learn_step_counter": self.__learn_step_counter,
-			"__is_deep": self.__is_deep
+			"__is_deep": self.__is_deep,
+			"__n_actions": self.__n_actions
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)

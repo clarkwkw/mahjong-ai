@@ -5,12 +5,15 @@ from .MCTSCpp import RuleBasedAINaiveMCTSCpp
 from .MCTSPy import RuleBasedAINaiveMCTSPy
 from .ModelTrainer import ModelTrainer
 from .ModelETrainer import ModelETrainer
+from .ModelRTrainer import ModelRTrainer
 from .TGHuman import TGHuman
 from .Rule_based_ai_q import RuleBasedAIQ
 from .DeepQGenerator import DeepQGenerator
 from .DeepQEGenerator import DeepQEGenerator
+from .DeepQRGenerator import DeepQRGenerator
 from .PGGenerator import PGGenerator
 from .PGFGenerator import PGFGenerator
+from .PGFRGenerator import PGFRGenerator
 from .RandomGenerator import RandomGenerator
 
 __models_map = {

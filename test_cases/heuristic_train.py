@@ -43,7 +43,21 @@ deep_model_paras = {
 			"e_greedy": 0.8,
 			"replace_target_iter": 300, 
 			"memory_size": 1000, 
-			"batch_size": 300
+			"batch_size": 300,
+			"n_actions": 48
+		}
+	},
+	"edeepqr": {
+		"getter": edeepq_getter,
+		"parameters": {
+			"is_deep": True,
+			"learning_rate": 1e-3,
+			"reward_decay": 0.9, 
+			"e_greedy": 0.8,
+			"replace_target_iter": 300, 
+			"memory_size": 1000, 
+			"batch_size": 300,
+			"n_actions": 39
 		}
 	},
 	"policy_gradient": {
@@ -60,7 +74,18 @@ deep_model_paras = {
 			"learning_rate": 1e-3,
 			"reward_decay": 0.99,
 			"sl_memory_size": 800,
-			"sl_batch_size": 200
+			"sl_batch_size": 200,
+			"n_actions": 48
+		}
+	},
+	"pg_fittedr": {
+		"getter": get_MJPGFitted,
+		"parameters": {
+			"learning_rate": 1e-3,
+			"reward_decay": 0.99,
+			"sl_memory_size": 800,
+			"sl_batch_size": 200,
+			"n_actions": 39
 		}
 	}
 }
@@ -83,6 +108,15 @@ generator_paras = {
 			"q_network_path": "heuristic_trainer"
 		}
 	},
+	"edeepqr":{
+		"class": MoveGenerator.ModelRTrainer,
+		"parameters": {
+			"network_type": network_type,
+			"model": MoveGenerator.DeepQRGenerator,
+			"display_step": False,
+			"q_network_path": "heuristic_trainer"
+		}
+	},
 	"policy_gradient":{
 		"class": MoveGenerator.ModelTrainer,
 		"parameters": {
@@ -98,6 +132,14 @@ generator_paras = {
 				"display_step": False,
 				"pg_model_path": "heuristic_trainer"
 			}
+	},
+	"pg_fittedr":{
+		"class": MoveGenerator.ModelRTrainer,
+		"parameters": {
+			"model": MoveGenerator.PGFRGenerator,
+			"display_step": False,
+			"pg_model_path": "heuristic_trainer"
+		}
 	},
 	"heuristics": {
 		"class": MoveGenerator.RuleBasedAINaive,
@@ -144,8 +186,10 @@ def test(args):
 	else:
 		generator_paras["deepq"]["parameters"]["q_network_path"] = args.model_dir
 		generator_paras["edeepq"]["parameters"]["q_network_path"] = args.model_dir
+		generator_paras["edeepqr"]["parameters"]["q_network_path"] = args.model_dir
 		generator_paras["policy_gradient"]["parameters"]["pg_model_path"] = args.model_dir
 		generator_paras["pg_fitted"]["parameters"]["pg_model_path"] = args.model_dir
+		generator_paras["pg_fittedr"]["parameters"]["pg_model_path"] = args.model_dir
 
 	model = deep_model_paras[args.model]["getter"](args.model_dir, **deep_model_paras[args.model]["parameters"])
 
