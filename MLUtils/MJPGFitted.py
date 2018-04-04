@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from . import utils
 import json
+import warnings
 
 # Reference: https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/7_Policy_gradient_softmax/RL_brain.py
 save_file_name = "savefile.ckpt"
@@ -178,20 +179,24 @@ class MJPGFitted:
 				discounted_ep_rs /= std
 			return discounted_ep_rs
 
-		loss = None
-		# discount and normalize episode reward
-		discounted_ep_rs_norm = discount_and_norm_rewards()
+		loss = np.NAN
+		
 		# train on episode
 		if not supervised:
-			_, loss = self.__sess.run(
-				[self.__train_op, self.__loss], 
-				feed_dict={
-					self.__obs: np.stack(self.__ep_obs, axis = 0),
-					self.__acts: np.array(self.__ep_as),
-					self.__vt: discounted_ep_rs_norm,
-					self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
-				}
-			)
+			if len(self.__ep_obs) > 0:
+				# discount and normalize episode reward
+				discounted_ep_rs_norm = discount_and_norm_rewards()
+				_, loss = self.__sess.run(
+					[self.__train_op, self.__loss], 
+					feed_dict={
+						self.__obs: np.stack(self.__ep_obs, axis = 0),
+						self.__acts: np.array(self.__ep_as),
+						self.__vt: discounted_ep_rs_norm,
+						self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
+					}
+				)
+			else:
+				warnings.warn("skipped learning because of 0 observation", RuntimeWarning)
 		else:
 			sample_index = np.random.choice(min(self.__sl_memory_size, self.__sl_memory_counter), size = self.__sl_batch_size)
 			batch_memory = self.__sl_memory[sample_index, :]

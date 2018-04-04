@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from . import utils
 import json
+import warnings
 
 # Reference: https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow/blob/master/contents/7_Policy_gradient_softmax/RL_brain.py
 save_file_name = "savefile.ckpt"
@@ -178,19 +179,22 @@ class MJPolicyGradient:
 				discounted_ep_rs /= std
 			return discounted_ep_rs
 
-		loss = None
-		# discount and normalize episode reward
-		discounted_ep_rs_norm = discount_and_norm_rewards()
-		# train on episode
-		_, loss = self.__sess.run(
-			[self.__train_op, self.__loss], 
-			feed_dict={
-				self.__obs: np.stack(self.__ep_obs, axis = 0),
-				self.__acts: np.array(self.__ep_as),
-				self.__vt: discounted_ep_rs_norm,
-				self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
-			}
-		)
+		loss = np.NAN
+		if len(self.__ep_obs) > 0:
+			# discount and normalize episode reward
+			discounted_ep_rs_norm = discount_and_norm_rewards()
+			# train on episode
+			_, loss = self.__sess.run(
+				[self.__train_op, self.__loss], 
+				feed_dict={
+					self.__obs: np.stack(self.__ep_obs, axis = 0),
+					self.__acts: np.array(self.__ep_as),
+					self.__vt: discounted_ep_rs_norm,
+					self.__a_filter: np.stack(self.__ep_a_filter, axis = 0)
+				}
+			)
+		else:
+			warnings.warn("skipped learning because of 0 observation", RuntimeWarning)
 
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
 		 
