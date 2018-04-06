@@ -372,16 +372,21 @@ def validate_thirteen_yiu(fixed_hand, hand, additional_tile, game, **kwargs):
 		return 0, None
 
 	required_tiles_map = {tile: 0 for tile in THIRTEEN_YIU_TILES}
-	tiles = hand if additional_tile is not None else hand + [additional_tile]
+	tiles = hand + [additional_tile] if additional_tile is not None else hand
 	for tile in tiles:
 		if tile not in required_tiles_map:
 			return 0, None
 		else:
 			required_tiles_map[tile] += 1
 
+	n_total = 0
 	for tile, count in required_tiles_map.items():
+		n_total += count
 		if count == 0:
 			return 0, None
+
+	if n_total != 14:
+		return 0, None
 
 	return __score_upper_limit, None if game is None else get_text(game.lang_code, "HKRULE_THIRTEEN_TERMINAL_TILES")
 
