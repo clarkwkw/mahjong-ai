@@ -3,8 +3,18 @@ from TGLanguage import get_text
 
 def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src, game):
 	grouped_hands = validate_hand(fixed_hand, hand, additional_tile)
-	if grouped_hands is None:
+
+	ty_score, ty_items = validate_thirteen_yiu(fixed_hand, hand, additional_tile, game)
+
+	max_hand, max_score, max_items = None, float("-inf"), []
+	ty_hand = None
+
+	if grouped_hands is None and ty_score == 0:
 		return None, None, None
+	elif ty_score > 0:
+		ty_hand = [("ty", False, tuple(hand))]
+		max_hand, max_score, max_items = ty_hand, ty_score, ty_items
+		grouped_hands = []
 	
 	parameters = {
 		"fixed_hand": fixed_hand,
@@ -13,8 +23,7 @@ def calculate_total_score(fixed_hand, hand, additional_tile, additional_tile_src
 		"additional_tile_src": additional_tile_src,
 		"game": game
 	}
-
-	max_hand, max_score, max_items = None, float("-inf"), []
+	
 	for grouped_hand in grouped_hands:
 		parameters["grouped_hand"] = grouped_hand
 		total_score, items = 0, []
@@ -341,6 +350,40 @@ def score_four_kongs(fixed_hand, game = None, **kwargs):
 		return __score_upper_limit, None if game is None else get_text(game.lang_code, "HKRULE_FOUR_KONGS")
 
 	return 0, None
+
+THIRTEEN_YIU_TILES = [
+	Tile.Tile("dots", 1),
+	Tile.Tile("dots", 9),
+	Tile.Tile("bamboo", 1),
+	Tile.Tile("bamboo", 9),
+	Tile.Tile("characters", 1),
+	Tile.Tile("characters", 9),
+	Tile.Tile("honor", "east"),
+	Tile.Tile("honor", "south"),
+	Tile.Tile("honor", "west"),
+	Tile.Tile("honor", "north"),
+	Tile.Tile("honor", "red"),
+	Tile.Tile("honor", "green"),
+	Tile.Tile("honor", "white")
+]
+
+def validate_thirteen_yiu(fixed_hand, hand, additional_tile, game, **kwargs):
+	if len(fixed_hand) > 0:
+		return 0, None
+
+	required_tiles_map = {tile: 0 for tile in THIRTEEN_YIU_TILES}
+	tiles = hand if additional_tile is not None else hand + [additional_tile]
+	for tile in tiles:
+		if tile not in required_tiles_map:
+			return 0, None
+		else:
+			required_tiles_map[tile] += 1
+
+	for tile, count in required_tiles_map.items():
+		if count == 0:
+			return 0, None
+
+	return __score_upper_limit, None if game is None else get_text(game.lang_code, "HKRULE_THIRTEEN_TERMINAL_TILES")
 
 def get_score_upper_limit():
 	return __score_upper_limit

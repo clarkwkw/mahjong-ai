@@ -148,3 +148,25 @@ class Calculate_score_test(unittest.TestCase):
 
 		grouped_hands, score, items =ScoringRules.HKRules.calculate_total_score(fixed_hand, hand, bamboo_9, "steal", game = None)
 		self.assertEqual(score, 7)
+
+	def test_ty(self):
+		fixed_hand = []
+		hand = [
+			Tile.Tile("dots", 1),
+			Tile.Tile("dots", 9),
+			Tile.Tile("bamboo", 1),
+			Tile.Tile("bamboo", 9),
+			Tile.Tile("characters", 1),
+			Tile.Tile("characters", 9),
+			Tile.Tile("honor", "east"),
+			Tile.Tile("honor", "south"),
+			Tile.Tile("honor", "west"),
+			Tile.Tile("honor", "north"),
+			Tile.Tile("honor", "red"),
+			Tile.Tile("honor", "green"),
+			Tile.Tile("honor", "white")
+		]
+		additional_tile = Tile.Tile("dots", 1)
+
+		grouped_hands, score, items = ScoringRules.HKRules.calculate_total_score(fixed_hand, hand, additional_tile, "steal", game = None)
+		self.assertEqual(score, 10)
