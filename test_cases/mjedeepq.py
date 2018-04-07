@@ -32,6 +32,7 @@ deep_q_model_paras = {
 deep_q_model_dir = "rule_base_q_test"
 
 trainer_conf = [model_flag, model_flag, model_flag]
+trainer_pool = ["heuristics", "heuristics2", "heuristics3", "random", model_flag]
 
 trainer_models = {
 	"heuristics": {
@@ -42,6 +43,30 @@ trainer_models = {
 			 "s_pong": 6,
 			 "s_future": 1,
 			 "s_explore": 0,
+			 "s_neighbor_suit": 0,
+			 "s_mixed_suit": 0
+		}
+	},
+	"heuristics2": {
+		"class": MoveGenerator.RuleBasedAINaive,
+		"parameters":{
+			 "display_step": False,
+			 "s_chow": 2,
+			 "s_pong": 6,
+			 "s_future": 1,
+			 "s_explore": 0.35,
+			 "s_neighbor_suit": 0,
+			 "s_mixed_suit": 0
+		}
+	},
+	"heuristics3": {
+		"class": MoveGenerator.RuleBasedAINaive,
+		"parameters":{
+			 "display_step": False,
+			 "s_chow": 2,
+			 "s_pong": 6,
+			 "s_future": 1,
+			 "s_explore": 0.7,
 			 "s_neighbor_suit": 0,
 			 "s_mixed_suit": 0
 		}
@@ -88,11 +113,22 @@ def signal_handler(signal, frame):
 def parse_args(args_list):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("--model_dir", type = str, help = "Where is the model")
+	parser.add_argument("--rand_opp", action = "store_true", default = False, help = "randomly choose opponents")
 	parser.add_argument("action", type = str, choices = ["train", "test", "play"], help = "What to do with the model")
 	parser.add_argument("n_episodes", nargs = "?", default = 1, type = int, help = "No. of episodes to go through")
 	parser.add_argument("save_name", nargs = "?", default = None, type = str, help = "Path to save the model")
 	args = parser.parse_args(args_list)
 	return args
+
+def get_oppponents(rand_opp, all_human):
+	players = []
+	for i in range(3):
+		if all_human:
+			players.append(Player.Player(MoveGenerator.Human, player_name = names[i]))
+		else:
+			model_tag = random.choice(trainer_pool) if rand_opp else trainer_conf[i]
+			players.append(Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"]))
+	return players
 
 def test(args):
 	global game_record_count
@@ -117,19 +153,7 @@ def test(args):
 			raise Exception("model_dir must be given to test/play")
 
 	model = get_network(args.model_dir, **deep_q_model_paras)
-
-	players = []
-	i = 0
-	for model_tag in trainer_conf:
-		if args.action == "play":
-			player = Player.Player(MoveGenerator.Human, player_name = names[i])
-		else:
-			player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"])
-		players.append(player)
-		i += 1
-
-	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator if model_flag == "deepq" else MoveGenerator.DeepQRGenerator, player_name = names[i], q_network_path = args.model_dir, network_type = network_type, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
-	players.append(deepq_player)
+	deepq_player = Player.Player(MoveGenerator.DeepQEGenerator if model_flag == "deepq" else MoveGenerator.DeepQRGenerator, player_name = names[len(names) - 1], q_network_path = args.model_dir, network_type = network_type, skip_history = False, is_train = args.action == "train", display_step = args.action == "play")
 
 	if args.action != "play":
 		signal.signal(signal.SIGINT, signal_handler)
@@ -139,7 +163,11 @@ def test(args):
 			break
 
 		if i % freq_shuffle_players == 0:
-			shuffled_players =  random.sample(players, k = 4)
+			if args.rand_opp or i == 0:
+				players = get_oppponents(args.rand_opp, args.action == "play")
+				players.append(deepq_player)
+
+			shuffled_players = random.sample(players, k = 4)
 			game = Game.Game(shuffled_players)
 
 		winner, losers, penalty = game.start_game()
