@@ -109,7 +109,7 @@ def test(args):
 		if args.action == "play":
 			player = Player.Player(MoveGenerator.Human, player_name = names[i])
 		else:
-			player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], pg_model_path = args.model_dir, **trainer_models[model_tag]["parameters"])
+			player = Player.Player(trainer_models[model_tag]["class"], player_name = names[i], **trainer_models[model_tag]["parameters"])
 		players.append(player)
 		i += 1
 
