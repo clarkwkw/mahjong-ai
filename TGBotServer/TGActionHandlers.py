@@ -250,7 +250,6 @@ def continue_game(userid, username, callback_data, bot, update):
 			
 			try:		
 				sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard, timeout = get_tgmsg_timeout())
-				break
 			except TimedOut:
 				print("Message timeout")
 
