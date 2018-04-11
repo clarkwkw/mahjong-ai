@@ -8,8 +8,8 @@ import MoveGenerator
 from . import utils
 
 EXIT_FLAG = False
-network_type = "vanilla"
-model_flag = "deepqr"
+network_type = "pr"
+model_flag = "deepq"
 names = ["Amy", "Billy", "Clark", "David"]
 freq_shuffle_players = 8
 freq_model_save = None
@@ -20,7 +20,7 @@ game_record_count = 0
 game_record = np.zeros((game_record_size, 4, 2))
 
 deep_q_model_paras = {
-	"is_deep": True,
+	"is_deep": False,
 	"learning_rate": 1e-3,
 	"reward_decay": 0.9, 
 	"e_greedy": 0.8,

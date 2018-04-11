@@ -1,5 +1,6 @@
 from . import utils
 import tensorflow as tf
+from tensorflow.contrib import rnn
 import random
 import numpy as np
 import json
@@ -78,19 +79,17 @@ class MJEDeepQNetworkPR:
 
 		def make_connection(state, action_filter, c_name):
 			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
-			state = tf.reshape(state, [-1, 10*34])
-			weight_1 = tf.get_variable("weight_1", [10*34, 3840], initializer = w_init, collections = collects)
-			bias_1 = tf.get_variable("bias_1", [3840], initializer = b_init, collections = collects)
-			layer_1 = tf.sigmoid(tf.matmul(state, weight_1) + bias_1)
+			state = tf.unstack(tf.reshape(state, [-1] + sample_shape[0:(len(sample_shape) - 1)]), axis = 1)
+			lstm_fw_cell = rnn.BasicLSTMCell(2380, forget_bias = 1.0)
+			lstm_bw_cell = rnn.BasicLSTMCell(2380, forget_bias = 1.0)
+			outputs, _, _ = rnn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, state, dtype=tf.float32)
 
-			weight_2 = tf.get_variable("weight_2", [3840, 1280], initializer = w_init, collections = collects)
-			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
-			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+			bias_result = tf.get_variable("bias_result", [self.__n_actions], initializer = b_init, collections = collects)
+			weight_result = tf.get_variable("weight_result", [2*2380, self.__n_actions], initializer = w_init, collections = collects)
 
-			weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
-			bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
-
-			return tf.multiply(tf.matmul(layer_2, weight_3) + bias_3, action_filter)
+			result = tf.matmul(outputs[-1], weight_result) + bias_result
+			
+			return result
 
 		def make_deep_connection(state, action_filter, c_name):
 			collects = [c_name, tf.GraphKeys.GLOBAL_VARIABLES]
@@ -127,19 +126,24 @@ class MJEDeepQNetworkPR:
 		self.__ISWeights = tf.placeholder(tf.float32, [None, 1], name='IS_weights')
 		self.__q_target = tf.placeholder(tf.float32, [None, self.__n_actions], name='q_target')
 		
-		with tf.variable_scope("eval_net"):
+		with tf.variable_scope("eval_net") as vs:
 			self.__q_eval = connect(self.__s, self.__a_filter, "eval_net_params")
+			eval_scope_params = [v for v in tf.all_variables() if v.name.startswith(vs.name)]
 
-		with tf.variable_scope("target_net"):
+		with tf.variable_scope("target_net") as vs:
 			self.__q_next = connect(self.__s_, self.__a_filter_, "target_net_params")
+			target_scope_params = [v for v in tf.all_variables() if v.name.startswith(vs.name)]
 
 		self.__abs_errors = tf.reduce_sum(tf.abs(self.__q_target - self.__q_eval), axis = 1)	# for updating Sumtree
 		self.__loss = tf.reduce_mean(self.__ISWeights * tf.squared_difference(self.__q_target, self.__q_eval))
 		self.__train__op = tf.train.RMSPropOptimizer(learning_rate).minimize(self.__loss)
 
-		eval_net_params = tf.get_collection("eval_net_params")
-		target_net_params = tf.get_collection("target_net_params")
-		self.__target_replace_op = [tf.assign(t, e) for t, e in zip(target_net_params, eval_net_params)]
+		if is_deep:
+			eval_net_params = tf.get_collection("eval_net_params")
+			target_net_params = tf.get_collection("target_net_params")
+			self.__target_replace_op = [tf.assign(t, e) for t, e in zip(target_net_params, eval_net_params)]
+		else:
+			self.__target_replace_op = [tf.assign(t, e) for t, e in zip(target_scope_params, eval_scope_params)]
 
 		tf.add_to_collection("q_next", self.__q_next)
 		tf.add_to_collection("q_eval", self.__q_eval)
