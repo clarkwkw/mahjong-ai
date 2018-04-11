@@ -9,7 +9,7 @@ from . import utils
 
 EXIT_FLAG = False
 names = ["Amy", "Billy", "Clark", "David"]
-model_flag = "pgfr"
+model_flag = "pgf"
 freq_shuffle_players = 8
 freq_model_save = None
 game_record_size = 100
@@ -22,7 +22,8 @@ pg_model_paras = {
 	"reward_decay": 0.99,
 	"sl_memory_size": 800,
 	"sl_batch_size": 200,
-	"n_actions": 48 if model_flag == "pgf" else 39
+	"n_actions": 48 if model_flag == "pgf" else 39,
+	"rnn_net": False
 }
 
 pg_model_path = "test"
@@ -47,7 +48,8 @@ trainer_models = {
 		"parameters": {
 			"display_step": False,
 			"is_train": False,
-			"skip_history": False
+			"skip_history": False,
+			"pg_model_path": pg_model_path
 		}
 	},
 	"pgfr": {
@@ -55,7 +57,8 @@ trainer_models = {
 		"parameters": {
 			"display_step": False,
 			"is_train": False,
-			"skip_history": False
+			"skip_history": False,
+			"pg_model_path": pg_model_path
 		}
 	},
 	"random": {
@@ -94,6 +97,7 @@ def test(args):
 			args.model_dir = pg_model_path
 		else:
 			trainer_models["pgf"]["parameters"]["pg_model_path"] = args.model_dir
+			trainer_models["pgfr"]["parameters"]["pg_model_path"] = args.model_dir
 		
 		freq_model_save = args.n_episodes//10
 

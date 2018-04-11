@@ -1,4 +1,5 @@
 import tensorflow as tf
+from tensorflow.contrib import rnn
 import numpy as np
 from . import utils
 import json
@@ -24,9 +25,10 @@ def get_MJPGFitted(path, **kwargs):
 	return loaded_models[path]
 
 class MJPGFitted:
-	def __init__(self, from_save = None, n_actions = 48, learning_rate = 0.01, reward_decay = 0.95, sl_memory_size = 800, sl_batch_size = 200):
+	def __init__(self, from_save = None, rnn_net = False, n_actions = 48, learning_rate = 0.01, reward_decay = 0.95, sl_memory_size = 800, sl_batch_size = 200):
 		self.__ep_obs, self.__ep_as, self.__ep_rs, self.__ep_a_filter = [], [], [], []
 		self.__n_actions = n_actions
+		self.__rnn_net = rnn_net
 
 		self.__graph = tf.Graph()
 		self.__config = tf.ConfigProto(**utils.parallel_parameters)
@@ -37,7 +39,7 @@ class MJPGFitted:
 		self.__sess = tf.Session(graph = self.__graph, config = self.__config)
 		with self.__graph.as_default() as g:
 			if from_save is None:
-				self.__build_graph(learning_rate)
+				self.__build_graph(rnn_net, learning_rate)
 				self.__reward_decay = reward_decay
 				self.__sess.run(tf.global_variables_initializer())
 				self.__learn_step_counter = 0
@@ -67,7 +69,7 @@ class MJPGFitted:
 		self.__sl_memory_counter = 0
 		self.__sl_memory = np.zeros((self.__sl_memory_size, sample_n_inputs + self.__n_actions + 1))
 
-	def __build_graph(self, learning_rate):
+	def __build_graph(self, rnn_net, learning_rate):
 		w_init, b_init = tf.random_normal_initializer(0., 0.3), tf.constant_initializer(0.1)
 		collects = [tf.GraphKeys.GLOBAL_VARIABLES]
 
@@ -77,29 +79,42 @@ class MJPGFitted:
 			self.__vt = tf.placeholder(tf.float32, [None, ], name = "actions_value")
 			self.__a_filter = tf.placeholder(tf.float32, [None, self.__n_actions], name = "actions_filter")
 
-		hand_negated = tf.multiply(self.__obs[:, 0:1, :, :], tf.constant(-1.0))
-		chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
-		chows = tf.multiply(hand_negated, tf.constant(-1.0))
-		
-		tile_used = tf.reduce_sum(self.__obs[:, 1:9, :, :], axis = 1, keep_dims = True)
+		result = None
+		if not rnn_net:
+			hand_negated = tf.multiply(self.__obs[:, 0:1, :, :], tf.constant(-1.0))
+			chows_negated = tf.nn.max_pool(hand_negated, [1, 1, 3, 1], [1, 1, 1, 1], padding = 'SAME')
+			chows = tf.multiply(hand_negated, tf.constant(-1.0))
+			
+			tile_used = tf.reduce_sum(self.__obs[:, 1:9, :, :], axis = 1, keep_dims = True)
 
-		input_all = tf.concat([self.__obs[:, 9:10, :, :], self.__obs[:, 0:2, :, :], chows, tile_used], axis = 1)
-		input_flat = tf.reshape(input_all, [-1, 5*34])
+			input_all = tf.concat([self.__obs[:, 9:10, :, :], self.__obs[:, 0:2, :, :], chows, tile_used], axis = 1)
+			input_flat = tf.reshape(input_all, [-1, 5*34])
 
-		weight_1 = tf.get_variable("weight_1", [5*34, 3840], initializer = w_init, collections = collects)
-		bias_1 = tf.get_variable("bias_1", [3840], initializer = b_init, collections = collects)
-		layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
+			weight_1 = tf.get_variable("weight_1", [5*34, 3840], initializer = w_init, collections = collects)
+			bias_1 = tf.get_variable("bias_1", [3840], initializer = b_init, collections = collects)
+			layer_1 = tf.sigmoid(tf.matmul(input_flat, weight_1) + bias_1)
 
-		weight_2 = tf.get_variable("weight_2", [3840, 1280], initializer = w_init, collections = collects)
-		bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
-		layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
+			weight_2 = tf.get_variable("weight_2", [3840, 1280], initializer = w_init, collections = collects)
+			bias_2 = tf.get_variable("bias_2", [1280], initializer = b_init, collections = collects)
+			layer_2 = tf.sigmoid(tf.matmul(layer_1, weight_2) + bias_2)
 
-		weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
-		bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
+			weight_3 = tf.get_variable("weight_3", [1280, self.__n_actions], initializer = w_init, collections = collects)
+			bias_3 = tf.get_variable("bias_3", [self.__n_actions], initializer = b_init, collections = collects)
 
-		action_weight_1 = tf.get_variable("action_weight_1", [self.__n_actions, self.__n_actions], initializer = w_init, collections = collects)
-		
-		result = tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(self.__a_filter, action_weight_1)
+			action_weight_1 = tf.get_variable("action_weight_1", [self.__n_actions, self.__n_actions], initializer = w_init, collections = collects)
+			
+			result = tf.matmul(layer_2, weight_3) + bias_3 + tf.matmul(self.__a_filter, action_weight_1)
+
+		else:
+			obs = tf.unstack(tf.reshape(self.__obs, [-1] + sample_shape[0:(len(sample_shape) - 1)]), axis = 1)
+			lstm_fw_cell = rnn.BasicLSTMCell(2380, forget_bias = 1.0)
+			lstm_bw_cell = rnn.BasicLSTMCell(2380, forget_bias = 1.0)
+			outputs, _, _ = rnn.static_bidirectional_rnn(lstm_fw_cell, lstm_bw_cell, obs, dtype=tf.float32)
+
+			bias_result = tf.get_variable("bias_result", [self.__n_actions], initializer = b_init, collections = collects)
+			weight_result = tf.get_variable("weight_result", [2*2380, self.__n_actions], initializer = w_init, collections = collects)
+
+			result = tf.matmul(outputs[-1], weight_result) + bias_result
 
 		self.__all_act_prob = tf.nn.softmax(result)
 
@@ -223,7 +238,8 @@ class MJPGFitted:
 			"__learn_step_counter": self.__learn_step_counter,
 			"__sl_memory_size": self.__sl_memory_size,
 			"__sl_batch_size": self.__sl_batch_size,
-			"__n_actions": self.__n_actions
+			"__n_actions": self.__n_actions,
+			"__rnn_net": self.__rnn_net
 		}
 		with open(save_dir.rstrip("/") + "/" + parameters_file_name, "w") as f:
 			json.dump(paras_dict, f, indent = 4)
