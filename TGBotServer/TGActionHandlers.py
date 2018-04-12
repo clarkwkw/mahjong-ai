@@ -247,11 +247,13 @@ def continue_game(userid, username, callback_data, bot, update):
 				except TelegramError:
 					retry_count += 1
 					print("Invalid server response, retrying.. %d"%retry_count)
-			
-			try:		
-				sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard, timeout = get_tgmsg_timeout())
-			except TimedOut:
-				print("Message timeout")
+					
+			while True
+				try:		
+					sent_message = bot.send_message(tg_user.tg_userid, new_response.message, reply_markup = keyboard, timeout = get_tgmsg_timeout())
+					break
+				except TimedOut:
+					print("Message timeout")
 
 			tg_user.register_last_game_message_id(sent_message.message_id)
 			tg_user.update_game(tg_game, new_response)
