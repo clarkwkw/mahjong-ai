@@ -6,9 +6,9 @@ import unittest
 from sklearn.preprocessing import normalize
 from . import utils
 
-train_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 1, 1)]
+train_datasets = [("../data_dir_ssd/training", 1, 1)]
 
-test_datasets = [("/data/ssd/public/kwwong5/heuristics_vs_heuristics_", 2, 2)]
+test_datasets = [("../data_dir_ssd/testing", 2, 2)]
 
 required_matrices = ["disposed_tiles_matrix", "hand_matrix", "fixed_hand_matrix", "remaining"]
 learning_rate = 1e-3
