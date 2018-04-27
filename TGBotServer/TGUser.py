@@ -13,7 +13,7 @@ def init_mongo_collect():
 
 def tgbroadcast(bot, msg, users = None):
 	import telegram
-
+	init_mongo_collect()
 	tg_userids = users
 	
 	if tg_userids is None:
