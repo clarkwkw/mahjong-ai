@@ -11,6 +11,23 @@ def init_mongo_collect():
 		utils.load_settings()
 		mongo_collect = utils.get_mongo_collection("Users")
 
+def broadcast(bot, msg, users = None):
+	import telegram
+
+	tg_userids = users
+	
+	if tg_userids is None:
+		mongo_documents = mongo_collect.find({})
+		tg_userids = [doc["tg_userid"] for doc in mongo_documents]
+	
+	for tg_userid in tg_userids:
+		try:
+			bot.send_message(tg_userid, msg, timeout = 10, parse_mode = "HTML")
+		except telegram.error.Unauthorized:
+			print("Skipped blocking user: %s"%tg_userid)
+		except:
+			pass
+
 class TGUser:
 
 	def __init__(self, tg_userid, username, lang = "CH"):
