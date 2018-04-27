@@ -59,7 +59,7 @@ else:
 		print("Abort.")
 		exit(-1)
 
-	
+	TGBotServer.tgboardcast(updater.bot, message)
 
 
 

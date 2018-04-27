@@ -3,3 +3,4 @@ from .utils import load_settings, get_tg_bot_token, get_tg_server_info, send_tg_
 from .TGBoardImage import generate_TG_board, generate_TG_end_board
 from . import TGActionHandlers
 from . import TGSettingHandlers
+from .TGUser import tgbroadcast

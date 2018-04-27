@@ -11,7 +11,7 @@ def init_mongo_collect():
 		utils.load_settings()
 		mongo_collect = utils.get_mongo_collection("Users")
 
-def broadcast(bot, msg, users = None):
+def tgbroadcast(bot, msg, users = None):
 	import telegram
 
 	tg_userids = users
