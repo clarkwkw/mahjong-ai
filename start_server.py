@@ -1,5 +1,6 @@
 import TGBotServer
 from telegram.ext import Updater, CommandHandler, ChosenInlineResultHandler, CallbackQueryHandler
+import argparse
 
 HANDLERS = {
 	"start": TGBotServer.TGActionHandlers.start,
@@ -15,7 +16,7 @@ INLINE_REPLY_HANDLER = TGBotServer.TGActionHandlers.inline_reply_handler
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--send_message", action = "store_true", default = False)
-is_send_message = parser.parse_args()["send_message"]
+is_send_message = parser.parse_args().send_message
 
 TGBotServer.load_settings(force_quit_on_err = True)
 updater = Updater(token = TGBotServer.get_tg_bot_token())
@@ -49,6 +50,7 @@ else:
 		if len(newline) == 0:
 			break
 		message += newline + "\n"
+		count += 1
 	print("Message inputted:\n%s"%message)
 	while confirmed is None:
 		res = input("Are you sure you want to send this? [y/n] ").lower()
@@ -59,7 +61,7 @@ else:
 		print("Abort.")
 		exit(-1)
 
-	TGBotServer.tgboardcast(updater.bot, message)
+	TGBotServer.tgbroadcast(updater.bot, message)
 
 
 
