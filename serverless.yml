@@ -1,0 +1,37 @@
+service: mahjong-ai-tgbot
+
+provider:
+  name: aws
+  runtime: python3.6
+  stage: dev
+  region: eu-central-1
+
+package:
+  include:
+    - ./TGLanguage
+    - ./Tile
+    - ./Player
+    - ./Game
+    - ./ScoringRules
+    - ./MoveGenerator
+    - ./MLUtils
+    - ./TGBotServer
+    - run_lambda.py
+    - resources
+
+  exclude:
+    - resources/models_backup
+
+functions:
+  webhook:
+    handler: run_lambda.webhook
+    events:
+      - http: POST /
+
+  set_webhook:
+    handler: run_lambda.set_webhook
+    events:
+      - http: POST /set_webhook
+      
+plugins:
+  - serverless-python-requirements

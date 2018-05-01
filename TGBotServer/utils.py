@@ -77,9 +77,8 @@ def load_settings(force_quit_on_err = False):
 		return
 	with open("resources/server_settings.json", "r") as f:
 		server_settings = json.load(f)
-		uri = "mongodb://%s/Mahjong-ai"%(server_settings["mongo_host"])
 		try:
-			_mongo_client = MongoClient(uri, username = server_settings["mongo_username"], password = server_settings["mongo_password"])
+			_mongo_client = MongoClient(server_settings["mongo_uri"])
 			_mongo_client["Mahjong-ai"]["User"].find_one()
 		except:
 			print("Failed to connect to MongoDB")

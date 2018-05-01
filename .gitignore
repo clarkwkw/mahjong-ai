@@ -7,3 +7,5 @@ output
 mahjong-ai.zip
 tmp_board.png
 resources/server_settings.json
+node_modules
+env
