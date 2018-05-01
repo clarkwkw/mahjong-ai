@@ -20,7 +20,7 @@ package:
     - resources
 
   exclude:
-    - resources/models_backup
+    - resources/models/**
 
 functions:
   webhook:
