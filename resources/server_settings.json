@@ -72,6 +72,11 @@
 			"names": ["Paul"]
 		}
 	],
+	"s3_zip_conf": {
+		"load_from_s3": true,
+		"bucket_name": "",
+		"zip_name": ""
+	},
 	"tgmsg_timeout": 10,
 	"scoring_scheme":[
 		[0, 0],

@@ -3,14 +3,18 @@ import json
 import random
 import math
 import numpy as np
+import os
 try:
 	from pymongo.errors import ConnectionFailure
 	from pymongo import MongoClient
 	from telegram import InlineKeyboardMarkup, InlineKeyboardButton, Bot
 	from telegram.error import TimedOut, TelegramError
+	import boto3
+	import zipfile
 except ImportError:
-	print("Unresolved dependencies: Telegram/MongoDB")
+	print("Unresolved dependencies: Telegram/MongoDB/boto3")
 
+TMP_DIR = "/tmp/mahjong-ai"
 __initialized = False
 _mongo_client = None
 _ai_models_sum = 0
@@ -21,6 +25,10 @@ _tg_bot_token = None
 _tg_bot = None
 _tgmsg_timeout = 0
 _tg_server_address, _tg_server_port = "", 443
+
+def download_from_s3(bucket_name, filename, target):
+	s3 = boto3.resource('s3')
+	s3.Bucket(bucket_name).download_file(filename, target)
 
 def get_mongo_time_str(time):
 	return time.strftime("%Y-%m-%dT%H:%M:%S.000Z")
@@ -70,6 +78,13 @@ def send_tg_message(tg_user_id, message):
 		except TimedOut:
 			pass
 
+def make_sure_path_exists(path):
+	try:
+		os.makedirs(path)
+	except OSError as exception:
+		if exception.errno != errno.EEXIST:
+			raise
+
 # Server setup
 def load_settings(force_quit_on_err = False):
 	global _ai_models, _ai_models_dist, _ai_models_sum, _mongo_client, _scoring_scheme, _tg_bot_token, __initialized, _tg_bot, _tgmsg_timeout, _tg_server_address, _tg_server_port
@@ -103,3 +118,22 @@ def load_settings(force_quit_on_err = False):
 		_tgmsg_timeout = server_settings["tgmsg_timeout"]
 		_ai_models_dist = np.asarray(_ai_models_dist)
 		_ai_models_dist = _ai_models_dist/_ai_models_sum
+
+		load_from_s3 = server_settings["s3_zip_conf"]["load_from_s3"]
+		if load_from_s3:
+			tmp_dir = tempfile.NamedTemporaryFile()
+			for model_args in _ai_models:
+				for key in model_args["kwargs"]:
+					if key.count("path") > 0:
+						model_args["kwargs"][key] = os.path.join(TMP_DIR, model_args["kwargs"][key])
+			
+
+			try:
+				if not os.path.exists(TMP_DIR):
+					make_sure_path_exists(TMP_DIR)
+					local_zip_path = os.path.join(TMP_DIR, server_settings["s3_zip_conf"]["zip_name"])
+					download_from_s3(server_settings["s3_zip_conf"]["bucket_name"], server_settings["s3_zip_conf"]["zip_name"], local_zip_path)
+					with zipfile.ZipFile(local_zip_path, "r") as zip_ref:
+						zip_ref.extractall(TMP_DIR)
+			except zipfile.BadZipFile:
+				raise Exception("Downloaded mod content is corrupted")
