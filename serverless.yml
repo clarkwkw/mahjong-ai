@@ -21,6 +21,7 @@ package:
 
   exclude:
     - resources/models/**
+    - env/**
 
 functions:
   webhook:
@@ -35,3 +36,7 @@ functions:
       
 plugins:
   - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    zip: true

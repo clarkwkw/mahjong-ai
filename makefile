@@ -9,12 +9,10 @@ test_mcts: test_mcts.cpp Move_generator/MCTSCpp/CppMCTHandEval.cpp Move_generato
 serverless:
 	rm -rf env node_modules
 	npm install
-
 	virtualenv -p python3.6 env; \
 	. ./env/bin/activate; \
 	serverless deploy; \
 	deactivate
-
 	rm -rf env node_modules
 
 clean:

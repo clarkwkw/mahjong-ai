@@ -3,6 +3,9 @@ __pycache__
 *.pyc
 MoveGenerator/MCTSCpp/cpp_interface.cpp
 *.so
+.Python
+.requirements.zip
+.serverless
 output
 mahjong-ai.zip
 tmp_board.png

@@ -94,7 +94,7 @@ def load_settings(force_quit_on_err = False):
 		server_settings = json.load(f)
 		try:
 			_mongo_client = MongoClient(server_settings["mongo_uri"])
-			_mongo_client["Mahjong-ai"]["User"].find_one()
+			_mongo_client["test"]["User"].find_one()
 		except:
 			print("Failed to connect to MongoDB")
 			if force_quit_on_err:

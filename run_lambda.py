@@ -1,8 +1,13 @@
+try:
+	import unzip_requirements
+except ImportError:
+	pass
 import json
 import telegram
 import os
 import logging
 from telegram.ext import Updater, CommandHandler, ChosenInlineResultHandler, CallbackQueryHandler
+import TGBotServer
 
 HANDLERS = {
 	"start": TGBotServer.TGActionHandlers.start,
