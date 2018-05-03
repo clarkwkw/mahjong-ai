@@ -5,6 +5,8 @@ provider:
   runtime: python3.6
   stage: dev
   region: eu-central-1
+  timeout: 25
+  memorySize: 1024
 
 package:
   include:
@@ -22,6 +24,8 @@ package:
   exclude:
     - resources/models/**
     - env/**
+    - "*.pyc"
+    - node_modules/**
 
 functions:
   webhook:
@@ -40,3 +44,4 @@ plugins:
 custom:
   pythonRequirements:
     zip: true
+    dockerizePip: true

@@ -1,8 +1,6 @@
 from .Human import Human
 from .MoveGenerator import MoveGenerator
 from .Rule_based_ai_naive_baseline import RuleBasedAINaive
-from .MCTSCpp import RuleBasedAINaiveMCTSCpp
-from .MCTSPy import RuleBasedAINaiveMCTSPy
 from .ModelTrainer import ModelTrainer
 from .ModelETrainer import ModelETrainer
 from .ModelRTrainer import ModelRTrainer
@@ -18,11 +16,17 @@ from .RandomGenerator import RandomGenerator
 
 __models_map = {
 	"RuleBasedAINaive": RuleBasedAINaive,
-	"RuleBasedAINaiveMCTSCpp": RuleBasedAINaiveMCTSCpp,
-	"RuleBasedAINaiveMCTSPy": RuleBasedAINaiveMCTSPy,
 	"DeepQ": DeepQGenerator,
 	"PGF": PGFGenerator
 }
+
+try:
+	from .MCTSCpp import RuleBasedAINaiveMCTSCpp
+	from .MCTSPy import RuleBasedAINaiveMCTSPy
+	__models_map["RuleBasedAINaiveMCTSCpp"] = RuleBasedAINaiveMCTSCpp
+	__models_map["RuleBasedAINaiveMCTSPy"] = RuleBasedAINaiveMCTSPy
+except:
+	print("Failed to import MCTS MoveGenerator")
 
 def get_model_by_id(model_id):
 	if model_id in __models_map:

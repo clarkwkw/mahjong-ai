@@ -1,3 +1,4 @@
+print("Importing dependecies..")
 try:
 	import unzip_requirements
 except ImportError:
@@ -8,6 +9,7 @@ import os
 import logging
 from telegram.ext import Updater, CommandHandler, ChosenInlineResultHandler, CallbackQueryHandler
 import TGBotServer
+print("Imported.")
 
 HANDLERS = {
 	"start": TGBotServer.TGActionHandlers.start,
