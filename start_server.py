@@ -25,7 +25,7 @@ if not is_send_message:
 	for command, handler in HANDLERS.items():
 		updater.dispatcher.add_handler(CommandHandler(command, handler))
 	updater.dispatcher.add_handler(CallbackQueryHandler(INLINE_REPLY_HANDLER))
-	'''
+	
 	updater.start_polling()
 	updater.idle()
 	'''
@@ -40,6 +40,7 @@ if not is_send_message:
 		webhook_url = 'https://%s:%d/%s'%(server_address, server_port, TGBotServer.get_tg_bot_token())
 	)
 	updater.idle()
+	'''
 
 else:
 	message = ""
