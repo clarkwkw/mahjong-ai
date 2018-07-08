@@ -1,7 +1,7 @@
 ## Dependencies (main module)
 - C++ 11 compiler
 - cython
-- tensorflow (1.0.1)
+- tensorflow (1.8)
 - (optional) PIL
 
 ## Dependencies (Telegram bot server module)
