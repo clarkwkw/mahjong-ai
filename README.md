@@ -2,11 +2,11 @@
 - C++ 11 compiler
 - cython
 - tensorflow (1.8)
-- (optional) PIL
+- (optional) pillow
 
 ## Dependencies (Telegram bot server module)
 - all libraries required in the main module
-- telegram
+- python-telegram-bot
 - pymongo
 
 ## Development Documentation
