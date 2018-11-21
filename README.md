@@ -48,4 +48,17 @@ The use of each script could be found [here](https://github.com/clarkwkw/mahjong
 4. Start the bot by `python3 start_server.py`.
 
 ## Development Documentation
+These are the functions of the modules:
+
+|Module Name|Functions|
+|---|---|
+|Game|Implements the Hong Kong Mahjong main game logic, such as turn taking and victory condition checking, etc. The module consists of the `Game` class and the `TGGame` class. `TGGame` is rewritten from `Game` to facilitate pausing and resuming a game.|
+|MLUtils|Implements different machine learning models, mainly deep learning models implemented in Tensorflow.|
+|MoveGenerator|Acts as an interface between the `Player` class and the corresponding AI model in `MLUtils`.|
+|Player|Encapsulate the information of a player, including tiles held and discaded tile history.|
+|ScoringRules|Implements the score calculation and victory hand detection mechanism.|
+|TGBotServer|Implements the communication with Telegram bot users and game state storing.|
+|TGLanguage|Wraps the lamguage pack as Python functions for the Telegram bot.|
+|Tile|Encapsulate the information of a tile, such as tile symbol and name.|
+
 For the detail API documentation, please refer to [here](https://docs.google.com/document/d/e/2PACX-1vTTcfwVCwFeHgwfVt7G1eyD5sLF7NmlHHANPOIU1pDlPldczfIi-PdrePyeFU0MXXaL6Qi98JVZlSNX/pub).
