@@ -1,3 +1,10 @@
+'''
+This script helps benchmark different models by letting them play against each other.
+Configuration:
+1. Modify _models to configure available MoveGenerator with predefined parameters.
+2. Modify other parameters below to configure the test.
+'''
+
 import Game
 import Player
 import MoveGenerator

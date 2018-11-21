@@ -1,3 +1,6 @@
+'''
+This experiment is to train deep learning models by forcing them to follow the moves given by the heuristics model.
+'''
 import argparse
 import numpy as np
 import random

@@ -1,3 +1,8 @@
+'''
+This experiment trains the extended deep Q model by letting it play against heuristics based players and players that take random moves.
+The model is extended as the action set now includes different kinds of Chow and Pong, like Chow on Bamboo tiles, Chow on Dots tiles, etc
+The model could also train the deepqpr model, which stands for Deep Q with prioritized experience replay.
+'''
 import argparse
 import numpy as np
 import random

@@ -1,3 +1,6 @@
+'''
+This script allows an user to play against the Monte Carlo Tree Search based model (Python implementation) in console. 
+'''
 import Game
 import Player
 import MoveGenerator

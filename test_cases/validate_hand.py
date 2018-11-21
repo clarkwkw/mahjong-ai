@@ -1,3 +1,6 @@
+'''
+Unit test for hand validating.
+'''
 import Tile
 import ScoringRules
 import unittest

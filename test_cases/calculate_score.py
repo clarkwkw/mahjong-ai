@@ -1,3 +1,6 @@
+'''
+Unit tests for the scoring rules.
+'''
 import Tile
 import ScoringRules
 import unittest

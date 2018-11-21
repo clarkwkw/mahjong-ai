@@ -1,3 +1,6 @@
+'''
+This experiment trains the policy gradient model by letting it play against heuristic players and players that take random moves.
+'''
 import argparse
 import numpy as np
 import random

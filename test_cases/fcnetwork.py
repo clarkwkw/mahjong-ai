@@ -1,3 +1,6 @@
+'''
+A little experiment on using fully connected network for classification / regression
+'''
 from MLUtils import FCNetwork
 import numpy as np
 import random

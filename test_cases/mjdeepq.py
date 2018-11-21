@@ -1,3 +1,6 @@
+'''
+This experiment trains the deep Q model by letting it play against heuristics based players and players that take random moves.
+'''
 import argparse
 import numpy as np
 import random

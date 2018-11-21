@@ -1,3 +1,13 @@
+'''
+An experiment on training a neural network model to predict tiles held by a heuristic based opponent.
+The network takes 2 informations:
+1. fixed hand of everyone
+2. disposed tiles of everyone
+The network should output a distribution on tiles.
+
+This script trains the model by an infinte stream of real matches.
+'''
+
 from MLUtils import HandPredictor
 import Game
 import Player

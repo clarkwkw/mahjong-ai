@@ -1,3 +1,7 @@
+'''
+This script allows 4 users the play against each other in command line console.
+An image of the board shows up whenever someone needs to take a move.
+'''
 import Game
 import MoveGenerator
 import Player

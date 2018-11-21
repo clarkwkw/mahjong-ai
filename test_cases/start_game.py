@@ -1,3 +1,6 @@
+'''
+This script allows 4 users the play against each other in command line console.
+'''
 import Game
 import Player
 import MoveGenerator

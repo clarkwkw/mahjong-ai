@@ -1,3 +1,7 @@
+'''
+This experiment trains the simple Q learning model by letting it play against heuristics based players and players that take random moves.
+'''
+
 import argparse
 import numpy as np
 import random
