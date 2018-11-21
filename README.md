@@ -22,8 +22,30 @@ The reports of the project could be downloaded here:
 - python-telegram-bot
 - pymongo
 
-## Built and Run
-(todo: complete this part)
+## Environment Setup
+- Install C++ 11 compiler.
+- Install Python dependencies by `pip3 install cython tensorflow==1.8 pillow python-telegram-bot pymongo`.
+- Issue the command `make` to compile the C++ scripts for the Monte Carlo Tree Search model.
+
+## List of Test Scripts
+During the project, different test scripts were coded for experiments. The scripts are located under `/test_cases`. 
+
+In general, to invoke a test script, issue the command `python3 test.py [script_name] [..args for the script]`. 
+
+The use of each script could be found [here](https://github.com/clarkwkw/mahjong-ai/wiki/List-of-Test-Scripts).
+
+## Setting Up the Telegram Bot
+1. Retrieve a Telegram Bot token by talking to [BotFather](https://telegram.me/botfather) in Telegram.
+2. Set up a [MongoDB](https://docs.mongodb.com/manual/installation/).
+3. Edit `/resources/server_settings.json`. 
+
+　Change `mongo_uri` according to the host, username and password of the MongoDB. 
+ 
+　Replace the value of `tg_bot_token` by the token you retrieved from BotFather.
+  
+　(Ignore `tg_server_address` and `tg_server_port` since by default the bot is in [polling mode](https://python-telegram-bot.readthedocs.io/en/stable/telegram.ext.updater.html#telegram.ext.Updater.start_polling).)
+  
+4. Start the bot by `python3 start_server.py`.
 
 ## Development Documentation
 For the detail API documentation, please refer to [here](https://docs.google.com/document/d/e/2PACX-1vTTcfwVCwFeHgwfVt7G1eyD5sLF7NmlHHANPOIU1pDlPldczfIi-PdrePyeFU0MXXaL6Qi98JVZlSNX/pub).
