@@ -59,6 +59,6 @@ These are the functions of the modules:
 |ScoringRules|Implements the score calculation and victory hand detection mechanism.|
 |TGBotServer|Implements the communication with Telegram bot users and game state storing.|
 |TGLanguage|Wraps the lamguage pack as Python functions for the Telegram bot.|
-|Tile|Encapsulate the information of a tile, such as tile symbol and name.|
+|Tile|Encapsulates the information of a tile, such as tile symbol and name.|
 
-For the detail API documentation, please refer to [here](https://docs.google.com/document/d/e/2PACX-1vTTcfwVCwFeHgwfVt7G1eyD5sLF7NmlHHANPOIU1pDlPldczfIi-PdrePyeFU0MXXaL6Qi98JVZlSNX/pub).
+[Outdated, for reference only] For the detail API documentation, please refer to [here](https://docs.google.com/document/d/e/2PACX-1vTTcfwVCwFeHgwfVt7G1eyD5sLF7NmlHHANPOIU1pDlPldczfIi-PdrePyeFU0MXXaL6Qi98JVZlSNX/pub).
