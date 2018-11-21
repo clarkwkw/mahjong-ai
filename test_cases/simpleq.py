@@ -1,3 +1,6 @@
+'''
+A made up scenario: training a q learning model to escape a maze.
+'''
 from MLUtils import QLearningTable
 import random
 import numpy as np

@@ -1,3 +1,6 @@
+'''
+A made up scenario: training a policy gradient model to escape a maze.
+'''
 from MLUtils import PolicyGradient
 import random
 import numpy as np

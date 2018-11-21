@@ -1,3 +1,6 @@
+'''
+A made up scenario: training a deepq model to escape a maze.
+'''
 from MLUtils import SimpleDeepQNetwork
 import random
 import numpy as np
